@@ -7,8 +7,4 @@
  */
 class ResqueSerial {
 
-    function f() {
-        echo "ayy";
-    }
-
 }
