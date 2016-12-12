@@ -1,0 +1,32 @@
+{
+    "name": "qualityunit/php-resque-serial",
+    "type": "library",
+    "description": "php-resque plugin",
+    "keywords": ["job", "background", "redis", "resque"],
+    "homepage": "http://www.github.com/chrisboulton/php-resque/",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Chris Boulton",
+            "email": "chris@bigcommerce.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/QualityUnit/php-resque.git"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.0",
+        "chrisboulton/php-resque": "dev-master"
+    },
+    "bin": [
+        "bin/resque-serial"
+    ],
+    "autoload": {
+        "psr-0": {
+            "ResqueSerial": "lib"
+        }
+    }
+}
