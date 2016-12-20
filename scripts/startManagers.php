@@ -101,7 +101,7 @@ for ($i = 0; $i < $count; ++$i) {
 
         if (!$pid) {
             $queues = explode(',', $QUEUE);
-            $worker = new \ResqueSerial\Worker\Manager($queues);
+            $worker = new \ResqueSerial\Worker($queues);
             $worker->setLogger($logger);
             $logger->log(Psr\Log\LogLevel::NOTICE, 'Starting worker {worker}', array('worker' => $worker));
             $worker->work($interval, $BLOCKING);

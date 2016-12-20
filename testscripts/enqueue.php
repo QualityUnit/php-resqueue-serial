@@ -1,4 +1,5 @@
 <?php
+
 require_once '/home/dmolnar/work/qu/php-resqueue-serial/vendor/autoload.php';
 
 
@@ -17,11 +18,51 @@ function enqueue() {
 
 enqueue();
 
+use ResqueSerial\Job;
+use ResqueSerial\SerialJobInterface;
 
-class La_Job_IndexTicket extends ResqueSerial\Job {
+class La_Job_IndexTicket extends Job implements SerialJobInterface {
 
+    private $ticket;
+
+    /**
+     * @return bool
+     */
+    public function perform() {
+        // TODO: Implement perform() method.
+    }
+
+
+    /**
+     * @return mixed[]
+     */
+    function getArgs() {
+        // TODO: Implement getArgs() method.
+    }
+
+    /**
+     * @return string
+     */
+    function getSecondarySerialId() {
+        // TODO: Implement getSecondarySerialId() method.
+    }
+
+    /**
+     * @return string
+     */
+    function getSerialId() {
+        // TODO: Implement getSerialId() method.
+    }
+
+    /**
+     * @return string
+     */
+    function getClass() {
+        return self::class;
+    }
 }
 
-$serialJob = new La_Job_IndexTicket($ticketId);
+$serialJob = new La_Job_IndexTicket();
+$serialJob->setTicket($ticket);
 
 ResqueSerial::enqueue('serial_q_name', $serialJob);

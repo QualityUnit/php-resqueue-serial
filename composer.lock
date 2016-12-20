@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "346fe84b47092fbf3b3f7b78bc571718",
+    "hash": "1f9e48ad0890551c9054148b36ab01e7",
     "content-hash": "71b745c657b9d057d0cdd6b829ce3548",
     "packages": [
         {
@@ -13,12 +13,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/QualityUnit/php-resque.git",
-                "reference": "bf737eb0e2bd01187b02bc506e08c88ca123e733"
+                "reference": "84087cc07010701441372533754ca908d9b0e483"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/QualityUnit/php-resque/zipball/bf737eb0e2bd01187b02bc506e08c88ca123e733",
-                "reference": "bf737eb0e2bd01187b02bc506e08c88ca123e733",
+                "url": "https://api.github.com/repos/QualityUnit/php-resque/zipball/84087cc07010701441372533754ca908d9b0e483",
+                "reference": "84087cc07010701441372533754ca908d9b0e483",
                 "shasum": ""
             },
             "require": {
@@ -63,7 +63,7 @@
             "support": {
                 "source": "https://github.com/QualityUnit/php-resque/tree/master"
             },
-            "time": "2016-12-07 13:37:35"
+            "time": "2016-12-19 17:45:25"
         },
         {
             "name": "colinmollenhour/credis",

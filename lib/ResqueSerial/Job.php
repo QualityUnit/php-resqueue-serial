@@ -12,11 +12,9 @@ abstract class Job {
     abstract function getArgs();
 
     /**
-     * @return  string
+     * @return string
      */
-    public function getClass() {
-        return static::class;
-    }
+    abstract function getClass();
 
     /**
      * @return string
