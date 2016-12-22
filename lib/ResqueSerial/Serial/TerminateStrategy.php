@@ -60,6 +60,9 @@ class TerminateStrategy implements Resque_Queue_EmptyQueueStrategy {
         return false;
     }
 
+    private function configChanged() {
+    }
+
     private function hasJob() {
         $this->hasWaitedOnce = false;
     }

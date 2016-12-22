@@ -6,7 +6,7 @@ namespace ResqueSerial\Serial;
 
 use ResqueSerial\SerialTask;
 
-class Worker  {
+class Worker {
 
     const RECOMPUTE_CONFIG_EVENT = "recomputeConfig";
 
@@ -14,8 +14,10 @@ class Worker  {
      * @var IWorker
      */
     private $state;
-    private $configManager;
-
+    /**
+     * @var Queue
+     */
+    private $queue;
     /**
      * @var SerialTask
      */
@@ -27,21 +29,26 @@ class Worker  {
      * @param SerialTask $task
      */
     public function __construct(SerialTask $task) {
-        $this->configManager = new ConfigManager($this->task->getQueue());
+        $this->queue = new Queue($this->task->getQueue());
         $this->task = $task;
+    }
+
+    public function recompute() {
+        // TODO
     }
 
     public function work() {
 
         $this->state = $this->initStateFromConfig();
 
-        $recompute = [$this, 'recompute']; // TODO test
+        $recompute = [$this, 'recompute'];
 
         \Resque_Event::listen(self::RECOMPUTE_CONFIG_EVENT, $recompute);
 
-        while(true) {
+        $this->recompute();
+        while (true) {
             $this->state->work();
-            $this->configManager->removeCurrent();
+            $this->queue->config()->removeCurrent();
 
             if ($this->isToBeTerminated()) {
                 break;
@@ -55,23 +62,22 @@ class Worker  {
     }
 
     private function changeStateFromConfig() {
-        if($this->configManager->getQueueCount() == 1) {
+        if ($this->queue->config()->getQueueCount() == 1) {
             return new Single($this->task->getQueue());
         } else {
-            return new Multi($this->task->getQueue());
+            return new Multi($this->task->getQueue(), $this->queue->config());
         }
     }
 
     private function initStateFromConfig() {
-        if($this->configManager->isEmpty()) {
-            $this->configManager->init();
+        if ($this->queue->config()->isEmpty()) {
+            $this->queue->config()->init();
         }
 
         return $this->changeStateFromConfig();
     }
 
     private function isToBeTerminated() {
-        return $this->configManager->isEmpty();
+        return $this->queue->config()->isEmpty();
     }
-
 }

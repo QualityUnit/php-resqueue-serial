@@ -28,7 +28,7 @@ class Worker extends \Resque_Worker {
      * @return bool
      */
     private function isJobSerial(Resque_Job $job) {
-        return $job->getTaskClass === SerialTaskFactory::SERIAL_CLASS;
+        return $job->getTaskClass() === SerialTaskFactory::SERIAL_CLASS;
     }
 
     private function createStrategy($job) {

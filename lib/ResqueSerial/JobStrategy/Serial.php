@@ -22,13 +22,12 @@ class Serial extends Resque_JobStrategy_InProcess {
     }
 
     /**
-     * Seperates the job execution context from the worker and calls $worker->perform($job).
+     * Separates the job execution context from the worker and calls $worker->perform($job).
      *
      * @param Resque_Job $job
      * @throws ForkException
      */
     function perform(Resque_Job $job) {
-        $child = -1;
         try {
             $child = $this->fork();
         } catch (RuntimeException $e) {

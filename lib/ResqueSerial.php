@@ -18,6 +18,7 @@ class ResqueSerial {
         $id = Resque::generateJobId();
 
         $serialQueue = self::generateSerialQueueName($queue, $serialJob);
+
         $mainArgs = [
                 \ResqueSerial\SerialTask::ARG_SERIAL_QUEUE => $serialQueue
         ];
@@ -74,6 +75,17 @@ class ResqueSerial {
     }
 
     private static function generateSerialQueueName($queue, \ResqueSerial\Job $serialJob) {
-        return $queue . '_' . $serialJob->getSerialId();
+        $serialQueue = $queue . '_' . $serialJob->getSerialId();
+        $configManager = new \ResqueSerial\Serial\ConfigManager($serialQueue);
+        $config = $configManager->getLatest();
+
+        if($config->getQueueCount() < 2) {
+            return $serialQueue;
+        }
+
+        $hashNum = hexdec(substr(md5($serialJob->getSecondarySerialId()), -4));
+        $queue = $config->getQueue($hashNum % $config->getQueueCount());
+
+        return $queue;
     }
 }

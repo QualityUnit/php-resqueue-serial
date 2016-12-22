@@ -37,12 +37,12 @@ class SerialTask implements \Resque_Task {
     }
 
     public function perform() {
-        // TODO pridat worker do redisu
+        // TODO add worker to redis
         // $this->worker
 
         $worker = new Worker($this);
         $worker->work();
 
-        // odobrat
+        // remove
     }
 }

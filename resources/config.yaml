@@ -1,0 +1,14 @@
+log_level: debug
+
+
+redis:
+    hostname: localhost
+    port: 3333
+
+queues:
+    example_queue:
+        worker_count: 100
+        blocking: true
+        serial:
+            max_serial_workers: 5
+            max_serial_subqueus: 5
