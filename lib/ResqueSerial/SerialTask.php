@@ -4,7 +4,7 @@
 namespace ResqueSerial;
 
 
-use ResqueSerial\Serial\Worker;
+use ResqueSerial\Serial\SerialWorker;
 
 class SerialTask implements \Resque_Task {
     const ARG_SERIAL_QUEUE = "serialQueue";
@@ -36,13 +36,15 @@ class SerialTask implements \Resque_Task {
         return $this->serialQueue;
     }
 
+    /**
+     * @return string
+     */
+    public function getWorkerId() {
+        return (string)$this->job->worker;
+    }
+
     public function perform() {
-        // TODO add worker to redis
-        // $this->worker
-
-        $worker = new Worker($this);
+        $worker = new SerialWorker($this);
         $worker->work();
-
-        // remove
     }
 }

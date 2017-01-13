@@ -4,39 +4,84 @@
 namespace ResqueSerial\Serial;
 
 
-use Resque_Event;
-use RuntimeException;
+use Psr\Log\LoggerInterface;
+use Resque;
+use ResqueSerial\Key;
+use ResqueSerial\Log;
 
 class Multi implements IWorker {
 
-    /**
-     * @var string
-     */
+    /** @var string */
     private $queue;
-    /**
-     * @var
-     */
+    /** @var ConfigManager */
     private $config;
-    /**
-     * @var int[]
-     */
-    private $children;
-
-
+    /** @var int[] */
+    private $children = [];
+    /** @var SerialWorkerImage */
+    private $image;
+    /** @var LoggerInterface */
+    private $logger;
+    /** @var bool */
+    private $stopping = false;
     /**
      * Multi constructor.
      *
      * @param string $queue
-     * @param $config
+     * @param ConfigManager $config
      */
     public function __construct($queue, $config) {
         $this->queue = $queue;
         $this->config = $config;
+        $this->image = SerialWorkerImage::create($queue);
+        $this->logger = Log::prefix(getmypid() . "-multi-$queue");
+    }
+
+    /**
+     * @param SerialWorkerImage $image
+     */
+    public function setImage(SerialWorkerImage $image) {
+        $this->image = $image;
+    }
+
+    public function shutdown() {
+        $this->stopping = true;
+        $this->logger->notice('Shutting down.');
+
+        foreach ($this->children as $child) {
+            posix_kill($child, SIGTERM);
+        }
+    }
+
+    /**
+     * On supported systems (with the PECL proctitle module installed), update
+     * the name of the currently running process to indicate the current state
+     * of a worker.
+     *
+     * @param string $status The updated process title.
+     */
+    public function updateProcLine($status)
+    {
+        $processTitle = "resque-serial-serial_worker: $status";
+        if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
+            cli_set_process_title($processTitle);
+        }
+        else if(function_exists('setproctitle')) {
+            setproctitle($processTitle);
+        }
     }
 
     function work() {
+        if($this->stopping) {
+            return;
+        }
+
+        $this->logger->notice("Starting.");
+        $this->image->addToPool()->setStartedNow();
+
+        $this->updateProcLine('Forking runners');
         $this->forkChildren();
 
+        $this->updateProcLine('Managing runners');
         while (true) {
             foreach ($this->children as $pid) {
                 $response = pcntl_waitpid($pid, $status, WNOHANG);
@@ -45,41 +90,59 @@ class Multi implements IWorker {
                 }
             }
 
-            if(count($this->children) == 0) {
+            if (count($this->children) == 0) {
                 break;
             }
 
-            Resque_Event::trigger(Worker::RECOMPUTE_CONFIG_EVENT, $this);
+            pcntl_signal_dispatch();
+
+            \Resque_Event::trigger(SerialWorker::RECOMPUTE_CONFIG_EVENT, $this);
             sleep(1);
         }
-        //todo:
+
+        $this->image->removeFromPool()->clearStarted();
+        $this->logger->notice("Ended.");
     }
 
     private function forkChildren() {
-        foreach ($this->config->getQueues as $queue) {
-            $this->forkSingleWorker($queue);
+        // check if some workers already exist TODO
+//        $workers = \Resque::redis()->smembers('queues');
+//        $existing_workers = [];
+//        if (is_array($workers)) {
+//            foreach ($workers as $workerId) {
+//                /** @noinspection PhpUnusedLocalVariableInspection */
+//                list($hostname, $pid, $que) = explode(':', $workerId, 3);
+//                if (!posix_getpgid($pid)) {
+//                    continue;
+//                }
+//                $this->children[$pid] = $pid;
+//                $existing_workers[] = $que;
+//            }
+//        }
+
+        $currentConfig = $this->config->getCurrent();
+        $queueCount = $currentConfig->getQueueCount();
+        for ($i = 0; $i < $queueCount; $i++) {
+            $queue = $this->queue . $currentConfig->getQueuePostfix($i);
+//            if (!in_array($this->queue, $existing_workers)) {
+                $this->forkSingleWorker($queue);
+//            }
         }
     }
 
     private function forkSingleWorker($queue) {
-        $childPid = $this->fork();
+        $childPid = Resque::fork();
 
         // Forked and we're the child. Run the job.
         if ($childPid === 0) {
             $worker = new Single($queue, true);
+            $id = (string)$worker;
+            Resque::redis()->sadd(Key::serialWorkerRunners($this->image->getId()), $id);
             $worker->work();
+            Resque::redis()->srem(Key::serialWorkerRunners($this->image->getId()), $id);
             exit(0);
         }
 
-        $this->children[] = $childPid;
-    }
-
-    private function fork() {
-        $pid = pcntl_fork();
-        if ($pid === -1) {
-            throw new RuntimeException('Unable to fork child worker.');
-        }
-
-        return $pid;
+        $this->children[$childPid] = $childPid;
     }
 }

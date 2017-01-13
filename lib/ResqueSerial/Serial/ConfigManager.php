@@ -19,29 +19,34 @@ class ConfigManager {
      * @param $serialQueue
      */
     public function __construct($serialQueue) {
-        $this->queueKey = Key::serialConfig($serialQueue);
+        $this->queueKey = Key::serialQueueConfig($serialQueue);
     }
 
     /**
      * @return Config
      */
-    public function getCurrent() { // FIXME
-        if ($this->current === null) {
-            $this->init();
+    public function getCurrent() {
+        $current = \Resque::redis()->lIndex($this->queueKey, 0);
+        if ($current == null) {
+            return $this->init();
         }
-
-        return $this->current;
+        return new Config(json_decode($current, true));
     }
 
     /**
      * @return Config
      */
-    public function getLatest() { // FIXME
-        if ($this->next !== null) {
-            return $this->next;
+    public function getLatest() {
+        if(\Resque::redis()->llen($this->queueKey) < 2) {
+            return $this->getCurrent();
         }
 
-        return $this->getCurrent();
+        // TODO: crash on >2 ?
+        $latest = \Resque::redis()->lindex($this->queueKey, 1);
+        if ($latest == null) {
+                return null;
+            }
+        return new Config(json_decode($latest, true));
     }
 
     /**
@@ -52,39 +57,25 @@ class ConfigManager {
     }
 
     public function hasChanges() {
-        return \Resque::redis()->lLen($this->queueKey) > 1;
-    }
-
-    public function init() {
-        $this->load();
-        if ($this->current === null) {
-            $this->current = new Config();
-            $this->next = null;
-        }
+        return \Resque::redis()->llen($this->queueKey) > 1;
     }
 
     public function isEmpty() {
-        return \Resque::redis()->lLen($this->queueKey) < 1;
+        return \Resque::redis()->llen($this->queueKey) < 1;
     }
 
     public function removeCurrent() {
-        \Resque::redis()->lPop($this->queueKey);
+        \Resque::redis()->lpop($this->queueKey);
     }
 
-    private function load() {
-        $this->current = null;
-        $this->next = null;
-
-        $current = \Resque::redis()->lIndex($this->queueKey, 0);
-        if ($current == null) {
-            return;
-        }
-        $this->current = new Config(json_decode($current, true));
-
-        $next = \Resque::redis()->lIndex($this->queueKey, 1);
-        if ($next != null) {
-            return;
-        }
-        $this->next = new Config(json_decode($next, true));
+    /**
+     * @return Config
+     */
+    private function init() {
+        $data = [
+                'queueCount' => 1
+        ];
+        \Resque::redis()->lpush($this->queueKey, json_encode($data));
+        return new Config($data);
     }
 }

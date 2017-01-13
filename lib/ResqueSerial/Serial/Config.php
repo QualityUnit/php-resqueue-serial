@@ -31,8 +31,9 @@ class Config {
      * @param $queueId
      * @return string
      */
-    public function getQueue($queueId) {
-        return $this->data['queues'][$queueId];
+    public function getQueuePostfix($queueId) {
+        $queueCount = $this->getQueueCount();
+        return "~$queueCount~$queueId";
     }
 
     /**

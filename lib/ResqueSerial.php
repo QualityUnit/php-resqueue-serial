@@ -1,5 +1,8 @@
 <?php
 
+
+use ResqueSerial\Key;
+
 /**
  * Base ResqueSerial.
  *
@@ -17,7 +20,10 @@ class ResqueSerial {
     public static function enqueue($queue, \ResqueSerial\Job $serialJob, $monitor = false) {
         $id = Resque::generateJobId();
 
-        $serialQueue = self::generateSerialQueueName($queue, $serialJob);
+        $serialQueue = $queue . '~' . $serialJob->getSerialId();
+
+        // in case serial queue is split into multiple subqueues
+        $subqueue = self::generateSerialSubqueueName($serialQueue, $serialJob);
 
         $mainArgs = [
                 \ResqueSerial\SerialTask::ARG_SERIAL_QUEUE => $serialQueue
@@ -31,7 +37,7 @@ class ResqueSerial {
 
 
         self::createSerialJob(
-                $serialQueue,
+                $subqueue,
                 $serialJob->getClass(),
                 $serialArgs,
                 $id
@@ -49,13 +55,13 @@ class ResqueSerial {
     }
 
     /**
-     * @param string $queue
+     * @param string $subqueue
      * @param string $class
      * @param mixed[] $args
      * @param string $id
      * @return boolean success
      */
-    private static function createSerialJob($queue, $class, array $args, $id) {
+    private static function createSerialJob($subqueue, $class, array $args, $id) {
         $encodedItem = json_encode([
                 'class' => $class,
                 'args' => $args,
@@ -66,7 +72,7 @@ class ResqueSerial {
             return false;
         }
 
-        $length = Resque::redis()->rpush('serial_queue:' . $queue, $encodedItem);
+        $length = Resque::redis()->rpush(Key::serialQueue($subqueue), $encodedItem);
         if ($length < 1) {
             return false;
         }
@@ -74,8 +80,7 @@ class ResqueSerial {
         return true;
     }
 
-    private static function generateSerialQueueName($queue, \ResqueSerial\Job $serialJob) {
-        $serialQueue = $queue . '_' . $serialJob->getSerialId();
+    private static function generateSerialSubqueueName($serialQueue, \ResqueSerial\Job $serialJob) {
         $configManager = new \ResqueSerial\Serial\ConfigManager($serialQueue);
         $config = $configManager->getLatest();
 
@@ -84,7 +89,7 @@ class ResqueSerial {
         }
 
         $hashNum = hexdec(substr(md5($serialJob->getSecondarySerialId()), -4));
-        $queue = $config->getQueue($hashNum % $config->getQueueCount());
+        $queue = $serialQueue . $config->getQueuePostfix($hashNum % $config->getQueueCount());
 
         return $queue;
     }

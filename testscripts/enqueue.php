@@ -7,21 +7,9 @@ require_once '/home/dmolnar/work/qu/php-resqueue-serial/vendor/autoload.php';
 
 Resque::setBackend("localhost:6379");
 
-function enqueue() {
-    for ($i = 0; $i < 10; $i++) {
-        Resque::enqueue('test_queue', \ResqueSerial\DummyJob::class, [
-                "key1" => "value$i",
-                "key2" => "value$i"
-        ], true);
-    }
-}
-
-enqueue();
-
 use ResqueSerial\Job;
-use ResqueSerial\SerialJobInterface;
 
-class La_Job_IndexTicket extends Job implements SerialJobInterface {
+class La_Job_IndexTicket extends Job implements Resque_Task {
 
     private $ticket;
 
@@ -29,7 +17,8 @@ class La_Job_IndexTicket extends Job implements SerialJobInterface {
      * @return bool
      */
     public function perform() {
-        // TODO: Implement perform() method.
+        usleep(100000);
+        return true;
     }
 
 
@@ -37,21 +26,21 @@ class La_Job_IndexTicket extends Job implements SerialJobInterface {
      * @return mixed[]
      */
     function getArgs() {
-        // TODO: Implement getArgs() method.
+        return [];
     }
 
     /**
      * @return string
      */
     function getSecondarySerialId() {
-        // TODO: Implement getSecondarySerialId() method.
+        return rand(0, 16);
     }
 
     /**
      * @return string
      */
     function getSerialId() {
-        // TODO: Implement getSerialId() method.
+        return 'test_job_serial_id';
     }
 
     /**
@@ -63,6 +52,14 @@ class La_Job_IndexTicket extends Job implements SerialJobInterface {
 }
 
 $serialJob = new La_Job_IndexTicket();
-$serialJob->setTicket($ticket);
 
-ResqueSerial::enqueue('serial_q_name', $serialJob);
+//Resque::redis()->lPush(\ResqueSerial\Key::serialQueueConfig('example_queue~test_job_serial_id'), '{"queueCount":2}');
+
+for ($i=0; $i<20; $i++) {
+    ResqueSerial::enqueue('example_queue', $serialJob);
+}
+
+$proc = new \ResqueSerial\Init\Process();
+
+$proc->recover();
+$proc->wait();

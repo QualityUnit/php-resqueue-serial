@@ -1,14 +1,23 @@
+# default = notice
 log_level: debug
-
+# default = "/var/log/resque-serial.log"
+log_path: "/home/dmolnar/tmp/resque-serial.log"
 
 redis:
+    # default = localhost
     hostname: localhost
-    port: 3333
+    # default = 6379
+    port: 6379
 
+# MANDATORY
 queues:
     example_queue:
-        worker_count: 100
+        # MANDATORY <INT>
+        worker_count: 2
+        # MANDATORY <BOOL>
         blocking: true
         serial:
-            max_serial_workers: 5
-            max_serial_subqueus: 5
+            # MANDATORY <INT>
+            max_workers: 5
+            # MANDATORY <INT>
+            max_subqueues: 5

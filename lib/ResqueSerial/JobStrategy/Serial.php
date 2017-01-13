@@ -7,6 +7,7 @@ namespace ResqueSerial\JobStrategy;
 use Resque_Job;
 use Resque_JobStrategy_InProcess;
 use ResqueSerial\ForkException;
+use ResqueSerial\Log;
 use ResqueSerial\Worker;
 use RuntimeException;
 
@@ -29,7 +30,7 @@ class Serial extends Resque_JobStrategy_InProcess {
      */
     function perform(Resque_Job $job) {
         try {
-            $child = $this->fork();
+            $child = \Resque::fork();
         } catch (RuntimeException $e) {
             throw new ForkException();
         }
@@ -37,6 +38,7 @@ class Serial extends Resque_JobStrategy_InProcess {
         // Forked and we're the child. Run the job.
         if ($child === 0) {
 
+            $this->worker->logger = Log::prefix(getmypid() . '-serial-task');
             parent::perform($job);
             exit(0);
         }
@@ -57,23 +59,5 @@ class Serial extends Resque_JobStrategy_InProcess {
      */
     function shutdown() {
         // TODO: Implement shutdown() method.
-    }
-
-    /**
-     * Attempt to fork a child process from the parent to run a job in.
-     *
-     * Return values are those of pcntl_fork().
-     *
-     * @return int 0 for the forked child, or the PID of the child for the parent.
-     * @throws RuntimeException When pcntl_fork returns -1
-     */
-    private function fork()
-    {
-        $pid = pcntl_fork();
-        if($pid === -1) {
-            throw new RuntimeException('Unable to fork child worker.');
-        }
-
-        return $pid;
     }
 }

@@ -1,29 +1,7 @@
 #!/usr/bin/env php
 <?php
 
-// Find and initialize Composer
-$files = array(
-        __DIR__ . '/../../vendor/autoload.php',
-        __DIR__ . '/../../../autoload.php',
-        __DIR__ . '/../../../../autoload.php',
-        __DIR__ . '/../vendor/autoload.php',
-);
-
-$found = false;
-foreach ($files as $file) {
-    if (file_exists($file)) {
-        require_once $file;
-        break;
-    }
-}
-
-if (!class_exists('Composer\Autoload\ClassLoader', false)) {
-    die(
-            'You need to set up the project dependencies using the following commands:' . PHP_EOL .
-            'curl -s http://getcomposer.org/installer | php' . PHP_EOL .
-            'php composer.phar install' . PHP_EOL
-    );
-}
+require_once 'bootstrap.php';
 
 $QUEUE = getenv('QUEUE');
 if (empty($QUEUE)) {
@@ -57,20 +35,7 @@ if (!empty($LOGGING) || !empty($VERBOSE)) {
     $logLevel = true;
 }
 
-$APP_INCLUDE = getenv('APP_INCLUDE');
-if ($APP_INCLUDE) {
-    if (!file_exists($APP_INCLUDE)) {
-        die('APP_INCLUDE (' . $APP_INCLUDE . ") does not exist.\n");
-    }
-
-    require_once $APP_INCLUDE;
-}
-
-// See if the APP_INCLUDE containes a logger object,
-// If none exists, fallback to internal logger
-if (!isset($logger) || !is_object($logger)) {
-    $logger = new Resque_Log($logLevel);
-}
+$logger = new Resque_Log($logLevel);
 
 $BLOCKING = getenv('BLOCKING') !== false;
 

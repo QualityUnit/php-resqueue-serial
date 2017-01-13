@@ -60,7 +60,8 @@ class TerminateStrategy implements Resque_Queue_EmptyQueueStrategy {
         return false;
     }
 
-    private function configChanged() {
+    private function configChanged() {  // TODO
+
     }
 
     private function hasJob() {
@@ -73,7 +74,7 @@ class TerminateStrategy implements Resque_Queue_EmptyQueueStrategy {
 
     private function shouldShutdown() {
         if ($this->isParallel) {
-            return $this->configChanged(); // TODO
+            return $this->configChanged();
         }
 
         return $this->hasWaitedOnce;

@@ -28,7 +28,6 @@ class Lock {
                 0 => 'nx',
                 'px' => $this->time
         ]);
-        var_dump($response);
         if (!$response) {
             return false;
         }
@@ -41,7 +40,6 @@ class Lock {
         $response = \Resque::redis()->eval($script,
                 [\Resque_Redis::getPrefix() . $this->lockKey],
                 [$this->lockValue]);
-        var_dump($response);
         if (!$response) {
             return false;
         }
