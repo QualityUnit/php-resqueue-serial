@@ -18,22 +18,16 @@ class Process {
 
     private $logger;
 
+    /** @var GlobalConfig */
+    private $globalConfig;
+
     public function __construct() {
         $this->logger = Log::main();
     }
 
     public function recover() {
-        $this->updateProcLine("starting");
-        $config = GlobalConfig::load();
-        Resque::setBackend($config->getBackend());
-
-        Log::initFromConfig($config);
-        $this->logger = Log::prefix('init-process');
-
-        $this->registerSigHandlers();
-
-        foreach ($config->getQueueList() as $queue) {
-            $workerConfig = $config->getWorkerConfig($queue);
+        foreach ($this->globalConfig->getQueueList() as $queue) {
+            $workerConfig = $this->globalConfig->getWorkerConfig($queue);
 
             if ($workerConfig == null) {
                 Log::main()->error("Invalid worker config for queue $queue");
@@ -47,8 +41,8 @@ class Process {
             $toCreate = $workerConfig->getWorkerCount() - $livingWorkerCount;
 
             $orphanedSerialWorkers = $this->getOrphanedSerialWorkers($queue);
-
             $orphanedSerialQueues = $this->getOrphanedSerialQueues($queue);
+
             for ($i = 0; $i < $toCreate; ++$i) {
                 try {
                     $workersToAppend = @$orphanedSerialWorkers[0];
@@ -64,7 +58,7 @@ class Process {
                     }
 
                     if (!$pid) {
-                        $worker = new Worker(explode(',', $queue), $config);
+                        $worker = new Worker(explode(',', $queue), $this->globalConfig);
                         $worker->setLogger(Log::prefix(getmypid() . "-worker-$queue"));
 
                         if ($workersToAppend) {
@@ -86,6 +80,7 @@ class Process {
                     die();
                 }
             }
+
 
             // check interruption
             pcntl_signal_dispatch();
@@ -116,6 +111,12 @@ class Process {
         }
     }
 
+    public function start() {
+        $this->updateProcLine("starting");
+        $this->initialize();
+        $this->recover();
+    }
+
     public function updateProcLine($status) {
         $processTitle = "resque-serial-init: $status";
         if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
@@ -126,8 +127,8 @@ class Process {
         }
     }
 
-    public function wait() {
-        $this->updateProcLine("waiting");
+    public function maintain() {
+        $this->updateProcLine("maintaining");
         while (true) {
             sleep(5);
             pcntl_signal_dispatch();
@@ -204,7 +205,26 @@ class Process {
      * @return string[][]
      */
     private function getOrphanedSerialWorkers($queue) {
+        $orphanedGroups = [];
+        foreach (SerialWorkerImage::all() as $serialWorkerId) {
+            $serialImage = SerialWorkerImage::fromId($serialWorkerId);
+            $parent = $serialImage->getParent();
+
+            if (!$parent) {
+
+            }
+        }
         return []; // TODO
+    }
+
+    private function initialize() {
+        $this->globalConfig = $config = GlobalConfig::load();
+        Resque::setBackend($config->getBackend());
+
+        Log::initFromConfig($config);
+        $this->logger = Log::prefix('init-process');
+
+        $this->registerSigHandlers();
     }
 
     private function registerSigHandlers() {

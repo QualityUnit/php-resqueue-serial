@@ -59,7 +59,15 @@ for ($i=0; $i<20; $i++) {
     ResqueSerial::enqueue('example_queue', $serialJob);
 }
 
+$PATH = __DIR__ . '../resources/config.yml';
+
+if($PATH) {
+    \ResqueSerial\Init\GlobalConfig::$PATH = $PATH;
+}
+
+Resque_Redis::prefix(ResqueSerial::VERSION);
+
 $proc = new \ResqueSerial\Init\Process();
 
 $proc->recover();
-$proc->wait();
+$proc->maintain();

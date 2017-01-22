@@ -1,4 +1,4 @@
-resque:
+resque-v1:
     
     queues: set(queue_name)
     queue:<queue_name>: list(job_data)
@@ -17,7 +17,7 @@ resque:
     stat:processed: <processed_count>
     stat:processed:<worker_id>: <processed_count>
     
-resque:serial:
+resque-v1:serial:
     
     workers: set(worker_id)                                     # Reque-Serial workers
     worker:<worker_id>: <job_run_data>

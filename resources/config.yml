@@ -9,6 +9,8 @@ redis:
     # default = 6379
     port: 6379
 
+task_include_path: "/opt/qu/"
+
 # MANDATORY
 queues:
     example_queue:

@@ -11,6 +11,8 @@ use ResqueSerial\Key;
  */
 class ResqueSerial {
 
+    const VERSION = 'resque_v1';
+
     /**
      * @param $queue
      * @param \ResqueSerial\Job $serialJob

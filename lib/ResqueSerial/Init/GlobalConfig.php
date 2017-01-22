@@ -20,7 +20,10 @@ class GlobalConfig {
             'WARNING' => LogLevel::WARNING
     ];
 
-    public static $PATH = __DIR__ . '/../../../resources/config.yaml';
+    public static $PATH = '/etc/resque-serial/config.yml';
+
+    /** @var GlobalConfig */
+    private static $instance;
 
     private $queues = [];
     private $logLevel = LogLevel::NOTICE;
@@ -28,33 +31,48 @@ class GlobalConfig {
     private $redisHost = \Resque_Redis::DEFAULT_HOST;
     private $redisPort = \Resque_Redis::DEFAULT_PORT;
 
+    private $taskIncludePath = '/opt';
+    private $path;
+
     public function __construct($path) {
+        $this->path = $path;
         $data = Yaml::parse(file_get_contents($path));
 
-        if(!isset($data['queues'])) {
+        if (!isset($data['queues'])) {
             throw new \Exception("Global config contains no queues.");
         }
 
         $this->queues = $data['queues'];
 
         $redis = $data['redis'];
-        if(is_array($redis)) {
+        if (is_array($redis)) {
             $this->redisHost = $redis['hostname'];
             $this->redisPort = $redis['port'];
         }
 
         $level = self::LOG_LEVELS[strtoupper($data['log_level'])];
-        if($level != null) {
+        if ($level != null) {
             $this->logLevel = $level;
         }
         $logPath = $data['log_path'];
-        if($logPath != null) {
+        if ($logPath != null) {
             $this->logPath = $logPath;
+        }
+        $taskIncludePath = $data['task_include_path'];
+        if ($taskIncludePath != null) {
+            $this->taskIncludePath = $taskIncludePath;
         }
     }
 
-    public static function load() {
-        return new GlobalConfig(self::$PATH);
+    public static function instance() {
+        if (!self::$instance) {
+            self::$instance = new GlobalConfig(self::$PATH);
+        }
+        return self::$instance;
+    }
+
+    public static function reload() {
+        self::$instance = new GlobalConfig(self::$instance->getPath());
     }
 
     public function getBackend() {
@@ -76,16 +94,27 @@ class GlobalConfig {
         return array_keys($this->queues);
     }
 
+    public function getTaskIncludePath() {
+        return $this->taskIncludePath;
+    }
+
     /**
      * @param $queue
+     *
      * @return WorkerConfig|null
      */
     public function getWorkerConfig($queue) {
         try {
             $queueData = $this->queues[$queue];
+
             return new WorkerConfig($queueData);
-        } catch (\Exception $ignore) {}
+        } catch (\Exception $ignore) {
+        }
 
         return null;
+    }
+
+    private function getPath() {
+        return $this->path;
     }
 }

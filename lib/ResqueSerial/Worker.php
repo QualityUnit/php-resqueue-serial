@@ -14,7 +14,6 @@ use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Init\WorkerConfig;
 use ResqueSerial\JobStrategy\Serial;
 use ResqueSerial\Serial\QueueImage;
-use ResqueSerial\Serial\SerialWorkerImage;
 
 class Worker extends \Resque_Worker {
 
