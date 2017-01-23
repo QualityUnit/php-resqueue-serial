@@ -8,6 +8,10 @@ use ResqueSerial\Init\GlobalConfig;
 
 class RunApplicationTask implements \Resque_Task {
 
+    public static function className() {
+        return get_class();
+    }
+    
     public function perform() {
         list($applicationPath, $jobArgs, $taskClass) = $this->initializeArgs();
 
