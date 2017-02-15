@@ -7,7 +7,9 @@ namespace ResqueSerial\Init;
 use Exception;
 use Resque;
 use ResqueSerial\Key;
+use ResqueSerial\QueueLock;
 use ResqueSerial\Log;
+use ResqueSerial\Serial\QueueImage;
 use ResqueSerial\Serial\SerialWorkerImage;
 use ResqueSerial\Worker;
 use ResqueSerial\WorkerImage;
@@ -23,6 +25,17 @@ class Process {
 
     public function __construct() {
         $this->logger = Log::main();
+    }
+
+    public function maintain() {
+        $this->updateProcLine("maintaining");
+        while (true) {
+            sleep(5);
+            pcntl_signal_dispatch();
+            if ($this->stopping) {
+                break;
+            }
+        }
     }
 
     public function recover() {
@@ -127,17 +140,6 @@ class Process {
         }
     }
 
-    public function maintain() {
-        $this->updateProcLine("maintaining");
-        while (true) {
-            sleep(5);
-            pcntl_signal_dispatch();
-            if ($this->stopping) {
-                break;
-            }
-        }
-    }
-
     /**
      * Assigns serial worker to specified parent worker.
      *
@@ -177,13 +179,11 @@ class Process {
             if ($queue != $image->getQueue()) {
                 continue; // not this queue
             }
-            if (gethostname() != $image->getHostname()) {
+            if (!$image->isLocal()) {
                 continue; // not this machine
             }
 
-            $isAlive = posix_getpgid($image->getPid()) > 0;
-
-            if (!$isAlive) {
+            if (!$image->isAlive()) {
                 // cleanup
                 WorkerImage::fromId($workerId)
                         ->removeFromPool()
@@ -208,7 +208,22 @@ class Process {
      * @return string[] list of orphaned serial queue names
      */
     private function getOrphanedSerialQueues($queue) {
-        return []; // TODO
+        $orphanedQueues = [];
+        foreach (QueueImage::all() as $serialQueue) {
+            $queueImage = QueueImage::fromName($serialQueue);
+
+            if ($queueImage->getParentQueue() != $queue) {
+                continue; // not our queue
+            }
+
+            if (QueueLock::exists($serialQueue)) {
+                continue; // someone is holding the queue
+            }
+
+            $orphanedQueues[] = $serialQueue;
+        }
+
+        return $orphanedQueues;
     }
 
     /**
@@ -223,18 +238,35 @@ class Process {
     private function getOrphanedSerialWorkers($queue) {
         $orphanedGroups = [];
         foreach (SerialWorkerImage::all() as $serialWorkerId) {
-            $serialImage = SerialWorkerImage::fromId($serialWorkerId);
-            $parent = $serialImage->getParent();
+            $workerImage = SerialWorkerImage::fromId($serialWorkerId);
+            $queueImage = QueueImage::fromName($workerImage->getQueue());
 
-            if (!$parent) {
+            if ($queue != $queueImage->getParentQueue()) {
+                continue; // not our queue
+            }
 
+            if(!$workerImage->isLocal()) {
+                continue; // not our responsibility
+            }
+
+            $parent = $workerImage->getParent();
+
+            if ($parent == '') {
+                $orphanedGroups['_'][] = $workerImage->getId();
+                continue;
+            }
+
+            $parentImage = WorkerImage::fromId($parent);
+
+            if (!$parentImage->isAlive()) {
+                $orphanedGroups[$parent][] = $workerImage->getId();
             }
         }
-        return []; // TODO
+        return $orphanedGroups;
     }
 
     private function initialize() {
-        $this->globalConfig = $config = GlobalConfig::load();
+        $this->globalConfig = $config = GlobalConfig::instance();
         Resque::setBackend($config->getBackend());
 
         Log::initFromConfig($config);

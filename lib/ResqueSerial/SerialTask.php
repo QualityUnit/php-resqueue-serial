@@ -10,7 +10,7 @@ class SerialTask implements \Resque_Task {
     const ARG_SERIAL_QUEUE = "serialQueue";
 
     /**
-     * @var Lock
+     * @var QueueLock
      */
     private $lock;
     private $serialQueue;
@@ -23,7 +23,7 @@ class SerialTask implements \Resque_Task {
      * @param $queue
      * @param $lock
      */
-    public function __construct($serialQueue, $queue, Lock $lock) {
+    public function __construct($serialQueue, $queue, QueueLock $lock) {
         $this->serialQueue = $serialQueue;
         $this->queue = $queue;
         $this->lock = $lock;

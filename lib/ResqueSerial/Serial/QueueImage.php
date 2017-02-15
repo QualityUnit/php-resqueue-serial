@@ -5,7 +5,7 @@ namespace ResqueSerial\Serial;
 
 
 use ResqueSerial\Key;
-use ResqueSerial\Lock;
+use ResqueSerial\QueueLock;
 use ResqueSerial\Log;
 
 class QueueImage {
@@ -30,6 +30,14 @@ class QueueImage {
                     . " This is probably a bug.");
         }
         $this->configManager = new ConfigManager($serialQueue);
+    }
+
+    /**
+     * @return \Iterator
+     */
+    public static function all() {
+        $keys = \Resque::redis()->keys(Key::serialQueue('*'));
+        return new __QueueIterator($keys, Key::serialQueue(''));
     }
 
     public static function create($queue, $serialId) {
@@ -77,6 +85,39 @@ class QueueImage {
     }
 
     public function newLock() {
-        return new Lock(Key::queueLock($this->serialQueue));
+        return new QueueLock(Key::queueLock($this->serialQueue));
+    }
+}
+
+class __QueueIterator implements \Iterator {
+
+    /** @var \ArrayIterator */
+    private $iterator;
+    /** @var int */
+    private $prefixLength;
+
+    public function __construct(array $array, $prefixLength) {
+        $this->iterator = new \ArrayIterator($array);
+        $this->prefixLength = $prefixLength;
+    }
+
+    public function current() {
+        return substr($this->iterator->current(), $this->prefixLength);
+    }
+
+    public function next() {
+        $this->iterator->next();
+    }
+
+    public function key() {
+        return $this->iterator->key();
+    }
+
+    public function valid() {
+        return $this->iterator->valid();
+    }
+
+    public function rewind() {
+        $this->iterator->rewind();
     }
 }

@@ -4,7 +4,7 @@
 namespace ResqueSerial;
 
 
-class Lock {
+class QueueLock {
 
     private $lockKey;
     private $lockValue;
@@ -22,6 +22,9 @@ class Lock {
         $this->lockValue = md5(microtime());
     }
 
+    public static function exists($queue) {
+        return \Resque::redis()->get(Key::queueLock($queue)) !== false;
+    }
 
     public function acquire() {
         $response = \Resque::redis()->set($this->lockKey, $this->lockValue, [

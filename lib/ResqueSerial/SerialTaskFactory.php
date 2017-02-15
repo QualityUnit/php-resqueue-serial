@@ -11,24 +11,24 @@ class SerialTaskFactory implements \Resque_Task_FactoryInterface {
     const SERIAL_CLASS = '-serial-task';
 
     /**
-     * @var Lock
+     * @var QueueLock
      */
     private $lock;
 
     /**
      * SerialTaskFactory constructor.
      *
-     * @param Lock $lock
+     * @param QueueLock $lock
      */
-    public function __construct(Lock $lock) {
+    public function __construct(QueueLock $lock) {
         $this->lock = $lock;
     }
-
 
     /**
      * @param $className
      * @param array $args
      * @param $queue
+     *
      * @return Resque_Task
      * @throws \Exception
      */
