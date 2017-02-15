@@ -22,7 +22,7 @@ class QueueImage {
      *
      * @param string $serialQueue
      */
-    public function __construct($serialQueue) {
+    private function __construct($serialQueue) {
         $this->serialQueue = $serialQueue;
         $this->parts = explode('~', $serialQueue);
         if (count($this->parts) != 2) {
@@ -34,6 +34,10 @@ class QueueImage {
 
     public static function create($queue, $serialId) {
         return new self($queue . '~' . $serialId);
+    }
+
+    public static function fromName($serialQueue) {
+        return new self($serialQueue);
     }
 
     public function config() {

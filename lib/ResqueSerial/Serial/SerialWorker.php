@@ -33,11 +33,11 @@ class SerialWorker {
      * @param SerialTask $task
      */
     public function __construct(SerialTask $task) {
-        $queueName = $task->getQueue();
-        $this->queue = new QueueImage($queueName);
+        $serialQueueName = $task->getQueue();
+        $this->queue = QueueImage::fromName($serialQueueName);
         $this->task = $task;
-        $this->image = SerialWorkerImage::create($queueName);
-        $this->logger = Log::prefix($this->image->getPid() . "-serial_worker-$queueName");
+        $this->image = SerialWorkerImage::create($serialQueueName);
+        $this->logger = Log::prefix($this->image->getPid() . "-serial_worker-$serialQueueName");
     }
 
     public function getId() {
@@ -56,7 +56,7 @@ class SerialWorker {
     }
 
     public function recompute() {
-        // TODO
+        // TODO implement once we have the need for it (manual configuration now)
     }
 
     public function work() {

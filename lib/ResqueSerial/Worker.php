@@ -101,7 +101,7 @@ class Worker extends \Resque_Worker {
             return;
         }
 
-        $lock = (new QueueImage($job->getArguments()['serialQueue']))->newLock();
+        $lock = QueueImage::fromName($job->getArguments()['serialQueue'])->newLock();
 
         if (!$lock->acquire()) {
             $this->logger->log(LogLevel::INFO, 'Nothing to do with job {job}', array('job' => $job));
