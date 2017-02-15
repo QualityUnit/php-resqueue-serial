@@ -31,8 +31,8 @@ resque-v1:serial:
     serial_worker:<serial_worker_id>:started: <time_started>
     
     queue:<queue_name>: list(serial_job_data)
-    queue:<queue>:config: <queue_config>
-    queue:<queue>:lock: <lock_value>
-    queue:<queue>:completed_count: <completed_count>
+    queuedata:<queue>:config: <queue_config>
+    queuedata:<queue>:lock: <lock_value>
+    queuedata:<queue>:completed_count: <completed_count>
 
 serial_worker_id: <hostname>:<pid>:<queue>:<queue_count>:<queue_num>

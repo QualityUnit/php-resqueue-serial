@@ -16,7 +16,7 @@ class Key {
      * @return string
      */
     public static function queueLock($queue) {
-        return Key::serial('queue', $queue, 'lock');
+        return Key::serial('queuedata', $queue, 'lock');
     }
 
     /**
@@ -25,7 +25,7 @@ class Key {
      * @return string
      */
     public static function serialCompletedCount($queue) {
-        return Key::serial('queue', $queue, 'completed_count');
+        return Key::serial('queuedata', $queue, 'completed_count');
     }
 
     /**
@@ -43,7 +43,7 @@ class Key {
      * @return string
      */
     public static function serialQueueConfig($queue) {
-        return Key::serial('queue', $queue, 'config');
+        return Key::serial('queuedata', $queue, 'config');
     }
 
     /**
