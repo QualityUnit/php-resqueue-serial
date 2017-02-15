@@ -2,6 +2,7 @@
 
 
 use ResqueSerial\Key;
+use ResqueSerial\Serial\QueueImage;
 
 /**
  * Base ResqueSerial.
@@ -14,7 +15,7 @@ class ResqueSerial {
     const VERSION = 'resque_v1';
 
     /**
-     * @param $queue
+     * @param string $queue
      * @param \ResqueSerial\Job $serialJob
      * @param bool $monitor
      * @return string
@@ -22,13 +23,13 @@ class ResqueSerial {
     public static function enqueue($queue, \ResqueSerial\Job $serialJob, $monitor = false) {
         $id = Resque::generateJobId();
 
-        $serialQueue = $queue . '~' . $serialJob->getSerialId();
+        $serialQueue = QueueImage::create($queue, $serialJob->getSerialId());
 
         // in case serial queue is split into multiple subqueues
-        $subqueue = self::generateSerialSubqueueName($serialQueue, $serialJob);
+        $subqueue = $serialQueue->generateSubqueueName($serialJob->getSecondarySerialId());
 
         $mainArgs = [
-                \ResqueSerial\SerialTask::ARG_SERIAL_QUEUE => $serialQueue
+                \ResqueSerial\SerialTask::ARG_SERIAL_QUEUE => $serialQueue->getQueue()
         ];
 
         $serialArgs = array_merge($mainArgs, [
@@ -80,19 +81,5 @@ class ResqueSerial {
         }
 
         return true;
-    }
-
-    private static function generateSerialSubqueueName($serialQueue, \ResqueSerial\Job $serialJob) {
-        $configManager = new \ResqueSerial\Serial\ConfigManager($serialQueue);
-        $config = $configManager->getLatest();
-
-        if($config->getQueueCount() < 2) {
-            return $serialQueue;
-        }
-
-        $hashNum = hexdec(substr(md5($serialJob->getSecondarySerialId()), -4));
-        $queue = $serialQueue . $config->getQueuePostfix($hashNum % $config->getQueueCount());
-
-        return $queue;
     }
 }
