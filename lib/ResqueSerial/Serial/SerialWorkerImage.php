@@ -5,19 +5,11 @@ namespace ResqueSerial\Serial;
 
 
 use Resque;
-use Resque_Stat;
 use ResqueSerial\Key;
+use ResqueSerial\WorkerImageTrait;
 
 class SerialWorkerImage {
-
-    /** @var string */
-    protected $id;
-    /** @var string */
-    protected $hostname;
-    /** @var int */
-    protected $pid;
-    /** @var string */
-    protected $queue;
+    use WorkerImageTrait;
 
     /**
      * @return string[] worker ids
@@ -25,43 +17,6 @@ class SerialWorkerImage {
     public static function all() {
         return Resque::redis()->smembers(Key::serialWorkers());
     }
-
-    /**
-     * Creates new worker image.
-     *
-     * @param $queue
-     *
-     * @return self
-     */
-    public static function create($queue) {
-        $worker = new static();
-        $worker->hostname = gethostname();
-        $worker->pid = getmypid();
-        $worker->queue = $queue;
-        $worker->id = gethostname() . '~' . getmypid() . '~' . $queue;
-
-        return $worker;
-    }
-
-    /**
-     * Creates worker image from id.
-     *
-     * @param $workerId
-     *
-     * @return self
-     */
-    public static function fromId($workerId) {
-        $parts = explode('~', $workerId, 3);
-
-        $worker = new static();
-        $worker->id = $workerId;
-        $worker->hostname = @$parts[0];
-        $worker->pid = @$parts[1];
-        $worker->queue = @$parts[2];
-
-        return $worker;
-    }
-
     /**
      * @return $this
      */
@@ -87,16 +42,6 @@ class SerialWorkerImage {
     }
 
     /**
-     * @param string $stat
-     *
-     * @return $this
-     */
-    public function clearStat($stat) {
-        Resque_Stat::clear("$stat:" . $this->id);
-        return $this;
-    }
-
-    /**
      * @return $this
      */
     public function clearState() {
@@ -112,48 +57,10 @@ class SerialWorkerImage {
     }
 
     /**
-     * @return string
-     */
-    public function getHostname() {
-        return $this->hostname;
-    }
-
-    /**
-     * @return string
-     */
-    public function getId() {
-        return $this->id;
-    }
-
-    /**
      * @return bool|string
      */
     public function getParent() {
         return Resque::redis()->get(Key::serialWorkerParent($this->id));
-    }
-
-    /**
-     * @return int
-     */
-    public function getPid() {
-        return $this->pid;
-    }
-
-    /**
-     * @return string
-     */
-    public function getQueue() {
-        return $this->queue;
-    }
-
-    /**
-     * @param string $stat
-     *
-     * @return $this
-     */
-    public function incStat($stat) {
-        Resque_Stat::incr("$stat:" . $this->id);
-        return $this;
     }
 
     /**
