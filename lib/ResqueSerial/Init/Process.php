@@ -63,7 +63,7 @@ class Process {
 
                         if ($workersToAppend) {
                             foreach ($workersToAppend as $toAppend) {
-                                $this->appendSerialWorker($worker, $toAppend);
+                                $this->assignSerialWorker($worker, $toAppend);
                             }
                         }
 
@@ -139,10 +139,12 @@ class Process {
     }
 
     /**
+     * Assigns serial worker to specified parent worker.
+     *
      * @param Worker $parent
      * @param $toAppend
      */
-    private function appendSerialWorker(Worker $parent, $toAppend) {
+    private function assignSerialWorker(Worker $parent, $toAppend) {
         $image = SerialWorkerImage::fromId($toAppend);
 
         if (!$image->exists()) {
@@ -157,6 +159,13 @@ class Process {
         $image->setParent($newParent->getId());
     }
 
+    /**
+     * Removes dead workers from queue pool counts the number of living ones.
+     *
+     * @param string $queue
+     *
+     * @return int number of living workers on specified queue
+     */
     private function cleanupWorkers($queue) {
         $workers = Resque::redis()->smembers(Key::workers());
 
@@ -191,18 +200,25 @@ class Process {
     }
 
     /**
+     * Detects all orphaned serial queues derived from specified queue and returns them.
+     * Orphaned serial queue is serial queue without running serial worker.
+     *
      * @param string $queue
      *
-     * @return string[]
+     * @return string[] list of orphaned serial queue names
      */
     private function getOrphanedSerialQueues($queue) {
         return []; // TODO
     }
 
     /**
+     * Detects all orphaned serial workers on specified queue and returns them.
+     * Orphaned serial worker is running serial worker without running parent worker.
+     *
      * @param string $queue
      *
-     * @return string[][]
+     * @return string[][] map of dead parent worker ID to list of orphaned serial worker IDs
+     * that used to have it as a parent
      */
     private function getOrphanedSerialWorkers($queue) {
         $orphanedGroups = [];
@@ -235,6 +251,8 @@ class Process {
     }
 
     /**
+     * Starts new serial worker on specified serial queue and assigns specified worker as its parent.
+     *
      * @param Worker $parent
      * @param string $queueToStart
      */
