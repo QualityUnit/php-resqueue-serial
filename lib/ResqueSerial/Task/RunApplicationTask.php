@@ -61,7 +61,7 @@ class RunApplicationTask implements \Resque_Task {
      * @param $applicationPath
      */
     private function includeApplication($applicationPath) {
-        $fullPath = GlobalConfig::instance()->getTaskIncludePath() . $applicationPath;
+        $fullPath = GlobalConfig::instance()->getTaskIncludePath() . ltrim($applicationPath, '/');
         include_once $fullPath;
     }
 
@@ -73,6 +73,13 @@ class RunApplicationTask implements \Resque_Task {
         $applicationPath = @$this->args['include_path'];
         $jobArgs = @$this->args['job_args'];
         $taskClass = @$this->args['job_class'];
+        $environment = @$this->args['environment'];
+
+        if(is_array($environment)) {
+            foreach ($environment as $key => $value) {
+                $_SERVER[$key] = $value;
+            }
+        }
 
         if ($applicationPath === null || !is_array($jobArgs) || $taskClass === null) {
             throw new TaskCreationException("Job arguments incomplete.");
