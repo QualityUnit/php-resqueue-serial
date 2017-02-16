@@ -55,19 +55,20 @@ $serialJob = new La_Job_IndexTicket();
 
 //Resque::redis()->lPush(\ResqueSerial\Key::serialQueueConfig('example_queue~test_job_serial_id'), '{"queueCount":2}');
 
+Resque_Redis::prefix(ResqueSerial::VERSION);
+
 for ($i=0; $i<20; $i++) {
-    ResqueSerial::enqueue('example_queue', $serialJob);
+//    ResqueSerial::enqueue('example_queue', $serialJob);
+    Resque::enqueue('example_queue', La_Job_IndexTicket::class);
 }
 
-$PATH = __DIR__ . '../resources/config.yml';
+$PATH = __DIR__ . '/../resources/config.yml';
 
 if($PATH) {
     \ResqueSerial\Init\GlobalConfig::$PATH = $PATH;
 }
 
-Resque_Redis::prefix(ResqueSerial::VERSION);
-
 $proc = new \ResqueSerial\Init\Process();
 
-$proc->recover();
+$proc->start();
 $proc->maintain();
