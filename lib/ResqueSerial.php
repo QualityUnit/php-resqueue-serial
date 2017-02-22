@@ -67,7 +67,7 @@ class ResqueSerial {
     private static function createSerialJob($subqueue, $class, array $args, $id) {
         $encodedItem = json_encode([
                 'class' => $class,
-                'args' => $args,
+                'args' => [$args],
                 'id' => $id,
                 'queue_time' => microtime(true),
         ]);
