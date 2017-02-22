@@ -13,12 +13,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/QualityUnit/php-resque.git",
-                "reference": "3a556fa40ce394b449742dbe2dbc989907fad98c"
+                "reference": "2eee31eeddbac3550eb38f4bb70c36a0e01155bf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/QualityUnit/php-resque/zipball/3a556fa40ce394b449742dbe2dbc989907fad98c",
-                "reference": "3a556fa40ce394b449742dbe2dbc989907fad98c",
+                "url": "https://api.github.com/repos/QualityUnit/php-resque/zipball/2eee31eeddbac3550eb38f4bb70c36a0e01155bf",
+                "reference": "2eee31eeddbac3550eb38f4bb70c36a0e01155bf",
                 "shasum": ""
             },
             "require": {
@@ -63,7 +63,7 @@
             "support": {
                 "source": "https://github.com/QualityUnit/php-resque/tree/master"
             },
-            "time": "2017-01-13 14:31:55"
+            "time": "2017-02-16 14:59:30"
         },
         {
             "name": "colinmollenhour/credis",
@@ -222,16 +222,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.2.2",
+            "version": "v3.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "50eadbd7926e31842893c957eca362b21592a97d"
+                "reference": "e1718c6bf57e1efbb8793ada951584b2ab27775b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/50eadbd7926e31842893c957eca362b21592a97d",
-                "reference": "50eadbd7926e31842893c957eca362b21592a97d",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/e1718c6bf57e1efbb8793ada951584b2ab27775b",
+                "reference": "e1718c6bf57e1efbb8793ada951584b2ab27775b",
                 "shasum": ""
             },
             "require": {
@@ -273,7 +273,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2017-01-03 13:51:32"
+            "time": "2017-01-21 17:06:35"
         }
     ],
     "packages-dev": [],
