@@ -85,7 +85,7 @@ class QueueImage {
     }
 
     public function newLock() {
-        return new QueueLock(Key::queueLock($this->serialQueue));
+        return new QueueLock($this->serialQueue);
     }
 }
 
