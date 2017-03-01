@@ -1,3 +1,5 @@
+project.version '1.0.0'
+
 ext {
 	distributionDir = file('dist')
 }
@@ -71,7 +73,8 @@ task dist(type: Zip) {
 	description 'Packages distribution into an archive'
 	dependsOn 'installDist'
 
-	baseName 'distribution'
+	baseName project.name
+	version project.version
 	destinationDir project.distributionDir
 
 	from(project.distributionDir) {
