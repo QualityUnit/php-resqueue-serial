@@ -95,3 +95,7 @@ fabric.properties
 ### Composer template
 composer.phar
 /vendor/
+
+### Project
+
+/dist/

@@ -1,0 +1,82 @@
+ext {
+	distributionDir = file('dist')
+}
+
+task installDev(type: Exec) {
+	group 'resque-serial dev'
+	description 'Installs development composer dependencies.'
+	inputs.files file('composer.lock')
+	outputs.files fileTree('vendor')
+
+	def command = []
+	if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+		command += ['cmd', '/c']
+	}
+	command += ['composer', 'install', '--no-progress', '--no-interaction']
+	commandLine command
+}
+
+task setupDev {
+	group 'resque-serial dev'
+	description 'Setups development environment.'
+	dependsOn installDev
+}
+
+task cleanDist(type: Delete) {
+	group 'resque-serial dist'
+	description 'Cleans distribution folder.'
+	delete 'dist'
+}
+
+task copyDist(type: Copy) {
+	group 'resque-serial dist'
+	description 'Copies project files into distribution folder.'
+	dependsOn 'cleanDist'
+
+	from project.projectDir
+
+	include 'lib/**'
+
+	include 'scripts/bootstrap.php'
+
+	include 'composer.json'
+	include 'composer.lock'
+
+	into project.distributionDir
+}
+
+task installDist(type: Exec) {
+	group 'resque-serial dist'
+	description 'Installs dependencies into distribution folder.'
+	dependsOn 'copyDist'
+
+	workingDir project.distributionDir
+
+	def command = []
+	if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+		command += ['cmd', '/c']
+	}
+	command += ['composer', 'install',
+				'--no-dev',
+				'--optimize-autoloader',
+				'--no-ansi',
+				'--no-interaction',
+				'--no-progress',
+				'--no-scripts']
+	commandLine command
+}
+
+task dist(type: Zip) {
+	group 'resque-serial dist'
+	description 'Packages distribution into an archive'
+	dependsOn 'installDist'
+
+	baseName 'distribution'
+	destinationDir project.distributionDir
+
+	from(project.distributionDir) {
+		exclude "$archiveName" // exclude self to prevent endless loop...
+		exclude 'composer.json'
+		exclude 'composer.lock'
+	}
+}
