@@ -7,9 +7,10 @@ namespace ResqueSerial\Init;
 use Exception;
 use Resque;
 use ResqueSerial\Key;
-use ResqueSerial\QueueLock;
 use ResqueSerial\Log;
+use ResqueSerial\QueueLock;
 use ResqueSerial\Serial\QueueImage;
+use ResqueSerial\Serial\SerialWorker;
 use ResqueSerial\Serial\SerialWorkerImage;
 use ResqueSerial\Worker;
 use ResqueSerial\WorkerImage;
@@ -81,7 +82,7 @@ class Process {
                         }
 
                         foreach ($serialQueuesToStart as $queueToStart) {
-                            $this->startSerialQueue($worker, $queueToStart);
+                            $this->startSerialQueue($worker->getImage(), $queueToStart);
                         }
 
                         $this->logger->notice("Starting worker $worker", array('worker' => $worker));
@@ -132,10 +133,9 @@ class Process {
 
     public function updateProcLine($status) {
         $processTitle = "resque-serial-init: $status";
-        if(function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
+        if (function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
             cli_set_process_title($processTitle);
-        }
-        else if(function_exists('setproctitle')) {
+        } else if (function_exists('setproctitle')) {
             setproctitle($processTitle);
         }
     }
@@ -245,7 +245,7 @@ class Process {
                 continue; // not our queue
             }
 
-            if(!$workerImage->isLocal()) {
+            if (!$workerImage->isLocal()) {
                 continue; // not our responsibility
             }
 
@@ -262,6 +262,7 @@ class Process {
                 $orphanedGroups[$parent][] = $workerImage->getId();
             }
         }
+
         return $orphanedGroups;
     }
 
@@ -285,10 +286,26 @@ class Process {
     /**
      * Starts new serial worker on specified serial queue and assigns specified worker as its parent.
      *
-     * @param Worker $parent
+     * @param WorkerImage $parent
      * @param string $queueToStart
      */
-    private function startSerialQueue(Worker $parent, $queueToStart) {
-        // TODO
+    private function startSerialQueue(WorkerImage $parent, $queueToStart) {
+        $lock = new QueueLock($queueToStart);
+        if (!$lock->acquire()) {
+            $this->logger->notice("Failed to acquire lock for serial queue $queueToStart.");
+
+            return;
+        }
+        try {
+            if (Resque::fork() === 0) {
+                $serialWorker = new SerialWorker($queueToStart);
+                $serialWorker->work($parent->getId());
+                $lock->release();
+                exit(0);
+            }
+        } catch (Exception $e) {
+            $this->logger->error("Failed to start serial worker on $queueToStart. Error: "
+                    . $e->getMessage());
+        }
     }
 }

@@ -21,7 +21,7 @@ class Worker extends \Resque_Worker {
     /** @var WorkerConfig */
     private $config;
     /** @var WorkerImage */
-    public $image;
+    private $image;
 
     /**
      * @inheritdoc
@@ -47,6 +47,13 @@ class Worker extends \Resque_Worker {
         while ($this->isSerialLimitReached()) {
             sleep(self::SLEEP_SECONDS);
         }
+    }
+
+    /**
+     * @return WorkerImage
+     */
+    public function getImage() {
+        return $this->image;
     }
 
     public function pruneDeadWorkers() {
