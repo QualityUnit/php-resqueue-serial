@@ -18,8 +18,6 @@ class SerialWorker {
     private $state;
     /** @var QueueImage */
     private $queue;
-    /** @var SerialTask */
-    private $task;
     /** @var SerialWorkerImage */
     private $image;
     /** @var LoggerInterface */
@@ -30,14 +28,12 @@ class SerialWorker {
     /**
      * SerialWorker constructor.
      *
-     * @param SerialTask $task
+     * @param $serialQueue
      */
-    public function __construct(SerialTask $task) {
-        $serialQueueName = $task->getQueue();
-        $this->queue = QueueImage::fromName($serialQueueName);
-        $this->task = $task;
-        $this->image = SerialWorkerImage::create($serialQueueName);
-        $this->logger = Log::prefix($this->image->getPid() . "-serial_worker-$serialQueueName");
+    public function __construct($serialQueue) {
+        $this->queue = QueueImage::fromName($serialQueue);
+        $this->image = SerialWorkerImage::create($serialQueue);
+        $this->logger = Log::prefix($this->image->getPid() . "-serial_worker-$serialQueue");
     }
 
     public function getId() {
@@ -59,14 +55,13 @@ class SerialWorker {
         // TODO implement once we have the need for it (manual configuration now)
     }
 
-    public function work() {
+    public function work($parentWorkerId) {
         $this->logger->notice("Starting.");
         // register
         $this->registerSigHandlers();
-        $parentId = $this->task->getWorkerId();
-        WorkerImage::fromId($parentId)->addSerialWorker($this->getId());
+        WorkerImage::fromId($parentWorkerId)->addSerialWorker($this->getId());
         $this->image
-                ->setParent($parentId)
+                ->setParent($parentWorkerId)
                 ->addToPool()
                 ->setStartedNow();
 
@@ -114,7 +109,7 @@ class SerialWorker {
 
         if($current->getQueueCount() > 1) {
             for ($i = 0; $i < $current->getQueueCount(); $i++) {
-                $queue = $this->task->getQueue() . $current->getQueuePostfix($i);
+                $queue = $this->queue->getQueue() . $current->getQueuePostfix($i);
                 if(\Resque::redis()->llen(Key::serialQueue($queue)) > 0) {
                     return false;
                 }
@@ -122,16 +117,16 @@ class SerialWorker {
             return true;
         }
 
-        return \Resque::redis()->llen(Key::serialQueue($this->task->getQueue())) == 0;
+        return \Resque::redis()->llen(Key::serialQueue($this->queue->getQueue())) == 0;
     }
 
     private function changeStateFromConfig() {
         if ($this->queue->config()->getQueueCount() == 1) {
-            $single = new Single($this->task->getQueue());
+            $single = new Single($this->queue->getQueue());
             $single->setId($this->image->getId());
             return $single;
         } else {
-            $multi = new Multi($this->task->getQueue(), $this->queue->config());
+            $multi = new Multi($this->queue->getQueue(), $this->queue->config());
             $multi->setImage($this->image);
             return $multi;
         }
