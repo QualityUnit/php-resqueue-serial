@@ -31,6 +31,7 @@ class Process {
     public function maintain() {
         $this->updateProcLine("maintaining");
         while (true) {
+            $this->recover();
             sleep(5);
             pcntl_signal_dispatch();
             if ($this->stopping) {
@@ -104,25 +105,24 @@ class Process {
         }
     }
 
+    public function reload() {
+        GlobalConfig::reload();
+        $this->globalConfig = $config = GlobalConfig::instance();
+        Log::initFromConfig($config);
+        $this->logger = Log::prefix('init-process');
+
+        $this->signalWorkers(SIGHUP, "HUP");
+        $this->signalSerialWorkers(SIGHUP, "HUP");
+    }
+
     /**
      * send TERM to all workers and serial workers
      */
     public function shutdown() {
         $this->stopping = true;
 
-        $workers = WorkerImage::all();
-        foreach ($workers as $worker) {
-            $image = WorkerImage::fromId($worker);
-            $this->logger->debug("Killing " . $image->getId() . " " . $image->getPid());
-            posix_kill($image->getPid(), SIGTERM);
-        }
-
-        $serialWorkers = SerialWorkerImage::all();
-        foreach ($serialWorkers as $worker) {
-            $image = SerialWorkerImage::fromId($worker);
-            $this->logger->debug("Killing " . $image->getId() . " " . $image->getPid());
-            posix_kill($image->getPid(), SIGTERM);
-        }
+        $this->signalWorkers(SIGTERM, "TERM");
+        $this->signalSerialWorkers(SIGTERM, "TERM");
     }
 
     public function start() {
@@ -280,7 +280,28 @@ class Process {
         pcntl_signal(SIGTERM, [$this, 'shutdown']);
         pcntl_signal(SIGINT, [$this, 'shutdown']);
         pcntl_signal(SIGQUIT, [$this, 'shutdown']);
+        pcntl_signal(SIGHUP, [$this, 'reload']);
         $this->logger->debug('Registered signals');
+    }
+
+    private function signalSerialWorkers($signal, $signalName) {
+        $workers = WorkerImage::all();
+        foreach ($workers as $worker) {
+            $image = WorkerImage::fromId($worker);
+            $this->logger->debug("Signalling $signalName " . $image->getId() . " " . $image->getPid());
+            posix_kill($image->getPid(), $signal);
+        }
+
+    }
+
+    private function signalWorkers($signal, $signalName) {
+        $workers = WorkerImage::all();
+        foreach ($workers as $worker) {
+            $image = WorkerImage::fromId($worker);
+            $this->logger->debug("Signalling $signalName " . $image->getId() . " " . $image->getPid());
+            posix_kill($image->getPid(), $signal);
+        }
+
     }
 
     /**
