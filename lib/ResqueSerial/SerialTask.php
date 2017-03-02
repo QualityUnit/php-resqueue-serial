@@ -32,5 +32,6 @@ class SerialTask implements \Resque_Task {
     public function perform() {
         $worker = new SerialWorker($this->serialQueue);
         $worker->work((string)$this->job->worker);
+        $this->lock->release();
     }
 }
