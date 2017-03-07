@@ -53,7 +53,7 @@ local.properties
 .recommenders/
 ### Gradle template
 .gradle
-/build/
+# /build/ # we are using build folder to keep latest archives
 
 # Ignore Gradle GUI config
 gradle-app.setting

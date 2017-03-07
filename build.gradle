@@ -2,6 +2,7 @@ project.version '1.0.0'
 
 ext {
 	distributionDir = file('dist')
+	buildDir = file('build')
 }
 
 task installDev(type: Exec) {
@@ -75,7 +76,7 @@ task dist(type: Zip) {
 
 	baseName project.name
 	version project.version
-	destinationDir project.distributionDir
+	destinationDir project.buildDir
 
 	from(project.distributionDir) {
 		exclude "$archiveName" // exclude self to prevent endless loop...
