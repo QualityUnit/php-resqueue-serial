@@ -1,4 +1,4 @@
-project.version '1.0.0'
+project.version '1.0.1'
 
 ext {
 	distributionDir = file('dist')
@@ -41,6 +41,9 @@ task copyDist(type: Copy) {
 	include 'lib/**'
 
 	include 'scripts/bootstrap.php'
+	include 'scripts/startManagers.php'
+
+	include 'resources/config.yml'
 
 	include 'composer.json'
 	include 'composer.lock'
