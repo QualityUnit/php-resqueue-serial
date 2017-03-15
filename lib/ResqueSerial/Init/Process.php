@@ -162,7 +162,7 @@ class Process {
     }
 
     /**
-     * Removes dead workers from queue pool counts the number of living ones.
+     * Removes dead workers from queue pool and counts the number of living ones.
      *
      * @param string $queue
      *
