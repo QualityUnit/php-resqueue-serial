@@ -39,7 +39,6 @@ class QueueImage {
     public static function all() {
         $keys = \Resque::redis()->keys(Key::serialQueue('*'));
         $prefix = \Resque_Redis::getPrefix() . Key::serialQueue('');
-        Log::main()->debug("[QueueImage class] Prefix: $prefix; Keys: " . json_encode($keys));
         return new __QueueIterator($keys, strlen($prefix));
     }
 

@@ -6,6 +6,8 @@ namespace ResqueSerial;
 
 class QueueLock {
 
+    const DEFAULT_TIME = 5000;
+
     const RELEASE_SCRIPT = <<<LUA
 if redis.call('get', KEYS[1]) == ARGV[1] then
     return redis.call('del', KEYS[1])
@@ -32,7 +34,7 @@ LUA;
      * @param $queue
      * @param int $time
      */
-    public function __construct($queue, $time = 5000) {
+    public function __construct($queue, $time = self::DEFAULT_TIME) {
         $this->time = $time;
         $this->lockKey = Key::queueLock($queue);
         $this->lockValue = md5(microtime());

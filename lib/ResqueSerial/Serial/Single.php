@@ -11,6 +11,7 @@ use Resque_Job_Status;
 use Resque_Stat;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
+use ResqueSerial\QueueLock;
 
 class Single extends \Resque_Worker implements IWorker {
 
@@ -18,6 +19,8 @@ class Single extends \Resque_Worker implements IWorker {
     private $isParallel;
     /** @var SerialWorkerImage */
     private $image;
+    /** @var QueueLock */
+    private $lock;
 
     public function __construct($queue, $isParallel = false) {
         parent::__construct([$queue]);
@@ -45,6 +48,23 @@ class Single extends \Resque_Worker implements IWorker {
 
     public function registerWorker() {
         // NOOP - workers creating single instances are responsible for registering them
+    }
+
+    public function reserveInternal($blocking, $timeout = null) {
+        $lockDuration = QueueLock::DEFAULT_TIME;
+        if ($timeout != null) {
+            $lockDuration += $timeout * 1000;
+        }
+        if (!$this->acquireLock($lockDuration)) {
+            $this->shutdown();
+            return false;
+        }
+
+        return parent::reserveInternal($blocking, $timeout);
+    }
+
+    public function setLock(QueueLock $lock) {
+        $this->lock = $lock;
     }
 
     public function unregisterWorker() {
@@ -91,7 +111,14 @@ class Single extends \Resque_Worker implements IWorker {
     }
 
     protected function processJob(Resque_Job $job) {
-        parent::processJob($job);
+        if (!$this->acquireLock()) {
+            $job->worker = $this;
+            $job->fail(new \Exception("Unable to acquire queue lock"));
+            $this->shutdown();
+        } else {
+            parent::processJob($job);
+        }
+
         Resque::redis()->incr(Key::serialCompletedCount($job->queue));
         Resque_Event::trigger(SerialWorker::RECOMPUTE_CONFIG_EVENT, $this);
     }
@@ -99,6 +126,14 @@ class Single extends \Resque_Worker implements IWorker {
     protected function startup() {
         $this->registerSigHandlers();
         $this->registerWorker();
+    }
+
+    private function acquireLock($time = QueueLock::DEFAULT_TIME) {
+        if ($this->lock == null) {
+            return true;
+        }
+
+        return $this->lock->acquire($time);
     }
 
     /**

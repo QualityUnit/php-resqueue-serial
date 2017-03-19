@@ -7,7 +7,7 @@ namespace ResqueSerial\Serial;
 use Psr\Log\LoggerInterface;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
-use ResqueSerial\SerialTask;
+use ResqueSerial\QueueLock;
 use ResqueSerial\WorkerImage;
 
 class SerialWorker {
@@ -24,16 +24,20 @@ class SerialWorker {
     private $logger;
     /** @var bool */
     private $stopping = false;
+    /** @var QueueLock */
+    private $lock;
 
     /**
      * SerialWorker constructor.
      *
      * @param $serialQueue
+     * @param QueueLock $lock
      */
-    public function __construct($serialQueue) {
+    public function __construct($serialQueue, QueueLock $lock) {
         $this->queue = QueueImage::fromName($serialQueue);
         $this->image = SerialWorkerImage::create($serialQueue);
         $this->logger = Log::prefix($this->image->getPid() . "-serial_worker-$serialQueue");
+        $this->lock = $lock;
     }
 
     public function getId() {
@@ -56,6 +60,10 @@ class SerialWorker {
     }
 
     public function work($parentWorkerId) {
+        if (!$this->lock->acquire()) {
+            $this->logger->warning("Failed to reacquire lock before startup. Halting...");
+            return;
+        }
         $this->logger->notice("Starting.");
         // register
         $this->registerSigHandlers();
@@ -73,6 +81,11 @@ class SerialWorker {
         $this->recompute();
         try {
             while (true) {
+                if (!$this->lock->acquire()) {
+                    $this->logger->critical("Failed to reacquire lock before work. Halting...");
+                    $this->shutdown();
+                    break;
+                }
                 $this->state->work();
 
                 if ($this->allSubQueuesEmpty()) {
@@ -87,6 +100,7 @@ class SerialWorker {
             }
         } catch (\Exception $e) {
             $this->logger->error("Serial worker encountered an exception. {exception}", ['exception' => $e]);
+            $this->shutdown();
         }
 
         // unregister
@@ -124,9 +138,10 @@ class SerialWorker {
         if ($this->queue->config()->getQueueCount() == 1) {
             $single = new Single($this->queue->getQueue());
             $single->setId($this->image->getId());
+            $single->setLock($this->lock);
             return $single;
         } else {
-            $multi = new Multi($this->queue->getQueue(), $this->queue->config());
+            $multi = new Multi($this->queue->getQueue(), $this->queue->config(), $this->lock);
             $multi->setImage($this->image);
             return $multi;
         }

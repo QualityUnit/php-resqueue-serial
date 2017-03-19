@@ -11,14 +11,20 @@ use ResqueSerial\Job;
 
 class La_Job_IndexTicket extends Job implements Resque_Task {
 
-    private $ticket;
+    private $arg;
 
     /**
      * @return bool
      */
     public function perform() {
         usleep(4000000);
+        file_put_contents('/tmp/serialjob.txt', var_export($this->args, true) . "\n", FILE_APPEND);
         return true;
+    }
+
+    public function arg($arg) {
+        $this->arg = $arg;
+        return $this;
     }
 
 
@@ -26,7 +32,7 @@ class La_Job_IndexTicket extends Job implements Resque_Task {
      * @return mixed[]
      */
     function getArgs() {
-        return [];
+        return ['arg' => $this->arg];
     }
 
     /**
@@ -57,8 +63,10 @@ $serialJob = new La_Job_IndexTicket();
 
 Resque_Redis::prefix(ResqueSerial::VERSION);
 
+unlink('/tmp/serialjob.txt');
+
 for ($i=0; $i<20; $i++) {
-//    ResqueSerial::enqueue('example_queue', $serialJob);
+    ResqueSerial::enqueue('example_queue', $serialJob->arg($i));
 //    Resque::enqueue('example_queue', La_Job_IndexTicket::class);
 }
 

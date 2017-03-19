@@ -66,7 +66,7 @@ class Process {
             $orphanedSerialWorkers = $this->getOrphanedSerialWorkers($queue);
             $this->logger->debug("Orphaned serial workers: " . json_encode($orphanedSerialWorkers));
             $orphanedSerialQueues = $this->getOrphanedSerialQueues($queue);
-            $this->logger->debug("Orphaned serial queues: " . json_encode($orphanedSerialWorkers));
+            $this->logger->debug("Orphaned serial queues: " . json_encode($orphanedSerialQueues));
 
             for ($i = 0; $i < $toCreate; ++$i) {
                 try {
@@ -257,7 +257,7 @@ class Process {
                 continue; // someone is holding the queue
             }
 
-            $this->logger->debug("Orphan found: $serialQueue");
+            $this->logger->debug("Orphaned queue found: $serialQueue");
             $orphanedQueues[] = $serialQueue;
         }
 
@@ -270,8 +270,7 @@ class Process {
      *
      * @param string $queue
      *
-     * @return string[][] map of dead parent worker ID to list of orphaned serial worker IDs
-     * that used to have it as a parent
+     * @return string[] list of orphaned serial worker IDs
      */
     private function getOrphanedSerialWorkers($queue) {
         $this->logger->debug("Getting orphaned serial workers");
@@ -292,6 +291,13 @@ class Process {
 
             if (!$workerImage->isAlive()) {
                 $this->logger->debug("Cleaning up dead serial worker $serialWorkerId");
+
+                $state = json_decode($workerImage->getState(), true);
+                $failedJob = new \Resque_Job($workerImage->getQueue(), $state['payload']);
+                $failedJob->worker = new \Resque_Worker('whatever');
+                $failedJob->worker->setId($workerImage->getId());
+                $failedJob->fail(new Exception('Worker died on the job'));
+
                 $workerImage
                         ->removeFromPool()
                         ->clearState()
@@ -304,19 +310,20 @@ class Process {
                 if ($parent != '' && $parentImage->isAlive()) {
                     $parentImage->removeSerialWorker($workerImage->getId());
                 }
+                continue;
             }
 
             if ($parent == '') {
-                $this->logger->debug("Orphan with unknown parent: $serialWorkerId");
-                $orphanedGroups['_'][] = $workerImage->getId();
+                $this->logger->debug("Orphaned worker with unknown parent: $serialWorkerId");
+                $orphanedGroups[] = $workerImage->getId();
                 continue;
             }
 
             $parentImage = WorkerImage::fromId($parent);
 
             if (!$parentImage->isAlive()) {
-                $this->logger->debug("Orphan with dead parent: $serialWorkerId");
-                $orphanedGroups[$parent][] = $workerImage->getId();
+                $this->logger->debug("Orphaned worker with dead parent: $serialWorkerId");
+                $orphanedGroups[] = $workerImage->getId();
             }
         }
 
@@ -343,9 +350,9 @@ class Process {
     }
 
     private function signalSerialWorkers($signal, $signalName) {
-        $workers = WorkerImage::all();
-        foreach ($workers as $worker) {
-            $image = WorkerImage::fromId($worker);
+        $serialWorkers = SerialWorkerImage::all();
+        foreach ($serialWorkers as $serialWorker) {
+            $image = SerialWorkerImage::fromId($serialWorker);
             $this->logger->debug("Signalling $signalName " . $image->getId() . " " . $image->getPid());
             posix_kill($image->getPid(), $signal);
         }
@@ -369,6 +376,7 @@ class Process {
      * @param string $queueToStart
      */
     private function startSerialQueue(WorkerImage $parent, $queueToStart) {
+        $this->logger->debug("Starting serial worker on queue $queueToStart");
         $lock = new QueueLock($queueToStart);
         if (!$lock->acquire()) {
             $this->logger->notice("Failed to acquire lock for serial queue $queueToStart.");
@@ -377,7 +385,7 @@ class Process {
         }
         try {
             if (Resque::fork() === 0) {
-                $serialWorker = new SerialWorker($queueToStart);
+                $serialWorker = new SerialWorker($queueToStart, $lock);
                 $serialWorker->work($parent->getId());
                 $lock->release();
                 exit(0);

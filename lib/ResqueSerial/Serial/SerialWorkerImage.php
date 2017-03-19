@@ -64,6 +64,13 @@ class SerialWorkerImage {
     }
 
     /**
+     * @return mixed
+     */
+    public function getState() {
+        return Resque::redis()->get(Key::serialWorker($this->id));
+    }
+
+    /**
      * @return $this
      */
     public function removeFromPool() {

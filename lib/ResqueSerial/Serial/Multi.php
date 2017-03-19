@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Resque;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
+use ResqueSerial\QueueLock;
 
 class Multi implements IWorker {
 
@@ -23,17 +24,22 @@ class Multi implements IWorker {
     private $logger;
     /** @var bool */
     private $stopping = false;
+    /** @var QueueLock */
+    private $lock;
+
     /**
      * Multi constructor.
      *
      * @param string $queue
      * @param ConfigManager $config
+     * @param QueueLock $lock
      */
-    public function __construct($queue, $config) {
+    public function __construct($queue, $config, QueueLock $lock) {
         $this->queue = $queue;
         $this->config = $config;
         $this->image = SerialWorkerImage::create($queue);
         $this->logger = Log::prefix(getmypid() . "-multi-$queue");
+        $this->lock = $lock;
     }
 
     /**
@@ -71,6 +77,9 @@ class Multi implements IWorker {
     }
 
     function work() {
+        if (!$this->lock->acquire(5000)) {
+
+        }
         if($this->stopping) {
             return;
         }
