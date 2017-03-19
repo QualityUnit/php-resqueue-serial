@@ -18,6 +18,7 @@ use ResqueSerial\WorkerImage;
 class Process {
 
     private $stopping = false;
+    private $reloaded = false;
 
     private $logger;
 
@@ -41,6 +42,7 @@ class Process {
     }
 
     public function recover() {
+        $this->reloaded = false; // refresh reload state
         $this->logger->debug("========= Starting maintenance");
 
         foreach ($this->globalConfig->getQueueList() as $queue) {
@@ -109,12 +111,15 @@ class Process {
                 }
             }
 
+            $this->logger->debug("Orphaned serial workers left: " . json_encode($orphanedSerialWorkers));
+            $this->logger->debug("Orphaned serial queues left: " . json_encode($orphanedSerialWorkers));
+
             $this->logger->debug("====== Finished maintenance of queue $queue");
 
             // check interruption
             pcntl_signal_dispatch();
-            if ($this->stopping) {
-                $this->logger->debug("========= Received stop signal, ending...");
+            if ($this->stopping || $this->reloaded) {
+                $this->logger->debug("========= Received stop or reload signal, halting maintenance...");
                 return;
             }
         }
@@ -126,6 +131,7 @@ class Process {
         $this->globalConfig = $config = GlobalConfig::instance();
         Log::initFromConfig($config);
         $this->logger = Log::prefix('init-process');
+        $this->reloaded = true;
 
         $this->signalWorkers(SIGHUP, "HUP");
         $this->signalSerialWorkers(SIGHUP, "HUP");
@@ -185,8 +191,10 @@ class Process {
      * @return int number of living workers on specified queue
      */
     private function cleanupWorkers($queue) {
+        $this->logger->debug("Worker cleanup started");
         $workers = Resque::redis()->smembers(Key::workers());
 
+        $totalWorkers = 0;
         $livingWorkers = 0;
 
         foreach ($workers as $workerId) {
@@ -200,6 +208,8 @@ class Process {
             }
 
             if (!$image->isAlive()) {
+                $totalWorkers++;
+                $this->logger->debug("Found dead worker $workerId");
                 // cleanup
                 WorkerImage::fromId($workerId)
                         ->removeFromPool()
@@ -208,10 +218,12 @@ class Process {
                         ->clearSerialWorkers();
             } else {
                 $livingWorkers++;
+                $totalWorkers++;
             }
 
         }
 
+        $this->logger->debug("Worker cleanup done, processed $totalWorkers workers");
         return $livingWorkers;
     }
 
