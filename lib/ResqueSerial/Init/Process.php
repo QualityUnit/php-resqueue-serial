@@ -41,31 +41,44 @@ class Process {
     }
 
     public function recover() {
+        $this->logger->debug("========= Starting maintenance");
+
         foreach ($this->globalConfig->getQueueList() as $queue) {
             $workerConfig = $this->globalConfig->getWorkerConfig($queue);
 
             if ($workerConfig == null) {
-                Log::main()->error("Invalid worker config for queue $queue");
+                $this->logger->error("Invalid worker config for queue $queue");
                 continue;
             }
+
+            $this->logger->debug("====== Starting maintenance of queue $queue");
 
             $blocking = $workerConfig->getBlocking();
             $maxSerialWorkers = $workerConfig->getMaxSerialWorkers();
 
             $livingWorkerCount = $this->cleanupWorkers($queue);
+            $this->logger->debug("Living worker count: $livingWorkerCount");
             $toCreate = $workerConfig->getWorkerCount() - $livingWorkerCount;
+            $this->logger->debug("Need to create $toCreate workers");
 
             $orphanedSerialWorkers = $this->getOrphanedSerialWorkers($queue);
+            $this->logger->debug("Orphaned serial workers: " . json_encode($orphanedSerialWorkers));
             $orphanedSerialQueues = $this->getOrphanedSerialQueues($queue);
+            $this->logger->debug("Orphaned serial queues: " . json_encode($orphanedSerialWorkers));
 
             for ($i = 0; $i < $toCreate; ++$i) {
                 try {
+                    $this->logger->debug("=== Creating worker [$i]");
                     $workersToAppend = @$orphanedSerialWorkers[0];
                     $orphanedSerialWorkers = array_slice($orphanedSerialWorkers, 1);
+                    $this->logger->debug("Orphaned serial workers to append: " . json_encode($workersToAppend));
 
                     $spaceForSerialWorkers = $maxSerialWorkers - count($workersToAppend);
+                    $this->logger->debug("Space left to start fresh serial workers: $spaceForSerialWorkers");
                     $serialQueuesToStart = array_slice($orphanedSerialQueues, 0, $spaceForSerialWorkers);
                     $orphanedSerialQueues = array_slice($orphanedSerialQueues, $spaceForSerialWorkers);
+
+                    $this->logger->debug("Serial queues to create workers for: " . json_encode($serialQueuesToStart));
 
                     $pid = Resque::fork();
                     if ($pid === false) {
@@ -96,13 +109,16 @@ class Process {
                 }
             }
 
+            $this->logger->debug("====== Finished maintenance of queue $queue");
 
             // check interruption
             pcntl_signal_dispatch();
             if ($this->stopping) {
+                $this->logger->debug("========= Received stop signal, ending...");
                 return;
             }
         }
+        $this->logger->debug("========= Maintenance ended");
     }
 
     public function reload() {

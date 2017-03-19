@@ -59,7 +59,7 @@ Resque_Redis::prefix(ResqueSerial::VERSION);
 
 for ($i=0; $i<20; $i++) {
 //    ResqueSerial::enqueue('example_queue', $serialJob);
-    Resque::enqueue('example_queue', La_Job_IndexTicket::class);
+//    Resque::enqueue('example_queue', La_Job_IndexTicket::class);
 }
 
 $PATH = __DIR__ . '/../resources/config.yml';
