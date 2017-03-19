@@ -71,14 +71,15 @@ class Process {
             for ($i = 0; $i < $toCreate; ++$i) {
                 try {
                     $this->logger->debug("=== Creating worker [$i]");
-                    $workersToAppend = @$orphanedSerialWorkers[0];
-                    $orphanedSerialWorkers = array_slice($orphanedSerialWorkers, 1);
+
+                    $workersToAppend = array_slice($orphanedSerialWorkers, 0, $maxSerialWorkers);
+                    $orphanedSerialWorkers = array_slice($orphanedSerialWorkers, $maxSerialWorkers);
                     $this->logger->debug("Orphaned serial workers to append: " . json_encode($workersToAppend));
 
                     $spaceForSerialWorkers = $maxSerialWorkers - count($workersToAppend);
-                    $this->logger->debug("Space left to start fresh serial workers: $spaceForSerialWorkers");
                     $serialQueuesToStart = array_slice($orphanedSerialQueues, 0, $spaceForSerialWorkers);
                     $orphanedSerialQueues = array_slice($orphanedSerialQueues, $spaceForSerialWorkers);
+                    $this->logger->debug("Space left to start fresh serial workers: $spaceForSerialWorkers");
 
                     $this->logger->debug("Serial queues to create workers for: " . json_encode($serialQueuesToStart));
 
@@ -112,7 +113,7 @@ class Process {
             }
 
             $this->logger->debug("Orphaned serial workers left: " . json_encode($orphanedSerialWorkers));
-            $this->logger->debug("Orphaned serial queues left: " . json_encode($orphanedSerialWorkers));
+            $this->logger->debug("Orphaned serial queues left: " . json_encode($orphanedSerialQueues));
 
             $this->logger->debug("====== Finished maintenance of queue $queue");
 
@@ -209,7 +210,7 @@ class Process {
 
             if (!$image->isAlive()) {
                 $totalWorkers++;
-                $this->logger->debug("Found dead worker $workerId");
+                $this->logger->debug("Cleaning up dead worker $workerId");
                 // cleanup
                 WorkerImage::fromId($workerId)
                         ->removeFromPool()
@@ -236,18 +237,27 @@ class Process {
      * @return string[] list of orphaned serial queue names
      */
     private function getOrphanedSerialQueues($queue) {
+        $this->logger->debug("Getting orphaned serial queues");
         $orphanedQueues = [];
         foreach (QueueImage::all() as $serialQueue) {
+            if ($serialQueue == "") {
+                $this->logger->notice("Empty serial queue in orphan check");
+                continue;
+            }
+
             $queueImage = QueueImage::fromName($serialQueue);
 
             if ($queueImage->getParentQueue() != $queue) {
+                $this->logger->debug("Parent queue doesn't match: $serialQueue");
                 continue; // not our queue
             }
 
             if (QueueLock::exists($serialQueue)) {
+                $this->logger->debug("Lock exists for $serialQueue");
                 continue; // someone is holding the queue
             }
 
+            $this->logger->debug("Orphan found: $serialQueue");
             $orphanedQueues[] = $serialQueue;
         }
 
@@ -264,6 +274,7 @@ class Process {
      * that used to have it as a parent
      */
     private function getOrphanedSerialWorkers($queue) {
+        $this->logger->debug("Getting orphaned serial workers");
         $orphanedGroups = [];
         foreach (SerialWorkerImage::all() as $serialWorkerId) {
             $workerImage = SerialWorkerImage::fromId($serialWorkerId);
@@ -279,7 +290,24 @@ class Process {
 
             $parent = $workerImage->getParent();
 
+            if (!$workerImage->isAlive()) {
+                $this->logger->debug("Cleaning up dead serial worker $serialWorkerId");
+                $workerImage
+                        ->removeFromPool()
+                        ->clearState()
+                        ->clearParent()
+                        ->clearStarted()
+                        ->clearStat('processed')
+                        ->clearStat('failed');
+
+                $parentImage = WorkerImage::fromId($parent);
+                if ($parent != '' && $parentImage->isAlive()) {
+                    $parentImage->removeSerialWorker($workerImage->getId());
+                }
+            }
+
             if ($parent == '') {
+                $this->logger->debug("Orphan with unknown parent: $serialWorkerId");
                 $orphanedGroups['_'][] = $workerImage->getId();
                 continue;
             }
@@ -287,6 +315,7 @@ class Process {
             $parentImage = WorkerImage::fromId($parent);
 
             if (!$parentImage->isAlive()) {
+                $this->logger->debug("Orphan with dead parent: $serialWorkerId");
                 $orphanedGroups[$parent][] = $workerImage->getId();
             }
         }

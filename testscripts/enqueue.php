@@ -17,7 +17,7 @@ class La_Job_IndexTicket extends Job implements Resque_Task {
      * @return bool
      */
     public function perform() {
-        usleep(100000);
+        usleep(4000000);
         return true;
     }
 

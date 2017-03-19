@@ -7,6 +7,8 @@ namespace ResqueSerial\Serial;
 use Resque;
 use Resque_Event;
 use Resque_Job;
+use Resque_Job_Status;
+use Resque_Stat;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 
@@ -14,12 +16,23 @@ class Single extends \Resque_Worker implements IWorker {
 
     /** @var bool */
     private $isParallel;
+    /** @var SerialWorkerImage */
+    private $image;
 
     public function __construct($queue, $isParallel = false) {
         parent::__construct([$queue]);
         $this->isParallel = $isParallel;
-        $this->setId(SerialWorkerImage::create($queue)->getId());
+        $this->image = SerialWorkerImage::create($queue);
+        $this->setId($this->image->getId());
         $this->setLogger(Log::prefix(getmypid() . "-single-$queue"));
+    }
+
+    public function doneWorking() {
+        $this->currentJob = null;
+        Resque_Stat::incr('processed');
+        $this->image
+                ->incStat('processed')
+                ->clearState();
     }
 
     public function pruneDeadWorkers() {
@@ -59,6 +72,18 @@ class Single extends \Resque_Worker implements IWorker {
         else if(function_exists('setproctitle')) {
             setproctitle($processTitle);
         }
+    }
+
+    public function workingOn(Resque_Job $job) {
+        $job->worker = $this;
+        $this->currentJob = $job;
+        $job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
+        $data = json_encode(array(
+                'queue' => $job->queue,
+                'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
+                'payload' => $job->payload
+        ));
+        $this->image->setState($data);
     }
 
     protected function initReserveStrategy($interval, $blocking) {
