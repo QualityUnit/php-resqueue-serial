@@ -31,12 +31,12 @@ class Process {
     public function maintain() {
         $this->updateProcLine("maintaining");
         while (true) {
-            $this->recover();
             sleep(5);
             pcntl_signal_dispatch();
             if ($this->stopping) {
                 break;
             }
+            $this->recover();
         }
     }
 
