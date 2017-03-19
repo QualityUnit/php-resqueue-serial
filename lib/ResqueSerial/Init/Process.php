@@ -309,6 +309,7 @@ class Process {
         pcntl_signal(SIGINT, [$this, 'shutdown']);
         pcntl_signal(SIGQUIT, [$this, 'shutdown']);
         pcntl_signal(SIGHUP, [$this, 'reload']);
+        pcntl_signal(SIGCHLD, SIG_IGN); // prevent zombie children by ignoring them
         $this->logger->debug('Registered signals');
     }
 
