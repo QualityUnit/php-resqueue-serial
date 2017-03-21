@@ -126,6 +126,8 @@ class Worker extends \Resque_Worker {
             $this->createStrategy($job)->perform($job);
         } catch (ForkException $e) {
             $lock->release();
+            $this->logger->critical("Failed to create fork to perform job " . @$job->payload['id']);
+            $job->fail($e);
         }
 
         $this->doneWorking();
