@@ -292,12 +292,6 @@ class Process {
             if (!$workerImage->isAlive()) {
                 $this->logger->debug("Cleaning up dead serial worker $serialWorkerId");
 
-                $state = json_decode($workerImage->getState(), true);
-                $failedJob = new \Resque_Job($workerImage->getQueue(), $state['payload']);
-                $failedJob->worker = new \Resque_Worker('whatever');
-                $failedJob->worker->setId($workerImage->getId());
-                $failedJob->fail(new Exception('Worker died on the job'));
-
                 $workerImage
                         ->removeFromPool()
                         ->clearState()
