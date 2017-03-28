@@ -216,7 +216,9 @@ class Process {
                         ->removeFromPool()
                         ->clearState()
                         ->clearStarted()
-                        ->clearSerialWorkers();
+                        ->clearSerialWorkers()
+                        ->clearStat('processed')
+                        ->clearStat('failed');
             } else {
                 $livingWorkers++;
                 $totalWorkers++;
