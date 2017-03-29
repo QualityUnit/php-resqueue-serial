@@ -14,7 +14,7 @@ use ResqueSerial\Init\GlobalConfig;
 
 class Log {
 
-    const LINE_FORMAT = "[%datetime%] %channel%.%level_name%: %message%\n";
+    const LINE_FORMAT = "[%datetime%] %channel%.%level_name%: %message% %context.exception%\n";
 
     /**
      * @var LoggerInterface
@@ -24,7 +24,9 @@ class Log {
     public static function initFromConfig(GlobalConfig $config) {
         $logger = new Logger('main');
         $handler = new StreamHandler($config->getLogPath(), $config->getLogLevel());
-        $handler->setFormatter(new LineFormatter(self::LINE_FORMAT));
+        $formatter = new LineFormatter(self::LINE_FORMAT);
+        $formatter->includeStacktraces(true);
+        $handler->setFormatter($formatter);
         $logger->pushHandler($handler);
         $logger->pushProcessor(new PsrLogMessageProcessor());
         self::setMain($logger);
