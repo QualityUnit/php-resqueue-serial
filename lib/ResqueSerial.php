@@ -2,7 +2,7 @@
 
 
 use ResqueSerial\Key;
-use ResqueSerial\Serial\QueueImage;
+use ResqueSerial\Serial\SerialQueueImage;
 
 /**
  * Base ResqueSerial.
@@ -23,7 +23,7 @@ class ResqueSerial {
     public static function enqueue($queue, \ResqueSerial\Job $serialJob, $monitor = false) {
         $id = Resque::generateJobId();
 
-        $serialQueue = QueueImage::create($queue, $serialJob->getSerialId());
+        $serialQueue = SerialQueueImage::create($queue, $serialJob->getSerialId());
 
         // in case serial queue is split into multiple subqueues
         $subqueue = $serialQueue->generateSubqueueName($serialJob->getSecondarySerialId());

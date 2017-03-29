@@ -8,7 +8,7 @@ use ResqueSerial\Key;
 use ResqueSerial\QueueLock;
 use ResqueSerial\Log;
 
-class QueueImage {
+class SerialQueueImage {
 
     /** @var string */
     private $serialQueue;

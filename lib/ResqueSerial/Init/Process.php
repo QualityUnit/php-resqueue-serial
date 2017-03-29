@@ -9,7 +9,7 @@ use Resque;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
-use ResqueSerial\Serial\QueueImage;
+use ResqueSerial\Serial\SerialQueueImage;
 use ResqueSerial\Serial\SerialWorker;
 use ResqueSerial\Serial\SerialWorkerImage;
 use ResqueSerial\Worker;
@@ -20,6 +20,7 @@ class Process {
     private $stopping = false;
     private $reloaded = false;
 
+    /** @var \Psr\Log\LoggerInterface */
     private $logger;
 
     /** @var GlobalConfig */
@@ -241,13 +242,13 @@ class Process {
     private function getOrphanedSerialQueues($queue) {
         $this->logger->debug("Getting orphaned serial queues");
         $orphanedQueues = [];
-        foreach (QueueImage::all() as $serialQueue) {
+        foreach (SerialQueueImage::all() as $serialQueue) {
             if ($serialQueue == "") {
                 $this->logger->notice("Empty serial queue in orphan check");
                 continue;
             }
 
-            $queueImage = QueueImage::fromName($serialQueue);
+            $queueImage = SerialQueueImage::fromName($serialQueue);
 
             if ($queueImage->getParentQueue() != $queue) {
                 $this->logger->debug("Parent queue doesn't match: $serialQueue");
@@ -279,7 +280,7 @@ class Process {
         $orphanedGroups = [];
         foreach (SerialWorkerImage::all() as $serialWorkerId) {
             $workerImage = SerialWorkerImage::fromId($serialWorkerId);
-            $queueImage = QueueImage::fromName($workerImage->getQueue());
+            $queueImage = SerialQueueImage::fromName($workerImage->getQueue());
 
             if ($queue != $queueImage->getParentQueue()) {
                 continue; // not our queue

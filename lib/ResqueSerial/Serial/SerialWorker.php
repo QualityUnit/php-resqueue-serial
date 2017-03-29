@@ -16,7 +16,7 @@ class SerialWorker {
 
     /** @var IWorker */
     private $state;
-    /** @var QueueImage */
+    /** @var SerialQueueImage */
     private $queue;
     /** @var SerialWorkerImage */
     private $image;
@@ -34,7 +34,7 @@ class SerialWorker {
      * @param QueueLock $lock
      */
     public function __construct($serialQueue, QueueLock $lock) {
-        $this->queue = QueueImage::fromName($serialQueue);
+        $this->queue = SerialQueueImage::fromName($serialQueue);
         $this->image = SerialWorkerImage::create($serialQueue);
         $this->logger = Log::prefix($this->image->getPid() . "-serial_worker-$serialQueue");
         $this->lock = $lock;

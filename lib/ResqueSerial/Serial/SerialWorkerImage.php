@@ -6,6 +6,7 @@ namespace ResqueSerial\Serial;
 
 use Resque;
 use ResqueSerial\Key;
+use ResqueSerial\WorkerImage;
 use ResqueSerial\WorkerImageTrait;
 
 class SerialWorkerImage {
@@ -68,6 +69,15 @@ class SerialWorkerImage {
      */
     public function getState() {
         return Resque::redis()->get(Key::serialWorker($this->id));
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOrphaned() {
+        $parent = $this->getParent();
+
+        return $parent == '' || !WorkerImage::fromId($parent)->isAlive();
     }
 
     /**

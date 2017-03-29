@@ -13,7 +13,7 @@ use Resque_Stat;
 use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Init\WorkerConfig;
 use ResqueSerial\JobStrategy\Serial;
-use ResqueSerial\Serial\QueueImage;
+use ResqueSerial\Serial\SerialQueueImage;
 
 class Worker extends \Resque_Worker {
 
@@ -108,7 +108,7 @@ class Worker extends \Resque_Worker {
             return;
         }
 
-        $lock = QueueImage::fromName($job->getArguments()['serialQueue'])->newLock();
+        $lock = SerialQueueImage::fromName($job->getArguments()['serialQueue'])->newLock();
 
         if (!$lock->acquire()) {
             $this->logger->log(LogLevel::INFO, 'Nothing to do with job {job}', array('job' => $job));
