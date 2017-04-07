@@ -88,8 +88,13 @@ class Process {
                     if ($pid === false) {
                         throw new Exception('Fork returned false.');
                     }
+                } catch (Exception $e) {
+                    $this->logger->emergency("Could not fork worker $i for queue $queue", ['exception' => $e]);
+                    exit(1);
+                }
 
-                    if (!$pid) {
+                if (!$pid) {
+                    try {
                         $worker = new Worker(explode(',', $queue), $this->globalConfig);
                         $worker->setLogger(Log::prefix(getmypid() . "-worker-$queue"));
 
@@ -106,10 +111,10 @@ class Process {
                         $this->logger->notice("Starting worker $worker", array('worker' => $worker));
                         $worker->work(Resque::DEFAULT_INTERVAL, $blocking);
                         exit();
+                    } catch (Exception $e) {
+                        $this->logger->error("Worker " . posix_getpid() . " failed unexpectedly.", ['exception' => $e]);
                     }
-                } catch (Exception $e) {
-                    $this->logger->emergency("Could not fork worker $i for queue $queue", ['exception' => $e]);
-                    die();
+                    exit(1);
                 }
             }
 
