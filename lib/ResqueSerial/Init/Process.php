@@ -134,6 +134,7 @@ class Process {
     }
 
     public function reload() {
+        $this->logger->debug("Reloading configuration");
         GlobalConfig::reload();
         $this->globalConfig = $config = GlobalConfig::instance();
         Log::initFromConfig($config);

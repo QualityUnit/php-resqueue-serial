@@ -61,7 +61,9 @@ class Worker extends \Resque_Worker {
     }
 
     public function registerWorker() {
-        $this->image->addToPool()->setStartedNow();
+        $this->image
+                ->addToPool()
+                ->setStartedNow();
     }
 
     public function unregisterWorker() {
@@ -96,6 +98,11 @@ class Worker extends \Resque_Worker {
                 'payload' => $job->payload
         ));
         $this->image->setState($data);
+    }
+
+    protected function initReserveStrategy($interval, $blocking) {
+        // use config for blocking parameter
+        parent::initReserveStrategy($interval, $this->config->getBlocking());
     }
 
     /**
@@ -133,6 +140,28 @@ class Worker extends \Resque_Worker {
         $this->doneWorking();
     }
 
+    protected function reload() {
+        $this->logger->debug("Reloading configuration");
+        GlobalConfig::reload();
+        $config = GlobalConfig::instance()->getWorkerConfig($this->image->getQueue());
+
+        if ($config == null) {
+            $this->logger->error("Failed to reload configuration - queue section missing.");
+
+            return;
+        }
+
+        $this->config = $config;
+        Log::initFromConfig(GlobalConfig::instance());
+        $this->setLogger(Log::prefix(getmypid() . "-worker-" . $this->image->getQueue()));
+    }
+
+    protected function startup() {
+        $this->registerSigHandlers();
+        Resque_Event::trigger('beforeFirstFork', $this);
+        $this->registerWorker();
+    }
+
     private function createStrategy($job) {
         if ($this->isJobSerial($job)) {
             return new Serial($this);
@@ -161,5 +190,22 @@ class Worker extends \Resque_Worker {
         $count = \Resque::redis()->scard(Key::workerSerialWorkers((string)$this));
 
         return $count >= $this->config->getMaxSerialWorkers();
+    }
+
+    /**
+     * Register signal handlers that a worker should respond to.
+     * TERM: Shutdown immediately and stop processing jobs.
+     * INT: Shutdown immediately and stop processing jobs.
+     * QUIT: Shutdown after the current job finishes processing.
+     * USR1: Kill the forked child immediately and continue processing jobs.
+     */
+    private function registerSigHandlers() {
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGTERM, [$this, 'shutdown']);
+            pcntl_signal(SIGINT, [$this, 'shutdown']);
+            pcntl_signal(SIGQUIT, [$this, 'shutdown']);
+            pcntl_signal(SIGHUP, [$this, 'reload']);
+            $this->logger->debug('Registered signals');
+        }
     }
 }
