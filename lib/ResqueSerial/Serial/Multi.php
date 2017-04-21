@@ -145,6 +145,7 @@ class Multi implements IWorker {
         // Forked and we're the child. Run the job.
         if ($childPid === 0) {
             $worker = new Single($queue, true);
+            Log::setLocal($worker->logger);
             $id = (string)$worker;
             Resque::redis()->sadd(Key::serialWorkerRunners($this->image->getId()), $id);
             $worker->work();

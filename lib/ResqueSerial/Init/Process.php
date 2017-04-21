@@ -6,6 +6,7 @@ namespace ResqueSerial\Init;
 
 use Exception;
 use Resque;
+use Resque_Event;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
@@ -75,14 +76,16 @@ class Process {
 
                     $workersToAppend = array_slice($orphanedSerialWorkers, 0, $maxSerialWorkers);
                     $orphanedSerialWorkers = array_slice($orphanedSerialWorkers, $maxSerialWorkers);
-                    $this->logger->debug("Orphaned serial workers to append: " . json_encode($workersToAppend));
+                    $this->logger->debug("Orphaned serial workers to append: "
+                            . json_encode($workersToAppend));
 
                     $spaceForSerialWorkers = $maxSerialWorkers - count($workersToAppend);
                     $serialQueuesToStart = array_slice($orphanedSerialQueues, 0, $spaceForSerialWorkers);
                     $orphanedSerialQueues = array_slice($orphanedSerialQueues, $spaceForSerialWorkers);
                     $this->logger->debug("Space left to start fresh serial workers: $spaceForSerialWorkers");
 
-                    $this->logger->debug("Serial queues to create workers for: " . json_encode($serialQueuesToStart));
+                    $this->logger->debug("Serial queues to create workers for: "
+                            . json_encode($serialQueuesToStart));
 
                     $pid = Resque::fork();
                     if ($pid === false) {
@@ -95,8 +98,22 @@ class Process {
 
                 if (!$pid) {
                     try {
+                        $localLogger = Log::prefix(getmypid() . "-worker-$queue");
+                        Log::setLocal($localLogger);
                         $worker = new Worker(explode(',', $queue), $this->globalConfig);
-                        $worker->setLogger(Log::prefix(getmypid() . "-worker-$queue"));
+                        $worker->setLogger($localLogger);
+
+                        Resque_Event::listen('reload', function (array $params) use ($queue) {
+                            Log::initFromConfig(GlobalConfig::instance());
+                            $localLogger = Log::prefix(getmypid() . "-worker-$queue");
+                            Log::setLocal($localLogger);
+
+                            /** @var Worker $worker */
+                            $worker = @$params[0];
+                            if ($worker !== null) {
+                                $worker->setLogger($localLogger);
+                            }
+                        });
 
                         if ($workersToAppend) {
                             foreach ($workersToAppend as $toAppend) {
@@ -112,14 +129,17 @@ class Process {
                         $worker->work(Resque::DEFAULT_INTERVAL, $blocking);
                         exit();
                     } catch (Exception $e) {
-                        $this->logger->error("Worker " . posix_getpid() . " failed unexpectedly.", ['exception' => $e]);
+                        $this->logger->error("Worker " . posix_getpid()
+                                . " failed unexpectedly.", ['exception' => $e]);
                     }
                     exit(1);
                 }
             }
 
-            $this->logger->debug("Orphaned serial workers left: " . json_encode($orphanedSerialWorkers));
-            $this->logger->debug("Orphaned serial queues left: " . json_encode($orphanedSerialQueues));
+            $this->logger->debug("Orphaned serial workers left: "
+                    . json_encode($orphanedSerialWorkers));
+            $this->logger->debug("Orphaned serial queues left: "
+                    . json_encode($orphanedSerialQueues));
 
             $this->logger->debug("====== Finished maintenance of queue $queue");
 
@@ -127,6 +147,7 @@ class Process {
             pcntl_signal_dispatch();
             if ($this->stopping || $this->reloaded) {
                 $this->logger->debug("========= Received stop or reload signal, halting maintenance...");
+
                 return;
             }
         }
@@ -234,6 +255,7 @@ class Process {
         }
 
         $this->logger->debug("Worker cleanup done, processed $totalWorkers workers");
+
         return $livingWorkers;
     }
 
@@ -356,7 +378,8 @@ class Process {
         $serialWorkers = SerialWorkerImage::all();
         foreach ($serialWorkers as $serialWorker) {
             $image = SerialWorkerImage::fromId($serialWorker);
-            $this->logger->debug("Signalling $signalName " . $image->getId() . " " . $image->getPid());
+            $this->logger->debug("Signalling $signalName " . $image->getId()
+                    . " " . $image->getPid());
             posix_kill($image->getPid(), $signal);
         }
 
@@ -366,7 +389,8 @@ class Process {
         $workers = WorkerImage::all();
         foreach ($workers as $worker) {
             $image = WorkerImage::fromId($worker);
-            $this->logger->debug("Signalling $signalName " . $image->getId() . " " . $image->getPid());
+            $this->logger->debug("Signalling $signalName " . $image->getId()
+                    . " " . $image->getPid());
             posix_kill($image->getPid(), $signal);
         }
 
@@ -389,6 +413,7 @@ class Process {
         try {
             if (Resque::fork() === 0) {
                 $serialWorker = new SerialWorker($queueToStart, $lock);
+                Log::setLocal($serialWorker->getLogger());
                 $serialWorker->work($parent->getId());
                 $lock->release();
                 exit(0);

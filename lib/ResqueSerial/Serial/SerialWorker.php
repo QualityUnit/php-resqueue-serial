@@ -44,24 +44,32 @@ class SerialWorker {
         return $this->image->getId();
     }
 
-    public function shutdown() {
-        $this->stopping = true;
-        $this->logger->notice("Shutting down");
-
-        if($this->state == null) {
-            return;
-        }
-
-        $this->state->shutdown();
+    /**
+     * @return LoggerInterface
+     */
+    public function getLogger() {
+        return $this->logger;
     }
 
     public function recompute() {
         // TODO implement once we have the need for it (manual configuration now)
     }
 
+    public function shutdown() {
+        $this->stopping = true;
+        $this->logger->notice("Shutting down");
+
+        if ($this->state == null) {
+            return;
+        }
+
+        $this->state->shutdown();
+    }
+
     public function work($parentWorkerId) {
         if (!$this->lock->acquire()) {
             $this->logger->warning("Failed to reacquire lock before startup. Halting...");
+
             return;
         }
         $this->logger->notice("Starting.");
@@ -121,13 +129,14 @@ class SerialWorker {
     private function allSubQueuesEmpty() {
         $current = $this->queue->config()->getCurrent();
 
-        if($current->getQueueCount() > 1) {
+        if ($current->getQueueCount() > 1) {
             for ($i = 0; $i < $current->getQueueCount(); $i++) {
                 $queue = $this->queue->getQueue() . $current->getQueuePostfix($i);
-                if(\Resque::redis()->llen(Key::serialQueue($queue)) > 0) {
+                if (\Resque::redis()->llen(Key::serialQueue($queue)) > 0) {
                     return false;
                 }
             }
+
             return true;
         }
 
@@ -139,10 +148,12 @@ class SerialWorker {
             $single = new Single($this->queue->getQueue());
             $single->setId($this->image->getId());
             $single->setLock($this->lock);
+
             return $single;
         } else {
             $multi = new Multi($this->queue->getQueue(), $this->queue->config(), $this->lock);
             $multi->setImage($this->image);
+
             return $multi;
         }
     }

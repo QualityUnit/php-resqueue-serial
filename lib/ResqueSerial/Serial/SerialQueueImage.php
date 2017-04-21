@@ -27,7 +27,7 @@ class SerialQueueImage {
         $this->parts = explode('~', $serialQueue);
         if (count($this->parts) != 2) {
             $e = new \Exception();
-            Log::main()->warning("Queue passed to QueueImage constructor ($serialQueue)."
+            Log::local()->warning("Queue passed to QueueImage constructor ($serialQueue)."
                     . " This is probably a bug.\n" . $e->getTraceAsString());
         }
         $this->configManager = new ConfigManager($serialQueue);

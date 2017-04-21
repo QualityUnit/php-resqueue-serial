@@ -21,6 +21,11 @@ class Log {
      */
     private static $main = null;
 
+    /**
+     * @var LoggerInterface
+     */
+    private static $local = null;
+
     public static function initFromConfig(GlobalConfig $config) {
         $logger = new Logger('main');
         $handler = new StreamHandler($config->getLogPath(), $config->getLogLevel());
@@ -30,6 +35,17 @@ class Log {
         $logger->pushHandler($handler);
         $logger->pushProcessor(new PsrLogMessageProcessor());
         self::setMain($logger);
+    }
+
+    /**
+     * @return LoggerInterface
+     */
+    public static function local() {
+        if (self::$local === null) {
+            return self::main();
+        }
+
+        return self::$local;
     }
 
     /**
@@ -45,6 +61,10 @@ class Log {
 
     public static function prefix($prefix) {
         return new PrefixLogger($prefix, self::main());
+    }
+
+    public static function setLocal($logger) {
+        self::$local = $logger;
     }
 
     public static function setMain($logger) {

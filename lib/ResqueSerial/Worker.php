@@ -152,8 +152,7 @@ class Worker extends \Resque_Worker {
         }
 
         $this->config = $config;
-        Log::initFromConfig(GlobalConfig::instance());
-        $this->setLogger(Log::prefix(getmypid() . "-worker-" . $this->image->getQueue()));
+        Resque_Event::trigger('reload', $this);
     }
 
     protected function startup() {

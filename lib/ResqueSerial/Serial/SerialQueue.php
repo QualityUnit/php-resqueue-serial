@@ -24,9 +24,8 @@ class SerialQueue extends \Resque_Queue {
     public function pop() {
         $queue = $this->getQueues()[0];
 
-        // todo pass instance logger
         $size = \Resque::redis()->llen(Key::serialQueue($queue));;
-        Log::main()->debug("Pop from Queue: $queue, Size: $size");
+        Log::local()->debug("Pop from Queue: $queue, Size: $size");
 
         $item = \Resque::redis()->lpop(Key::serialQueue($queue));
 
