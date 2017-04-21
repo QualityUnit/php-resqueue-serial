@@ -9,16 +9,16 @@
     "packages": [
         {
             "name": "chrisboulton/php-resque",
-            "version": "1.3.2",
+            "version": "1.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/QualityUnit/php-resque.git",
-                "reference": "a5d03cea574dbc7328939c0e56076df30520b43d"
+                "reference": "7166a5c14d2ac7bfb461591e2078d2c37dc48daf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/QualityUnit/php-resque/zipball/a5d03cea574dbc7328939c0e56076df30520b43d",
-                "reference": "a5d03cea574dbc7328939c0e56076df30520b43d",
+                "url": "https://api.github.com/repos/QualityUnit/php-resque/zipball/7166a5c14d2ac7bfb461591e2078d2c37dc48daf",
+                "reference": "7166a5c14d2ac7bfb461591e2078d2c37dc48daf",
                 "shasum": ""
             },
             "require": {
@@ -61,9 +61,9 @@
                 "resque"
             ],
             "support": {
-                "source": "https://github.com/QualityUnit/php-resque/tree/1.3.2"
+                "source": "https://github.com/QualityUnit/php-resque/tree/1.3.3"
             },
-            "time": "2017-04-07 18:32:18"
+            "time": "2017-04-21 12:12:41"
         },
         {
             "name": "colinmollenhour/credis",
