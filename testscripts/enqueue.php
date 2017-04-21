@@ -2,73 +2,11 @@
 
 require_once '/home/dmolnar/work/qu/php-resqueue-serial/vendor/autoload.php';
 
-
-//Resque::removeQueue('test_queue');
-
-Resque::setBackend("localhost:6379");
-
-use ResqueSerial\Job;
-
-class La_Job_IndexTicket extends Job implements Resque_Task {
-
-    private $arg;
-
-    /**
-     * @return bool
-     */
-    public function perform() {
-        usleep(4000000);
-        file_put_contents('/tmp/serialjob.txt', var_export($this->args, true) . "\n", FILE_APPEND);
-        return true;
-    }
-
-    public function arg($arg) {
-        $this->arg = $arg;
-        return $this;
-    }
-
-
-    /**
-     * @return mixed[]
-     */
-    function getArgs() {
-        return ['arg' => $this->arg];
-    }
-
-    /**
-     * @return string
-     */
-    function getSecondarySerialId() {
-        return rand(0, 16);
-    }
-
-    /**
-     * @return string
-     */
-    function getSerialId() {
-        return 'test_job_serial_id';
-    }
-
-    /**
-     * @return string
-     */
-    function getClass() {
-        return self::class;
-    }
-}
-
-$serialJob = new La_Job_IndexTicket();
-
-//Resque::redis()->lPush(\ResqueSerial\Key::serialQueueConfig('example_queue~test_job_serial_id'), '{"queueCount":2}');
+require_once 'shared.php';
 
 Resque_Redis::prefix(ResqueSerial::VERSION);
 
 unlink('/tmp/serialjob.txt');
-
-for ($i=0; $i<20; $i++) {
-    ResqueSerial::enqueue('example_queue', $serialJob->arg($i));
-//    Resque::enqueue('example_queue', La_Job_IndexTicket::class);
-}
 
 $PATH = __DIR__ . '/../resources/config.yml';
 
