@@ -6,6 +6,7 @@ resque-v1:
     queue:<queue_name>:temp:<time>:requeue: list(job_data)      # temporary queue created by removeItems()
     
     failed: list(fail_data)
+    retries: list(fail_data)
     job:<job_id>:status: <status_data>
     
     workers: set(worker_id)
@@ -16,6 +17,8 @@ resque-v1:
     stat:failed:<worker_id>: <failed_count>
     stat:processed: <processed_count>
     stat:processed:<worker_id>: <processed_count>
+    stat:retries: <retry_count>
+    stat:retries:<worker_id>: <retry_count>
     
 resque-v1:serial:
     

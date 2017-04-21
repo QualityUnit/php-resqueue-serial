@@ -6,6 +6,8 @@ require_once 'shared.php';
 
 Resque_Redis::prefix(ResqueSerial::VERSION);
 
+Resque_Failure::setBackend(ResqueSerial\Failure\RedisRetry::class);
+
 unlink('/tmp/serialjob.txt');
 
 $PATH = __DIR__ . '/../resources/config.yml';

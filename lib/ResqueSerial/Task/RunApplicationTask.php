@@ -8,10 +8,17 @@ use ResqueSerial\Init\GlobalConfig;
 
 class RunApplicationTask implements \Resque_Task {
 
+    // task class methods (static)
+    const PERFORMER_GETTER = 'getPerformer';
+    const RETRY_PERFORMER_GETTER = 'getRetryPerformer';
+    // performer methods
+    const PERFORM_METHOD = 'perform';
+    const VALIDATION_METHOD = 'isValid';
+
     public static function className() {
         return get_class();
     }
-    
+
     public function perform() {
         list($applicationPath, $jobArgs, $taskClass) = $this->initializeArgs();
 
@@ -19,27 +26,30 @@ class RunApplicationTask implements \Resque_Task {
 
         $this->checkTaskClass($taskClass);
 
-        $performer = call_user_func([$taskClass, 'getPerformer'], $jobArgs);
+        $performerGetter = self::PERFORMER_GETTER;
+        if ($this->job->getFails() > 0) {
+            $performerGetter = self::RETRY_PERFORMER_GETTER;
+        }
+        $performer = $taskClass::{$performerGetter}($jobArgs);
 
-        $this->checkPerformer($performer, $taskClass);
+        $this->checkPerformer($performer);
 
-        if ($performer->isValid()) {
-            $performer->perform();
+        if ($performer->{self::VALIDATION_METHOD}()) {
+            $performer->{self::PERFORM_METHOD}();
         }
     }
 
     /**
      * @param $performer
-     * @param $taskClass
      *
      * @throws TaskCreationException
      */
-    private function checkPerformer($performer, $taskClass) {
-        if (!method_exists($performer, 'isValid')) {
-            throw new TaskCreationException("Performer of $taskClass does not contain a isValid method.");
+    private function checkPerformer($performer) {
+        if (!method_exists($performer, self::VALIDATION_METHOD)) {
+            throw new TaskCreationException("Performer $performer does not contain a validation method.");
         }
-        if (!method_exists($performer, 'perform')) {
-            throw new TaskCreationException("Performer of $taskClass does not contain a perform method.");
+        if (!method_exists($performer, self::PERFORM_METHOD)) {
+            throw new TaskCreationException("Performer $performer does not contain a perform method.");
         }
     }
 
@@ -52,10 +62,13 @@ class RunApplicationTask implements \Resque_Task {
         if (!class_exists($taskClass)) {
             throw new TaskCreationException("Could not find application task class $taskClass.");
         }
-        if (!method_exists($taskClass, 'getPerformer')) {
-            throw new TaskCreationException("Task class $taskClass does not contain a getPerformer method.");
+        if (!method_exists($taskClass, self::PERFORMER_GETTER)) {
+            throw new TaskCreationException("Task class $taskClass does not contain a performer getter.");
         }
-}
+        if (!method_exists($taskClass, self::RETRY_PERFORMER_GETTER)) {
+            throw new TaskCreationException("Task class $taskClass does not contain a retry performer getter.");
+        }
+    }
 
     /**
      * @param $applicationPath
@@ -75,7 +88,7 @@ class RunApplicationTask implements \Resque_Task {
         $taskClass = @$this->args['job_class'];
         $environment = @$this->args['environment'];
 
-        if(is_array($environment)) {
+        if (is_array($environment)) {
             foreach ($environment as $key => $value) {
                 $_SERVER[$key] = $value;
             }

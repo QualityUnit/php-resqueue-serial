@@ -62,3 +62,45 @@ class __TestJob implements Resque_Task {
         return true;
     }
 }
+
+class __FailJob implements Resque_Task {
+
+    private $arg;
+
+    public function perform() {
+        throw new Exception(@$this->args['arg']);
+    }
+}
+
+class __Fail__Perf {
+
+    public function isValid() {
+        return true;
+    }
+    
+    public function perform() {
+        throw new Exception();
+    }
+}
+
+class __Pass__Perf {
+
+    public function isValid() {
+        return true;
+    }
+
+    public function perform() {
+        \ResqueSerial\Log::local()->notice("Performing job.");
+    }
+}
+
+class __ApplicationTask {
+
+    public static function getPerformer(array $args) {
+        return new __Fail__Perf();
+    }
+
+    public static function getRetryPerformer(array $args) {
+        return new __Pass__Perf();
+    }
+}

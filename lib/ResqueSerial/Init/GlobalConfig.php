@@ -34,6 +34,9 @@ class GlobalConfig {
     private $taskIncludePath = '/opt';
     private $path;
 
+    /** @var int */
+    private $failRetries = 3;
+
     public function __construct($path) {
         $this->path = $path;
         $data = Yaml::parse(file_get_contents($path));
@@ -62,6 +65,10 @@ class GlobalConfig {
         if ($taskIncludePath != null) {
             $this->taskIncludePath = $taskIncludePath;
         }
+        $failRetries = $data['fail_retries'];
+        if ($failRetries != null) {
+            $this->failRetries = (int)$failRetries;
+        }
     }
 
     public static function instance() {
@@ -88,6 +95,13 @@ class GlobalConfig {
      */
     public function getLogPath() {
         return $this->logPath;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMaxTaskFails() {
+        return $this->failRetries;
     }
 
     public function getQueueList() {
