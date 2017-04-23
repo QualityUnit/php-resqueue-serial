@@ -1,12 +1,11 @@
 <?php
 
+
 require_once '/home/dmolnar/work/qu/php-resqueue-serial/vendor/autoload.php';
 
 require_once 'shared.php';
 
 Resque_Redis::prefix(ResqueSerial::VERSION);
-
-Resque_Failure::setBackend(ResqueSerial\Failure\RedisRetry::class);
 
 unlink('/tmp/serialjob.txt');
 

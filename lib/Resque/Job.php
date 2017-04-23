@@ -1,4 +1,6 @@
 <?php
+use ResqueSerial\Failure;
+
 /**
  * Resque job.
  *
@@ -199,7 +201,7 @@ class Resque_Job
 		));
 
 		$this->updateStatus(Resque_Job_Status::STATUS_FAILED);
-		Resque_Failure::create(
+		Failure::create(
 			$this->payload,
 			$exception,
 			$this->worker,

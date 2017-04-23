@@ -7,7 +7,7 @@ namespace ResqueSerial\Failure;
 use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Log;
 
-class RedisRetry implements \Resque_Failure_Interface {
+class RedisRetryFailure implements IFailure {
 
     public function __construct($payload, $exception, $worker, $queue) {
         $job = new \Resque_Job($queue, $payload);
