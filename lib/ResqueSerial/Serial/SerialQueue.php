@@ -6,9 +6,10 @@ namespace ResqueSerial\Serial;
 
 use ResqueSerial\Key;
 use ResqueSerial\Log;
+use ResqueSerial\Queue;
 use ResqueSerial\ResqueJob;
 
-class SerialQueue extends \Resque_Queue {
+class SerialQueue extends Queue {
 
     public function blockingPop($timeout = null) {
         $queue = $this->getQueues()[0];

@@ -5,8 +5,7 @@ namespace ResqueSerial;
 
 
 use Psr\Log\LogLevel;
-use Resque_Event;
-use Resque_Stat;
+use ResqueSerial\Exception\ForkException;
 use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Init\WorkerConfig;
 use ResqueSerial\Job\DirtyExitException;
@@ -15,7 +14,7 @@ use ResqueSerial\JobStrategy\Serial;
 use ResqueSerial\Serial\SerialQueueImage;
 use ResqueSerial\Task\SerialTaskFactory;
 
-class Worker extends \Resque_Worker {
+class Worker extends DeprecatedWorker {
 
     const SLEEP_SECONDS = 1;
     /** @var WorkerConfig */
@@ -40,7 +39,7 @@ class Worker extends \Resque_Worker {
         $jobDone = $this->currentJob;
         $this->currentJob = null;
         if (!$this->isJobSerial($jobDone)) {
-            Resque_Stat::incr('processed');
+            Stats::incr('processed');
             $this->image->incStat('processed')->clearState();
         }
 
@@ -124,7 +123,7 @@ class Worker extends \Resque_Worker {
         }
 
         $this->logger->log(LogLevel::NOTICE, 'Starting work on {job}', array('job' => $job));
-        Resque_Event::trigger('beforeFork', $job);
+        EventBus::trigger('beforeFork', $job);
         $this->workingOn($job);
 
         $job->setTaskFactory(new SerialTaskFactory($lock));
@@ -152,12 +151,12 @@ class Worker extends \Resque_Worker {
         }
 
         $this->config = $config;
-        Resque_Event::trigger('reload', $this);
+        EventBus::trigger('reload', $this);
     }
 
     protected function startup() {
         $this->registerSigHandlers();
-        Resque_Event::trigger('beforeFirstFork', $this);
+        EventBus::trigger('beforeFirstFork', $this);
         $this->registerWorker();
     }
 

@@ -1,5 +1,7 @@
 <?php
+use ResqueSerial\EventBus;
 use ResqueSerial\Job\DontCreateException;
+use ResqueSerial\Redis;
 use ResqueSerial\ResqueJob;
 
 /**
@@ -16,7 +18,7 @@ class Resque
     const DEFAULT_INTERVAL = 5;
 
 	/**
-	 * @var Resque_Redis Instance of Resque_Redis that talks to redis.
+	 * @var Redis Instance of Resque_Redis that talks to redis.
 	 */
 	public static $redis = null;
 
@@ -51,7 +53,7 @@ class Resque
 	/**
 	 * Return an instance of the Resque_Redis class instantiated for Resque.
 	 *
-	 * @return Resque_Redis Instance of Resque_Redis.
+	 * @return Redis Instance of Resque_Redis.
 	 */
 	public static function redis()
 	{
@@ -62,7 +64,7 @@ class Resque
 		if (is_callable(self::$redisServer)) {
 			self::$redis = call_user_func(self::$redisServer, self::$redisDatabase);
 		} else {
-			self::$redis = new Resque_Redis(self::$redisServer, self::$redisDatabase);
+			self::$redis = new Redis(self::$redisServer, self::$redisDatabase);
 		}
 
 		return self::$redis;
@@ -230,14 +232,14 @@ class Resque
 			'id'    => $id,
 		);
 		try {
-			Resque_Event::trigger('beforeEnqueue', $hookParams);
+			EventBus::trigger('beforeEnqueue', $hookParams);
 		}
 		catch(DontCreateException $e) {
 			return false;
 		}
 
 		ResqueJob::create($queue, $class, $args, $trackStatus, $id);
-		Resque_Event::trigger('afterEnqueue', $hookParams);
+		EventBus::trigger('afterEnqueue', $hookParams);
 
 		return $id;
 	}

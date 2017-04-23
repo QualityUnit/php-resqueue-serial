@@ -6,6 +6,7 @@ namespace ResqueSerial\Serial;
 
 use Psr\Log\LoggerInterface;
 use Resque;
+use ResqueSerial\EventBus;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
@@ -105,7 +106,7 @@ class Multi implements IWorker {
 
             pcntl_signal_dispatch();
 
-            \Resque_Event::trigger(SerialWorker::RECOMPUTE_CONFIG_EVENT, $this);
+            EventBus::trigger(SerialWorker::RECOMPUTE_CONFIG_EVENT, $this);
             sleep(1);
         }
 

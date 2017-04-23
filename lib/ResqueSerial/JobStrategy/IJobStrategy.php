@@ -2,7 +2,7 @@
 
 namespace ResqueSerial\JobStrategy;
 
-use Resque_Worker;
+use ResqueSerial\DeprecatedWorker;
 use ResqueSerial\ResqueJob;
 
 /**
@@ -17,9 +17,9 @@ interface IJobStrategy {
     /**
      * Set the Resque_Worker instance
      *
-     * @param Resque_Worker $worker
+     * @param DeprecatedWorker $worker
      */
-    function setWorker(Resque_Worker $worker);
+    function setWorker(DeprecatedWorker $worker);
 
     /**
      * Seperates the job execution context from the worker and calls $worker->perform($job).

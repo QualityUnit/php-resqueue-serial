@@ -3,7 +3,7 @@
 namespace ResqueSerial\Failure;
 
 use Resque;
-use Resque_Stat;
+use ResqueSerial\Stats;
 use stdClass;
 
 /**
@@ -33,7 +33,7 @@ class RedisFailure implements IFailure {
         $data->queue = $queue;
         $data = json_encode($data);
         Resque::redis()->rpush('failed', $data);
-        Resque_Stat::incr('failed');
-        Resque_Stat::incr('failed:' . (string)$worker);
+        Stats::incr('failed');
+        Stats::incr('failed:' . (string)$worker);
     }
 }

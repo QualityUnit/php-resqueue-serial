@@ -1,9 +1,11 @@
 #!/usr/bin/env php
 <?php
 
+use ResqueSerial\Redis;
+
 require_once 'bootstrap.php';
 
-Resque_Redis::prefix(ResqueSerial::VERSION);
+Redis::prefix(ResqueSerial::VERSION);
 
 $proc = new \ResqueSerial\Init\Process();
 

@@ -4,8 +4,8 @@ namespace ResqueSerial\JobStrategy;
 
 use Exception;
 use Resque;
-use Resque_Worker;
 use ResqueSerial\Job\DirtyExitException;
+use ResqueSerial\DeprecatedWorker;
 use ResqueSerial\ResqueJob;
 
 /**
@@ -23,16 +23,16 @@ class Fork extends InProcess {
     protected $child;
 
     /**
-     * @var Resque_Worker Instance of Resque_Worker that is starting jobs
+     * @var DeprecatedWorker Instance of Resque_Worker that is starting jobs
      */
     protected $worker;
 
     /**
      * Set the Resque_Worker instance
      *
-     * @param Resque_Worker $worker
+     * @param DeprecatedWorker $worker
      */
-    public function setWorker(Resque_Worker $worker) {
+    public function setWorker(DeprecatedWorker $worker) {
         $this->worker = $worker;
     }
 

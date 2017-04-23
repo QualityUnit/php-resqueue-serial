@@ -2,7 +2,7 @@
 
 namespace ResqueSerial\Task;
 
-use Resque_Worker;
+use ResqueSerial\DeprecatedWorker;
 use ResqueSerial\ResqueJob;
 
 /**
@@ -11,7 +11,7 @@ use ResqueSerial\ResqueJob;
  * @property mixed[] args
  * @property string queue
  * @property ResqueJob job
- * @property Resque_Worker worker
+ * @property DeprecatedWorker worker
  */
 interface ITask {
     /**

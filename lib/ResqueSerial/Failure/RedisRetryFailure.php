@@ -7,6 +7,7 @@ namespace ResqueSerial\Failure;
 use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Log;
 use ResqueSerial\ResqueJob;
+use ResqueSerial\Stats;
 
 class RedisRetryFailure implements IFailure {
 
@@ -37,12 +38,12 @@ class RedisRetryFailure implements IFailure {
         $data = json_encode($data);
 
         if ($retried_by !== null) {
-            \Resque_Stat::incr('retries');
-            \Resque_Stat::incr('retries:' . (string)$worker);
+            Stats::incr('retries');
+            Stats::incr('retries:' . (string)$worker);
             \Resque::redis()->rpush('retries', $data);
         } else {
-            \Resque_Stat::incr('failed');
-            \Resque_Stat::incr('failed:' . (string)$worker);
+            Stats::incr('failed');
+            Stats::incr('failed:' . (string)$worker);
             \Resque::redis()->rpush('failed', $data);
         }
     }

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ResqueSerial;
+namespace ResqueSerial\Exception;
 
 
 class ForkException extends \Exception {

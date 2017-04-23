@@ -4,8 +4,6 @@
 namespace ResqueSerial;
 
 
-use Resque_Stat;
-
 trait WorkerImageTrait {
 
     /** @var string */
@@ -59,7 +57,7 @@ trait WorkerImageTrait {
      * @return $this
      */
     public function clearStat($stat) {
-        Resque_Stat::clear("$stat:" . $this->id);
+        Stats::clear("$stat:" . $this->id);
         return $this;
     }
 
@@ -97,7 +95,7 @@ trait WorkerImageTrait {
      * @return $this
      */
     public function incStat($stat) {
-        Resque_Stat::incr("$stat:" . $this->id);
+        Stats::incr("$stat:" . $this->id);
         return $this;
     }
 

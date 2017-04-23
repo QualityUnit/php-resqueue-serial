@@ -4,9 +4,7 @@ namespace ResqueSerial;
 
 use InvalidArgumentException;
 use Resque;
-use Resque_Event;
-use Resque_Exception;
-use Resque_Worker;
+use ResqueSerial\Exception\BaseException;
 use ResqueSerial\Job\DontPerformException;
 use ResqueSerial\Job\Status;
 use ResqueSerial\Task\ITask;
@@ -27,7 +25,7 @@ class ResqueJob {
     public $queue;
 
     /**
-     * @var Resque_Worker Instance of the Resque worker running this job.
+     * @var DeprecatedWorker Instance of the Resque worker running this job.
      */
     public $worker;
 
@@ -150,7 +148,7 @@ class ResqueJob {
      * Get the instantiated object for this job that will be performing work.
      *
      * @return ITask Instance of the object that this job belongs to.
-     * @throws Resque_Exception
+     * @throws BaseException
      */
     public function getInstance() {
         if (!is_null($this->instance)) {
@@ -169,11 +167,11 @@ class ResqueJob {
      * associated with the job with the supplied arguments.
      *
      * @return bool
-     * @throws Resque_Exception When the job's class could not be found or it does not contain a perform method.
+     * @throws BaseException When the job's class could not be found or it does not contain a perform method.
      */
     public function perform() {
         try {
-            Resque_Event::trigger('beforePerform', $this);
+            EventBus::trigger('beforePerform', $this);
 
             $instance = $this->getInstance();
             if (method_exists($instance, 'setUp')) {
@@ -186,7 +184,7 @@ class ResqueJob {
                 $instance->tearDown();
             }
 
-            Resque_Event::trigger('afterPerform', $this);
+            EventBus::trigger('afterPerform', $this);
         } // beforePerform/setUp have said don't perform this job. Return.
         catch (DontPerformException $e) {
             return false;
@@ -201,7 +199,7 @@ class ResqueJob {
      * @param $exception
      */
     public function fail($exception) {
-        Resque_Event::trigger('onFailure', array(
+        EventBus::trigger('onFailure', array(
                 'exception' => $exception,
                 'job' => $this,
         ));

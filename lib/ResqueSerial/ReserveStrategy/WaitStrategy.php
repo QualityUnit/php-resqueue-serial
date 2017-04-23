@@ -4,12 +4,12 @@
 namespace ResqueSerial\ReserveStrategy;
 
 use Psr;
-use Resque_Worker;
+use ResqueSerial\DeprecatedWorker;
 
 class WaitStrategy implements IReserveStrategy {
 
     /**
-     * @var Resque_Worker
+     * @var DeprecatedWorker
      */
     private $worker;
     /**
@@ -24,9 +24,9 @@ class WaitStrategy implements IReserveStrategy {
     /**
      * Resque_Queue_WaitStrategy constructor.
      *
-     * @param Resque_Worker $worker
+     * @param DeprecatedWorker $worker
      */
-    public function __construct(Resque_Worker $worker, $interval, $blocking) {
+    public function __construct(DeprecatedWorker $worker, $interval, $blocking) {
         $this->worker = $worker;
         $this->interval = $interval;
         $this->blocking = $blocking;

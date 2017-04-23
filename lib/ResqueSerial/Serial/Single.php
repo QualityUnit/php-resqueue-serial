@@ -5,15 +5,17 @@ namespace ResqueSerial\Serial;
 
 
 use Resque;
-use Resque_Event;
-use Resque_Stat;
+use ResqueSerial\DeprecatedWorker;
+use ResqueSerial\EventBus;
+use ResqueSerial\Job\DirtyExitException;
 use ResqueSerial\Job\Status;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
 use ResqueSerial\ResqueJob;
+use ResqueSerial\Stats;
 
-class Single extends \Resque_Worker implements IWorker {
+class Single extends DeprecatedWorker implements IWorker {
 
     /** @var bool */
     private $isParallel;
@@ -32,7 +34,7 @@ class Single extends \Resque_Worker implements IWorker {
 
     public function doneWorking() {
         $this->currentJob = null;
-        Resque_Stat::incr('processed');
+        Stats::incr('processed');
         $this->image
                 ->incStat('processed')
                 ->clearState();
@@ -69,7 +71,7 @@ class Single extends \Resque_Worker implements IWorker {
 
     public function unregisterWorker() {
         if (is_object($this->currentJob)) {
-            $this->currentJob->fail(new \ResqueSerial\Job\DirtyExitException);
+            $this->currentJob->fail(new DirtyExitException);
         }
 
         if ($this->isParallel && function_exists('pcntl_signal')) {
@@ -120,7 +122,7 @@ class Single extends \Resque_Worker implements IWorker {
         }
 
         Resque::redis()->incr(Key::serialCompletedCount($job->queue));
-        Resque_Event::trigger(SerialWorker::RECOMPUTE_CONFIG_EVENT, $this);
+        EventBus::trigger(SerialWorker::RECOMPUTE_CONFIG_EVENT, $this);
     }
 
     protected function startup() {

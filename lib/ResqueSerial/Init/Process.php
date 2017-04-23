@@ -6,7 +6,7 @@ namespace ResqueSerial\Init;
 
 use Exception;
 use Resque;
-use Resque_Event;
+use ResqueSerial\EventBus;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
@@ -103,7 +103,7 @@ class Process {
                         $worker = new Worker(explode(',', $queue), $this->globalConfig);
                         $worker->setLogger($localLogger);
 
-                        Resque_Event::listen('reload', function (array $params) use ($queue) {
+                        EventBus::listen('reload', function (array $params) use ($queue) {
                             Log::initFromConfig(GlobalConfig::instance());
                             $localLogger = Log::prefix(getmypid() . "-worker-$queue");
                             Log::setLocal($localLogger);

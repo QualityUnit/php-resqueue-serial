@@ -4,7 +4,7 @@
 namespace ResqueSerial\JobStrategy;
 
 
-use ResqueSerial\ForkException;
+use ResqueSerial\Exception\ForkException;
 use ResqueSerial\Log;
 use ResqueSerial\ResqueJob;
 use ResqueSerial\Worker;

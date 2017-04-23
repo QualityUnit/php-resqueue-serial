@@ -5,6 +5,7 @@ namespace ResqueSerial\Init;
 
 
 use Psr\Log\LogLevel;
+use ResqueSerial\Redis;
 use Symfony\Component\Yaml\Yaml;
 
 class GlobalConfig {
@@ -28,8 +29,8 @@ class GlobalConfig {
     private $queues = [];
     private $logLevel = LogLevel::NOTICE;
     private $logPath = '/var/log/resque-serial.log';
-    private $redisHost = \Resque_Redis::DEFAULT_HOST;
-    private $redisPort = \Resque_Redis::DEFAULT_PORT;
+    private $redisHost = Redis::DEFAULT_HOST;
+    private $redisPort = Redis::DEFAULT_PORT;
 
     private $taskIncludePath = '/opt';
     private $path;

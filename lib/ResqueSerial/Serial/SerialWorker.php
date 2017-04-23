@@ -5,6 +5,7 @@ namespace ResqueSerial\Serial;
 
 
 use Psr\Log\LoggerInterface;
+use ResqueSerial\EventBus;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
@@ -82,7 +83,7 @@ class SerialWorker {
                 ->setStartedNow();
 
         $recompute = [$this, 'recompute'];
-        \Resque_Event::listen(self::RECOMPUTE_CONFIG_EVENT, $recompute);
+        EventBus::listen(self::RECOMPUTE_CONFIG_EVENT, $recompute);
 
         // do work
         $this->state = $this->changeStateFromConfig();
@@ -112,7 +113,7 @@ class SerialWorker {
         }
 
         // unregister
-        \Resque_Event::stopListening(self::RECOMPUTE_CONFIG_EVENT, $recompute);
+        EventBus::stopListening(self::RECOMPUTE_CONFIG_EVENT, $recompute);
         WorkerImage::fromId($this->image->getParent())->removeSerialWorker($this->getId());
         $this->image
                 ->clearParent()

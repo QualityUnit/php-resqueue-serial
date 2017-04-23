@@ -4,6 +4,8 @@
 namespace ResqueSerial;
 
 
+use ResqueSerial\Redis;
+
 class QueueLock {
 
     const DEFAULT_TIME = 5000;
@@ -50,7 +52,7 @@ LUA;
         }
         $response = \Resque::redis()->eval(
                 self::ACQUIRE_SCRIPT,
-                [\Resque_Redis::getPrefix() . $this->lockKey],
+                [Redis::getPrefix() . $this->lockKey],
                 [$this->lockValue, $time]
         );
         if (!$response) {
@@ -63,7 +65,7 @@ LUA;
     public function release() {
         $response = \Resque::redis()->eval(
                 self::RELEASE_SCRIPT,
-                [\Resque_Redis::getPrefix() . $this->lockKey],
+                [Redis::getPrefix() . $this->lockKey],
                 [$this->lockValue]
         );
         if (!$response) {

@@ -2,7 +2,7 @@
 
 namespace ResqueSerial\JobStrategy;
 
-use Resque_Worker;
+use ResqueSerial\DeprecatedWorker;
 use ResqueSerial\ResqueJob;
 
 /**
@@ -15,16 +15,16 @@ use ResqueSerial\ResqueJob;
  */
 class InProcess implements IJobStrategy {
     /**
-     * @var Resque_Worker
+     * @var DeprecatedWorker
      */
     protected $worker;
 
     /**
      * Set the Resque_Worker instance
      *
-     * @param Resque_Worker $worker
+     * @param DeprecatedWorker $worker
      */
-    public function setWorker(Resque_Worker $worker) {
+    public function setWorker(DeprecatedWorker $worker) {
         $this->worker = $worker;
     }
 

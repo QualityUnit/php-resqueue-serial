@@ -1,4 +1,5 @@
 <?php
+use ResqueSerial\Redis;
 use ResqueSerial\Task\RunApplicationTask;
 
 require_once '/home/dmolnar/work/qu/php-resqueue-serial/vendor/autoload.php';
@@ -7,7 +8,7 @@ require_once 'shared.php';
 
 Resque::setBackend("localhost:6379");
 
-Resque_Redis::prefix(ResqueSerial::VERSION);
+Redis::prefix(ResqueSerial::VERSION);
 
 unlink('/tmp/serialjob.txt');
 

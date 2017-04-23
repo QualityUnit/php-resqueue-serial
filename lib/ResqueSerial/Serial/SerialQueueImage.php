@@ -5,8 +5,9 @@ namespace ResqueSerial\Serial;
 
 
 use ResqueSerial\Key;
-use ResqueSerial\QueueLock;
 use ResqueSerial\Log;
+use ResqueSerial\QueueLock;
+use ResqueSerial\Redis;
 
 class SerialQueueImage {
 
@@ -38,7 +39,7 @@ class SerialQueueImage {
      */
     public static function all() {
         $keys = \Resque::redis()->keys(Key::serialQueue('*'));
-        $prefix = \Resque_Redis::getPrefix() . Key::serialQueue('');
+        $prefix = Redis::getPrefix() . Key::serialQueue('');
         return new __QueueIterator($keys, strlen($prefix));
     }
 
