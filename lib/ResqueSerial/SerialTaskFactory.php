@@ -4,7 +4,7 @@
 namespace ResqueSerial;
 
 
-use Resque_Task;
+use ResqueSerial\Task\ITask;
 
 class SerialTaskFactory implements \Resque_Task_FactoryInterface {
 
@@ -29,7 +29,7 @@ class SerialTaskFactory implements \Resque_Task_FactoryInterface {
      * @param array $args
      * @param $queue
      *
-     * @return Resque_Task
+     * @return ITask
      * @throws \Exception
      */
     public function create($className, $args, $queue) {

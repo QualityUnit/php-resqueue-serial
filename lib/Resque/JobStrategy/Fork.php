@@ -1,4 +1,7 @@
 <?php
+use ResqueSerial\Job\DirtyExitException;
+use ResqueSerial\ResqueJob;
+
 /**
  * Seperates the job execution environment from the worker via pcntl_fork
  *
@@ -32,9 +35,9 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
 	/**
 	 * Seperate the job from the worker via pcntl_fork
 	 *
-	 * @param Resque_Job $job
+	 * @param ResqueJob $job
 	 */
-	public function perform(Resque_Job $job)
+	public function perform(ResqueJob $job)
 	{
 		$this->child = Resque::fork();
 
@@ -59,7 +62,7 @@ class Resque_JobStrategy_Fork extends Resque_JobStrategy_InProcess
 			pcntl_wait($status);
 			$exitStatus = pcntl_wexitstatus($status);
 			if($exitStatus !== 0) {
-				$job->fail(new Resque_Job_DirtyExitException(
+				$job->fail(new DirtyExitException(
 					'Job exited with exit code ' . $exitStatus
 				));
 			}

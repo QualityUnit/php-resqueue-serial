@@ -6,11 +6,12 @@ namespace ResqueSerial\Failure;
 
 use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Log;
+use ResqueSerial\ResqueJob;
 
 class RedisRetryFailure implements IFailure {
 
     public function __construct($payload, $exception, $worker, $queue) {
-        $job = new \Resque_Job($queue, $payload);
+        $job = new ResqueJob($queue, $payload);
 
         $retried_by = null;
         $retry_text = null;

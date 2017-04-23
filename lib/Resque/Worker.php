@@ -1,5 +1,8 @@
 <?php
 declare(ticks = 1);
+use ResqueSerial\Job\DirtyExitException;
+use ResqueSerial\Job\Status;
+use ResqueSerial\ResqueJob;
 
 /**
  * Resque worker that handles checking queues for jobs, fetching them
@@ -42,7 +45,7 @@ class Resque_Worker
 	private $id;
 
 	/**
-	 * @var Resque_Job Current job, if any, being processed by this worker.
+	 * @var ResqueJob Current job, if any, being processed by this worker.
 	 */
 	protected $currentJob = null;
 
@@ -212,9 +215,9 @@ class Resque_Worker
 	/**
 	 * Process a single job.
 	 *
-	 * @param Resque_Job $job The job to be processed.
+	 * @param ResqueJob $job The job to be processed.
 	 */
-	public function perform(Resque_Job $job)
+	public function perform(ResqueJob $job)
 	{
 		try {
 			Resque_Event::trigger('afterFork', $job);
@@ -226,14 +229,15 @@ class Resque_Worker
 			return;
 		}
 
-		$job->updateStatus(Resque_Job_Status::STATUS_COMPLETE);
+		$job->updateStatus(Status::STATUS_COMPLETE);
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, '{job} has finished', array('job' => $job));
 	}
 
 	/**
 	 * @param  bool $blocking
 	 * @param  int $timeout
-	 * @return Resque_Job|false Instance of Resque_Job if a job is found, false if not.
+	 *
+	 * @return ResqueJob|false Instance of Resque Job if a job is found, false if not.
 	 */
 	public function reserveInternal($blocking, $timeout = null)
 	{
@@ -254,7 +258,7 @@ class Resque_Worker
 	}
 
 	/**
-	 * @return Resque_Job|false Instance of Resque_Job if a job is found, false if not.
+	 * @return ResqueJob|false Instance of Resque Job if a job is found, false if not.
 	 */
 	public function reserve() {
 		return $this->reserveInternal(false);
@@ -262,7 +266,8 @@ class Resque_Worker
 
 	/**
 	 * @param  int $timeout
-	 * @return Resque_Job|false Instance of Resque_Job if a job is found, false if not.
+	 *
+	 * @return ResqueJob|false Instance of Resque Job if a job is found, false if not.
 	 */
 	public function reserveBlocking($timeout = null) {
 		return $this->reserveInternal(true, $timeout);
@@ -299,9 +304,9 @@ class Resque_Worker
 	}
 
 	/**
-	 * @param Resque_Job $job
+	 * @param ResqueJob $job
 	 */
-	protected function processJob(Resque_Job $job) {
+	protected function processJob(ResqueJob $job) {
 		$this->logger->log(Psr\Log\LogLevel::NOTICE, 'Starting work on {job}', array('job' => $job));
 		Resque_Event::trigger('beforeFork', $job);
 		$this->workingOn($job);
@@ -467,7 +472,7 @@ class Resque_Worker
 	public function unregisterWorker()
 	{
 		if(is_object($this->currentJob)) {
-			$this->currentJob->fail(new Resque_Job_DirtyExitException);
+			$this->currentJob->fail(new DirtyExitException);
 		}
 
 		$id = (string)$this;
@@ -481,13 +486,13 @@ class Resque_Worker
 	/**
 	 * Tell Redis which job we're currently working on.
 	 *
-	 * @param Resque_Job $job Resque_Job instance containing the job we're working on.
+	 * @param ResqueJob $job Resque Job instance containing the job we're working on.
 	 */
-	public function workingOn(Resque_Job $job)
+	public function workingOn(ResqueJob $job)
 	{
 		$job->worker = $this;
 		$this->currentJob = $job;
-		$job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
+		$job->updateStatus(Status::STATUS_RUNNING);
 		$data = json_encode(array(
 			'queue' => $job->queue,
 			'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),

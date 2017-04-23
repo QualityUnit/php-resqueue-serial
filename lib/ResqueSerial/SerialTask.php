@@ -5,8 +5,9 @@ namespace ResqueSerial;
 
 
 use ResqueSerial\Serial\SerialWorker;
+use ResqueSerial\Task\ITask;
 
-class SerialTask implements \Resque_Task {
+class SerialTask implements ITask {
     const ARG_SERIAL_QUEUE = "serialQueue";
 
     /**

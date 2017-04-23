@@ -4,10 +4,10 @@
 namespace ResqueSerial\JobStrategy;
 
 
-use Resque_Job;
 use Resque_JobStrategy_InProcess;
 use ResqueSerial\ForkException;
 use ResqueSerial\Log;
+use ResqueSerial\ResqueJob;
 use ResqueSerial\Worker;
 use RuntimeException;
 
@@ -25,10 +25,11 @@ class Serial extends Resque_JobStrategy_InProcess {
     /**
      * Separates the job execution context from the worker and calls $worker->perform($job).
      *
-     * @param Resque_Job $job
+     * @param ResqueJob $job
+     *
      * @throws ForkException
      */
-    function perform(Resque_Job $job) {
+    function perform(ResqueJob $job) {
         try {
             $child = \Resque::fork();
         } catch (RuntimeException $e) {

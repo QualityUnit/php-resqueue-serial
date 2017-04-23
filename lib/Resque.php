@@ -1,4 +1,7 @@
 <?php
+use ResqueSerial\Job\DontCreateException;
+use ResqueSerial\ResqueJob;
+
 /**
  * Base Resque class.
  *
@@ -229,11 +232,11 @@ class Resque
 		try {
 			Resque_Event::trigger('beforeEnqueue', $hookParams);
 		}
-		catch(Resque_Job_DontCreate $e) {
+		catch(DontCreateException $e) {
 			return false;
 		}
 
-		Resque_Job::create($queue, $class, $args, $trackStatus, $id);
+		ResqueJob::create($queue, $class, $args, $trackStatus, $id);
 		Resque_Event::trigger('afterEnqueue', $hookParams);
 
 		return $id;

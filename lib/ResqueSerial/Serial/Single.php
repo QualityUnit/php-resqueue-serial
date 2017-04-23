@@ -6,12 +6,12 @@ namespace ResqueSerial\Serial;
 
 use Resque;
 use Resque_Event;
-use Resque_Job;
-use Resque_Job_Status;
 use Resque_Stat;
+use ResqueSerial\Job\Status;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
 use ResqueSerial\QueueLock;
+use ResqueSerial\ResqueJob;
 
 class Single extends \Resque_Worker implements IWorker {
 
@@ -69,7 +69,7 @@ class Single extends \Resque_Worker implements IWorker {
 
     public function unregisterWorker() {
         if (is_object($this->currentJob)) {
-            $this->currentJob->fail(new \Resque_Job_DirtyExitException);
+            $this->currentJob->fail(new \ResqueSerial\Job\DirtyExitException);
         }
 
         if ($this->isParallel && function_exists('pcntl_signal')) {
@@ -94,10 +94,10 @@ class Single extends \Resque_Worker implements IWorker {
         }
     }
 
-    public function workingOn(Resque_Job $job) {
+    public function workingOn(ResqueJob $job) {
         $job->worker = $this;
         $this->currentJob = $job;
-        $job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
+        $job->updateStatus(Status::STATUS_RUNNING);
         $data = json_encode(array(
                 'queue' => $job->queue,
                 'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
@@ -110,7 +110,7 @@ class Single extends \Resque_Worker implements IWorker {
         $this->reserveStrategy = new TerminateStrategy($this, 1, $this->isParallel);
     }
 
-    protected function processJob(Resque_Job $job) {
+    protected function processJob(ResqueJob $job) {
         if (!$this->acquireLock()) {
             $job->worker = $this;
             $job->fail(new \Exception("Unable to acquire queue lock"));

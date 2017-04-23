@@ -6,12 +6,11 @@ namespace ResqueSerial;
 
 use Psr\Log\LogLevel;
 use Resque_Event;
-use Resque_Job;
-use Resque_Job_DirtyExitException;
-use Resque_Job_Status;
 use Resque_Stat;
 use ResqueSerial\Init\GlobalConfig;
 use ResqueSerial\Init\WorkerConfig;
+use ResqueSerial\Job\DirtyExitException;
+use ResqueSerial\Job\Status;
 use ResqueSerial\JobStrategy\Serial;
 use ResqueSerial\Serial\SerialQueueImage;
 
@@ -68,7 +67,7 @@ class Worker extends \Resque_Worker {
 
     public function unregisterWorker() {
         if (is_object($this->currentJob)) {
-            $this->currentJob->fail(new Resque_Job_DirtyExitException);
+            $this->currentJob->fail(new DirtyExitException);
         }
 
         $this->image
@@ -88,10 +87,10 @@ class Worker extends \Resque_Worker {
         }
     }
 
-    public function workingOn(Resque_Job $job) {
+    public function workingOn(ResqueJob $job) {
         $job->worker = $this;
         $this->currentJob = $job;
-        $job->updateStatus(Resque_Job_Status::STATUS_RUNNING);
+        $job->updateStatus(Status::STATUS_RUNNING);
         $data = json_encode(array(
                 'queue' => $job->queue,
                 'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y'),
@@ -108,7 +107,7 @@ class Worker extends \Resque_Worker {
     /**
      * @param $job
      */
-    protected function processJob(Resque_Job $job) {
+    protected function processJob(ResqueJob $job) {
         if (!$this->isJobSerial($job)) {
             parent::processJob($job);
 
@@ -170,11 +169,11 @@ class Worker extends \Resque_Worker {
     }
 
     /**
-     * @param Resque_Job $job
+     * @param ResqueJob $job
      *
      * @return bool
      */
-    private function isJobSerial(Resque_Job $job) {
+    private function isJobSerial(ResqueJob $job) {
         if ($job == null) {
             return false;
         }

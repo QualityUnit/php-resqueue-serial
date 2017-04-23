@@ -1,6 +1,8 @@
 <?php
 
 
+use ResqueSerial\ResqueJob;
+
 class Resque_Queue {
 
     /** @var string[] */
@@ -18,10 +20,10 @@ class Resque_Queue {
 
     /**
      * Find the next available job from the specified queues using blocking list pop
-     * and return an instance of Resque_Job for it.
+     * and return an instance of Resque Job for it.
      *
      * @param int               $timeout
-     * @return false|object Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+     * @return false|object Null when there aren't any waiting jobs, instance of Resque Job when a job was found.
      */
     public function blockingPop($timeout = null)
 	{
@@ -31,7 +33,7 @@ class Resque_Queue {
             return false;
         }
 
-        return new Resque_Job($item['queue'], $item['payload']);
+        return new ResqueJob($item['queue'], $item['payload']);
     }
 
 	public function count() {
@@ -47,9 +49,9 @@ class Resque_Queue {
 
 	/**
 	 * Find the next available job from the specified queue and return an
-	 * instance of Resque_Job for it.
+	 * instance of Resque Job for it.
 	 *
-	 * @return false|Resque_Job Null when there aren't any waiting jobs, instance of Resque_Job when a job was found.
+	 * @return false|ResqueJob Null when there aren't any waiting jobs, instance of Resque Job when a job was found.
 	 */
     public function pop()
 	{
@@ -59,7 +61,7 @@ class Resque_Queue {
 				continue;
 			}
 
-			return new Resque_Job($queue, $payload);
+			return new ResqueJob($queue, $payload);
 		}
 
 		return false;

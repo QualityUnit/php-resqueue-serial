@@ -2,6 +2,7 @@
 
 
 use ResqueSerial\Key;
+use ResqueSerial\ResqueJob;
 use ResqueSerial\Serial\SerialQueueImage;
 
 /**
@@ -46,7 +47,7 @@ class ResqueSerial {
                 $id
         );
 
-        Resque_Job::create(
+        ResqueJob::create(
                 $queue,
                 \ResqueSerial\SerialTaskFactory::SERIAL_CLASS,
                 $mainArgs,

@@ -1,4 +1,6 @@
 <?php
+use ResqueSerial\ResqueJob;
+
 /**
  * Runs the job in the same process as Resque_Worker
  *
@@ -27,9 +29,9 @@ class Resque_JobStrategy_InProcess implements Resque_JobStrategy_Interface
 	/**
 	 * Run the job in the worker process
 	 *
-	 * @param Resque_Job $job
+	 * @param ResqueJob $job
 	 */
-	public function perform(Resque_Job $job)
+	public function perform(ResqueJob $job)
 	{
 		$status = 'Processing ' . $job->queue . ' since ' . strftime('%F %T');
 		$this->worker->updateProcLine($status);

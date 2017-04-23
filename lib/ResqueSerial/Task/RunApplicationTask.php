@@ -6,7 +6,7 @@ namespace ResqueSerial\Task;
 
 use ResqueSerial\Init\GlobalConfig;
 
-class RunApplicationTask implements \Resque_Task {
+class RunApplicationTask implements ITask {
 
     // task class methods (static)
     const PERFORMER_GETTER = 'getPerformer';

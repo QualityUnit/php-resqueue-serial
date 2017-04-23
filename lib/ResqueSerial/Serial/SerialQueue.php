@@ -4,9 +4,9 @@
 namespace ResqueSerial\Serial;
 
 
-use Resque_Job;
 use ResqueSerial\Key;
 use ResqueSerial\Log;
+use ResqueSerial\ResqueJob;
 
 class SerialQueue extends \Resque_Queue {
 
@@ -18,7 +18,7 @@ class SerialQueue extends \Resque_Queue {
             return false;
         }
 
-        return new Resque_Job($queue, json_decode($item[1], true));
+        return new ResqueJob($queue, json_decode($item[1], true));
     }
 
     public function pop() {
@@ -34,6 +34,6 @@ class SerialQueue extends \Resque_Queue {
             return false;
         }
 
-        return new Resque_Job($queue, json_decode($item, true));
+        return new ResqueJob($queue, json_decode($item, true));
     }
 }

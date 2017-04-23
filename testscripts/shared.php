@@ -1,8 +1,9 @@
 <?php
 
 use ResqueSerial\Job;
+use ResqueSerial\Task\ITask;
 
-class La_Job_IndexTicket extends Job implements Resque_Task {
+class La_Job_IndexTicket extends Job implements ITask {
 
     private $arg;
 
@@ -50,7 +51,7 @@ class La_Job_IndexTicket extends Job implements Resque_Task {
     }
 }
 
-class __TestJob implements Resque_Task {
+class __TestJob implements ITask {
 
     private $arg;
 
@@ -63,7 +64,7 @@ class __TestJob implements Resque_Task {
     }
 }
 
-class __FailJob implements Resque_Task {
+class __FailJob implements ITask {
 
     private $arg;
 

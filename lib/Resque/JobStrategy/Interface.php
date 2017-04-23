@@ -1,4 +1,6 @@
 <?php
+use ResqueSerial\ResqueJob;
+
 /**
  * Interface that all job strategy backends should implement.
  *
@@ -19,9 +21,9 @@ interface Resque_JobStrategy_Interface
 	/**
 	 * Seperates the job execution context from the worker and calls $worker->perform($job).
 	 *
-	 * @param Resque_Job $job
+	 * @param ResqueJob $job
 	 */
-	function perform(Resque_Job $job);
+	function perform(ResqueJob $job);
 
 	/**
 	 * Force an immediate shutdown of the worker, killing any child jobs
