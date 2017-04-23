@@ -1,12 +1,13 @@
 <?php
 
 
-namespace ResqueSerial;
+namespace ResqueSerial\Task;
 
 
-use ResqueSerial\Task\ITask;
+use ResqueSerial\QueueLock;
+use ResqueSerial\Task;
 
-class SerialTaskFactory implements \Resque_Task_FactoryInterface {
+class SerialTaskFactory implements Task\ITaskFactory {
 
     const SERIAL_CLASS = '-serial-task';
 

@@ -13,6 +13,7 @@ use ResqueSerial\Job\DirtyExitException;
 use ResqueSerial\Job\Status;
 use ResqueSerial\JobStrategy\Serial;
 use ResqueSerial\Serial\SerialQueueImage;
+use ResqueSerial\Task\SerialTaskFactory;
 
 class Worker extends \Resque_Worker {
 

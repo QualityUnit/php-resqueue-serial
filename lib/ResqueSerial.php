@@ -30,7 +30,7 @@ class ResqueSerial {
         $subqueue = $serialQueue->generateSubqueueName($serialJob->getSecondarySerialId());
 
         $mainArgs = [
-                \ResqueSerial\SerialTask::ARG_SERIAL_QUEUE => $serialQueue->getQueue()
+                \ResqueSerial\Task\SerialTask::ARG_SERIAL_QUEUE => $serialQueue->getQueue()
         ];
 
         $serialArgs = array_merge($mainArgs, [
@@ -49,7 +49,7 @@ class ResqueSerial {
 
         ResqueJob::create(
                 $queue,
-                \ResqueSerial\SerialTaskFactory::SERIAL_CLASS,
+                \ResqueSerial\Task\SerialTaskFactory::SERIAL_CLASS,
                 $mainArgs,
                 $monitor,
                 $id

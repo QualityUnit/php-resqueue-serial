@@ -1,11 +1,12 @@
 <?php
 
 
-namespace ResqueSerial;
+namespace ResqueSerial\Task;
 
 
+use ResqueSerial\Log;
+use ResqueSerial\QueueLock;
 use ResqueSerial\Serial\SerialWorker;
-use ResqueSerial\Task\ITask;
 
 class SerialTask implements ITask {
     const ARG_SERIAL_QUEUE = "serialQueue";

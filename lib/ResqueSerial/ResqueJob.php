@@ -6,12 +6,12 @@ use InvalidArgumentException;
 use Resque;
 use Resque_Event;
 use Resque_Exception;
-use Resque_Task_Factory;
-use Resque_Task_FactoryInterface;
 use Resque_Worker;
 use ResqueSerial\Job\DontPerformException;
 use ResqueSerial\Job\Status;
 use ResqueSerial\Task\ITask;
+use ResqueSerial\Task\ITaskFactory;
+use ResqueSerial\Task\TaskFactory;
 
 /**
  * Resque job.
@@ -42,7 +42,7 @@ class ResqueJob {
     private $instance;
 
     /**
-     * @var Resque_Task_FactoryInterface
+     * @var ITaskFactory
      */
     private $taskFactory;
 
@@ -258,22 +258,22 @@ class ResqueJob {
     }
 
     /**
-     * @param Resque_Task_FactoryInterface $taskFactory
+     * @param ITaskFactory $taskFactory
      *
      * @return ResqueJob
      */
-    public function setTaskFactory(Resque_Task_FactoryInterface $taskFactory) {
+    public function setTaskFactory(ITaskFactory $taskFactory) {
         $this->taskFactory = $taskFactory;
 
         return $this;
     }
 
     /**
-     * @return Resque_Task_FactoryInterface
+     * @return ITaskFactory
      */
     public function getTaskFactory() {
         if ($this->taskFactory === null) {
-            $this->taskFactory = new Resque_Task_Factory();
+            $this->taskFactory = new TaskFactory();
         }
 
         return $this->taskFactory;
