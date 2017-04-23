@@ -4,14 +4,13 @@
 namespace ResqueSerial\JobStrategy;
 
 
-use Resque_JobStrategy_InProcess;
 use ResqueSerial\ForkException;
 use ResqueSerial\Log;
 use ResqueSerial\ResqueJob;
 use ResqueSerial\Worker;
 use RuntimeException;
 
-class Serial extends Resque_JobStrategy_InProcess {
+class Serial extends InProcess {
 
     /**
      * NonBlockingFork constructor.

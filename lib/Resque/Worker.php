@@ -2,6 +2,11 @@
 declare(ticks = 1);
 use ResqueSerial\Job\DirtyExitException;
 use ResqueSerial\Job\Status;
+use ResqueSerial\JobStrategy\Fork;
+use ResqueSerial\JobStrategy\IJobStrategy;
+use ResqueSerial\JobStrategy\InProcess;
+use ResqueSerial\ReserveStrategy\IReserveStrategy;
+use ResqueSerial\ReserveStrategy\WaitStrategy;
 use ResqueSerial\ResqueJob;
 
 /**
@@ -50,12 +55,12 @@ class Resque_Worker
 	protected $currentJob = null;
 
 	/**
-	 * @var Resque_JobStrategy_Interface
+	 * @var IJobStrategy
 	 */
 	protected $jobStrategy = null;
 
 	/**
-	 * @var Resque_Queue_WaitStrategy
+	 * @var IReserveStrategy
 	 */
 	protected $reserveStrategy;
 
@@ -153,16 +158,16 @@ class Resque_Worker
 		$this->id = $this->hostname . ':'.getmypid() . ':' . implode(',', $this->queues);
 
 		if (function_exists('pcntl_fork')) {
-			$this->setJobStrategy(new Resque_JobStrategy_Fork);
+			$this->setJobStrategy(new Fork);
 		} else {
-			$this->setJobStrategy(new Resque_JobStrategy_InProcess);
+			$this->setJobStrategy(new InProcess);
 		}
 	}
 
     /**
      * Get the JobStrategy used to seperate the job execution context from the worker
      *
-     * @return Resque_JobStrategy_Interface
+     * @return IJobStrategy
      */
     public function getJobStrategy()
     {
@@ -170,11 +175,11 @@ class Resque_Worker
     }
 
     /**
-	 * Set the JobStrategy used to seperate the job execution context from the worker
-	 *
-	 * @param Resque_JobStrategy_Interface
-	 */
-	public function setJobStrategy(Resque_JobStrategy_Interface $jobStrategy)
+     * Set the JobStrategy used to seperate the job execution context from the worker
+     *
+     * @param IJobStrategy $jobStrategy
+     */
+	public function setJobStrategy(IJobStrategy $jobStrategy)
 	{
 		$this->jobStrategy = $jobStrategy;
 		$this->jobStrategy->setWorker($this);
@@ -300,7 +305,7 @@ class Resque_Worker
 	 * @param $blocking
 	 */
 	protected function initReserveStrategy($interval, $blocking) {
-		$this->reserveStrategy = new Resque_Queue_WaitStrategy($this, $interval, $blocking);
+		$this->reserveStrategy = new WaitStrategy($this, $interval, $blocking);
 	}
 
 	/**

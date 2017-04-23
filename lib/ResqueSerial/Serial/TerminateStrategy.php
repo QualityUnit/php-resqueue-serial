@@ -4,10 +4,10 @@
 namespace ResqueSerial\Serial;
 
 
-use Resque_Queue_EmptyQueueStrategy;
 use Resque_Worker;
+use ResqueSerial\ReserveStrategy\IReserveStrategy;
 
-class TerminateStrategy implements Resque_Queue_EmptyQueueStrategy {
+class TerminateStrategy implements IReserveStrategy {
     /**
      * @var Resque_Worker
      */
