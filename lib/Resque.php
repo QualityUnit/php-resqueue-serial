@@ -70,6 +70,17 @@ class Resque
 		return self::$redis;
 	}
 
+    public static function resetRedis() {
+        if(self::$redis === null) {
+            return;
+        }
+	    try {
+                self::$redis->quit();
+        } catch (Exception $ignore) {
+        }
+        self::$redis = null;
+    }
+
 	/**
 	 * fork() helper method for php-resque that handles issues PHP socket
 	 * and phpredis have with passing around sockets between child/parent
@@ -85,14 +96,16 @@ class Resque
 			return false;
 		}
 
-		// Close the connection to Redis before forking.
-		// This is a workaround for issues phpredis has.
-		self::$redis = null;
-
 		$pid = pcntl_fork();
 		if($pid === -1) {
 			throw new RuntimeException('Unable to fork child worker.');
 		}
+
+		if ($pid === 0) {
+            // Close the connection to Redis before forking.
+            // This is a workaround for issues phpredis has.
+            self::resetRedis();
+        }
 
 		return $pid;
 	}

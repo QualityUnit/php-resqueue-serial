@@ -48,6 +48,7 @@ class Fork extends InProcess {
         if ($this->child === 0) {
             try {
                 parent::perform($job);
+                Resque::resetRedis();
                 exit(0);
             } catch (Exception $e) {
                 $this->worker->logger->error("Failed to perform job $job", ['exception' => $e]);
