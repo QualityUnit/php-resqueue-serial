@@ -56,6 +56,10 @@ class DeprecatedWorker {
      * @var ResqueJob Current job, if any, being processed by this worker.
      */
     protected $currentJob = null;
+    /**
+     * @var int timestamp of current job processing start
+     */
+    protected $currentJobStart = 0;
 
     /**
      * @var IJobStrategy
@@ -483,6 +487,7 @@ class DeprecatedWorker {
     public function workingOn(ResqueJob $job) {
         $job->worker = $this;
         $this->currentJob = $job;
+        $this->currentJobStart = microtime(true);
         $job->updateStatus(Status::STATUS_RUNNING);
         $data = json_encode(array(
                 'queue' => $job->queue,
@@ -497,7 +502,15 @@ class DeprecatedWorker {
      * state and incrementing the job stats.
      */
     public function doneWorking() {
+        $job = $this->currentJob;
+        $jobStart = $this->currentJobStart;
         $this->currentJob = null;
+        $this->currentJobStart = 0;
+        if($jobStart > 0) {
+            $duration = floor((microtime(true) - $jobStart) * 1000);
+            QueueStats::incr($job->queue, 'processing_time', $duration);
+        }
+        QueueStats::incr($job->queue, 'processed');
         Stats::incr('processed');
         Stats::incr('processed:' . (string)$this);
         Resque::redis()->del('worker:' . (string)$this);

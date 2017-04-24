@@ -36,9 +36,20 @@ class Worker extends DeprecatedWorker {
     }
 
     public function doneWorking() {
-        $jobDone = $this->currentJob;
+        $job = $this->currentJob;
+        $jobStart = $this->currentJobStart;
         $this->currentJob = null;
-        if (!$this->isJobSerial($jobDone)) {
+        $this->currentJobStart = 0;
+        $duration = 0;
+        if($jobStart > 0) {
+            $duration = floor((microtime(true) - $jobStart) * 1000);
+
+        }
+        if (!$this->isJobSerial($job)) {
+            if($duration > 0) {
+                QueueStats::incr($job->queue, 'processing_time', $duration);
+            }
+            QueueStats::incr($job->queue, "processed");
             Stats::incr('processed');
             $this->image->incStat('processed')->clearState();
         }
@@ -90,6 +101,7 @@ class Worker extends DeprecatedWorker {
     public function workingOn(ResqueJob $job) {
         $job->worker = $this;
         $this->currentJob = $job;
+        $this->currentJobStart = microtime(true);
         $job->updateStatus(Status::STATUS_RUNNING);
         $data = json_encode(array(
                 'queue' => $job->queue,
@@ -108,6 +120,10 @@ class Worker extends DeprecatedWorker {
      * @param $job
      */
     protected function processJob(ResqueJob $job) {
+        $timeQueued = floor((microtime(true) - $job->getQueueTime()) * 1000);
+        QueueStats::incr($job->queue, 'dequeued');
+        QueueStats::incr($job->queue, 'queue_time', $timeQueued);
+
         if (!$this->isJobSerial($job)) {
             parent::processJob($job);
 

@@ -12,19 +12,21 @@ Redis::prefix(ResqueSerial::VERSION);
 
 unlink('/tmp/serialjob.txt');
 
-//$i = 8;
-//while (true) {
-//    Resque::enqueue('example_queue', __TestJob::class, ['arg' => $i]);
-//    //$i = ($i + 1) % 6 + 6;
-//    sleep(4);
-//}
+$i = 0;
+while ($i < 1000) {
+    $i++;
+    Resque::enqueue('example_queue', __TestJob::class, ['arg' => $i]);
+    //$i = ($i + 1) % 6 + 6;
+    //sleep(4);
+//    usleep(5);
+}
 
 
 //Resque::enqueue('example_queue', __FailJob::class, ['arg' => 'test']);
 
 
-Resque::enqueue('example_queue', RunApplicationTask::class, [
-        'include_path' => 'something.php',
-        'job_args' => [],
-        'job_class' => '__ApplicationTask',
-]);
+//Resque::enqueue('example_queue', RunApplicationTask::class, [
+//        'include_path' => 'something.php',
+//        'job_args' => [],
+//        'job_class' => '__ApplicationTask',
+//]);

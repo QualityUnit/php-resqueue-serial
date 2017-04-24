@@ -145,6 +145,15 @@ class ResqueJob {
     }
 
     /**
+     * Returns queue time as micro time float.
+     *
+     * @return float micro time float
+     */
+    public function getQueueTime() {
+        return isset($this->payload['queue_time']) ? (int)$this->payload['queue_time'] : 0;
+    }
+
+    /**
      * Get the instantiated object for this job that will be performing work.
      *
      * @return ITask Instance of the object that this job belongs to.
