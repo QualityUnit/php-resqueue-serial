@@ -14,6 +14,8 @@ class WorkerConfig {
     private $maxSerialWorkers;
     /** @var int */
     private $maxSerialSubqueues;
+    /** @var int */
+    private $interval;
 
     public function __construct($data) {
         if (!$this->hasRequiredFields($data)) {
@@ -21,6 +23,7 @@ class WorkerConfig {
         }
         $this->workerCount = $data['worker_count'];
         $this->blocking = $data['blocking'];
+        $this->interval = $data['interval'];
         $serial = $data['serial'];
         $this->maxSerialSubqueues = $serial['max_subqueues'];
         $this->maxSerialWorkers = $serial['max_workers'];
@@ -30,32 +33,40 @@ class WorkerConfig {
      * @return bool
      */
     public function getBlocking() {
-        return $this->blocking;
+        return (bool)$this->blocking;
+    }
+
+    /**
+     * @return int
+     */
+    public function getInterval() {
+        return (int)$this->interval;
     }
 
     /**
      * @return int
      */
     public function getMaxSerialSubqueues() {
-        return $this->maxSerialSubqueues;
+        return (int)$this->maxSerialSubqueues;
     }
 
     /**
      * @return int
      */
     public function getMaxSerialWorkers() {
-        return $this->maxSerialWorkers;
+        return (int)$this->maxSerialWorkers;
     }
 
     /**
      * @return int
      */
     public function getWorkerCount() {
-        return $this->workerCount;
+        return (int)$this->workerCount;
     }
 
     /**
      * @param $data
+     *
      * @return bool
      */
     private function hasRequiredFields($data) {

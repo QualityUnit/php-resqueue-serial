@@ -21,6 +21,8 @@ queues:
         worker_count: 2
         # MANDATORY <BOOL>
         blocking: true
+        # MANDATORY <INT> (seconds)
+        interval: 3
         serial:
             # MANDATORY <INT>
             max_workers: 5

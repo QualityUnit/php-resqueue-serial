@@ -58,6 +58,7 @@ class Process {
             $this->logger->debug("====== Starting maintenance of queue $queue");
 
             $blocking = $workerConfig->getBlocking();
+            $interval = $workerConfig->getInterval();
             $maxSerialWorkers = $workerConfig->getMaxSerialWorkers();
 
             $livingWorkerCount = $this->cleanupWorkers($queue);
@@ -126,7 +127,7 @@ class Process {
                         }
 
                         $this->logger->notice("Starting worker $worker", array('worker' => $worker));
-                        $worker->work(Resque::DEFAULT_INTERVAL, $blocking);
+                        $worker->work($interval, $blocking);
                         exit();
                     } catch (Exception $e) {
                         $this->logger->error("Worker " . posix_getpid()
