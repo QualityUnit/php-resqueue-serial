@@ -1,7 +1,7 @@
 # default = notice
-log_level: debug
+log_level: notice
 # default = "/var/log/resque-serial.log"
-log_path: "/home/dmolnar/tmp/resque-serial.log"
+log_path: "/var/log/resque-serial.log"
 
 redis:
     # default = localhost
@@ -11,10 +11,12 @@ redis:
 
 task_include_path: "/opt/qu/qu/apps/versions/la/"
 
+# default = 3
+fail_retries: 3
+
 # MANDATORY
 queues:
     example_queue:
-        fail_retries: 3
         # MANDATORY <INT>
         worker_count: 2
         # MANDATORY <BOOL>
