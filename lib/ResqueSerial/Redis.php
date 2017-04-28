@@ -367,4 +367,10 @@ class Redis {
 
         return $string;
     }
+
+    public function close() {
+        if (method_exists($this->driver, 'close')) {
+            $this->driver->close();
+        }
+    }
 }

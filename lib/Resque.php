@@ -71,11 +71,11 @@ class Resque
 	}
 
     public static function resetRedis() {
-        if(self::$redis === null) {
+        if (self::$redis === null) {
             return;
         }
-	    try {
-                self::$redis->quit();
+        try {
+            self::$redis->close();
         } catch (Exception $ignore) {
         }
         self::$redis = null;
