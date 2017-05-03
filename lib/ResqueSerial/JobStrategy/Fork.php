@@ -47,6 +47,7 @@ class Fork extends InProcess {
         // Forked and we're the child. Run the job.
         if ($this->child === 0) {
             try {
+                $this->worker->unregisterSigHandlers(); // let task process use separate signal handlers
                 parent::perform($job);
                 Resque::resetRedis();
                 exit(0);
@@ -63,7 +64,7 @@ class Fork extends InProcess {
             $this->worker->logger->info($status);
 
             // Wait until the child process finishes before continuing
-            pcntl_wait($status);
+            pcntl_waitpid($this->child, $status);
             $exitStatus = pcntl_wexitstatus($status);
             if ($exitStatus !== 0) {
                 $job->fail(new DirtyExitException(

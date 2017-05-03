@@ -41,12 +41,12 @@ class Worker extends DeprecatedWorker {
         $this->currentJob = null;
         $this->currentJobStart = 0;
         $duration = 0;
-        if($jobStart > 0) {
+        if ($jobStart > 0) {
             $duration = floor((microtime(true) - $jobStart) * 1000);
 
         }
         if (!$this->isJobSerial($job)) {
-            if($duration > 0) {
+            if ($duration > 0) {
                 QueueStats::incr($job->queue, 'processing_time', $duration);
             }
             QueueStats::incr($job->queue, "processed");
@@ -74,6 +74,16 @@ class Worker extends DeprecatedWorker {
         $this->image
                 ->addToPool()
                 ->setStartedNow();
+    }
+
+    public function unregisterSigHandlers() {
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGTERM, SIG_DFL);
+            pcntl_signal(SIGINT, SIG_DFL);
+            pcntl_signal(SIGQUIT, SIG_DFL);
+            pcntl_signal(SIGHUP, SIG_DFL);
+            $this->logger->debug('Unregistered signals in ' . posix_getpid());
+        }
     }
 
     public function unregisterWorker() {

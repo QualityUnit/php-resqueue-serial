@@ -37,7 +37,7 @@ class Serial extends InProcess {
 
         // Forked and we're the child. Run the job.
         if ($child === 0) {
-
+            $this->worker->unregisterSigHandlers();
             $this->worker->logger = Log::prefix(getmypid() . '-serial-task');
             parent::perform($job);
             exit(0);
@@ -49,8 +49,6 @@ class Serial extends InProcess {
             $this->worker->updateProcLine($status);
             $this->worker->logger->info($status);
         }
-
-        
     }
 
     /**

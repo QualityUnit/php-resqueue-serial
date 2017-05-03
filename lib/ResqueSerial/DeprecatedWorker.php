@@ -372,6 +372,20 @@ class DeprecatedWorker {
         $this->logger->log(Psr\Log\LogLevel::DEBUG, 'Registered signals');
     }
 
+    public function unregisterSigHandlers() {
+        if (!function_exists('pcntl_signal')) {
+            return;
+        }
+
+        pcntl_signal(SIGTERM, SIG_DFL);
+        pcntl_signal(SIGINT, SIG_DFL);
+        pcntl_signal(SIGQUIT, SIG_DFL);
+        pcntl_signal(SIGUSR1, SIG_DFL);
+        pcntl_signal(SIGUSR2, SIG_DFL);
+        pcntl_signal(SIGCONT, SIG_DFL);
+        $this->logger->debug('Unregistered signals in ' . posix_getpid());
+    }
+
     /**
      * Signal handler callback for USR2, pauses processing of new jobs.
      */

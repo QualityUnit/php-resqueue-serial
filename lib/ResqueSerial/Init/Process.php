@@ -98,6 +98,7 @@ class Process {
                 }
 
                 if (!$pid) {
+                    $this->unregisterSigHandlers(); // do not keep handlers from main process in child
                     try {
                         $localLogger = Log::prefix(getmypid() . "-worker-$queue");
                         Log::setLocal($localLogger);
@@ -413,6 +414,7 @@ class Process {
         }
         try {
             if (Resque::fork() === 0) {
+                $this->unregisterSigHandlers(); // do not keep handlers from main process in child
                 $serialWorker = new SerialWorker($queueToStart, $lock);
                 Log::setLocal($serialWorker->getLogger());
                 $serialWorker->work($parent->getId());
@@ -423,5 +425,13 @@ class Process {
             $this->logger->error("Failed to start serial worker on $queueToStart. Error: "
                     . $e->getMessage());
         }
+    }
+
+    private function unregisterSigHandlers() {
+        pcntl_signal(SIGTERM, SIG_DFL);
+        pcntl_signal(SIGINT, SIG_DFL);
+        pcntl_signal(SIGQUIT, SIG_DFL);
+        pcntl_signal(SIGHUP, SIG_DFL);
+        pcntl_signal(SIGCHLD, SIG_DFL);
     }
 }
