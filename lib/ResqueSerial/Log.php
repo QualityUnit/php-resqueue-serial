@@ -97,9 +97,9 @@ class PrefixLogger extends AbstractLogger {
      * @param string $message
      * @param array $context
      *
-     * @return null
+     * @return void
      */
     public function log($level, $message, array $context = array()) {
-        return $this->logger->log($level, '[' . $this->prefix . '] ' . $message, $context);
+        $this->logger->log($level, '[' . $this->prefix . '] ' . $message, $context);
     }
 }
