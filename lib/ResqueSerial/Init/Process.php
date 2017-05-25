@@ -105,14 +105,13 @@ class Process {
                         $worker = new Worker(explode(',', $queue), $this->globalConfig);
                         $worker->setLogger($localLogger);
 
-                        EventBus::listen('reload', function (array $params) use ($queue) {
+                        EventBus::listen('reload', function ($worker) use ($queue) {
                             Log::initFromConfig(GlobalConfig::instance());
                             $localLogger = Log::prefix(getmypid() . "-worker-$queue");
                             Log::setLocal($localLogger);
 
                             /** @var Worker $worker */
-                            $worker = @$params[0];
-                            if ($worker !== null) {
+                            if ($worker != null) {
                                 $worker->setLogger($localLogger);
                             }
                         });
