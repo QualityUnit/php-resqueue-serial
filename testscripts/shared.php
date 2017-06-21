@@ -1,9 +1,9 @@
 <?php
 
-use ResqueSerial\Job;
-use ResqueSerial\Task\ITask;
+use Resque\Api\JobDescriptor;
+use Resque\Task\ITask;
 
-class La_Job_IndexTicket extends Job implements ITask {
+class __SerialJob extends JobDescriptor implements ITask {
 
     private $arg;
 
@@ -11,8 +11,8 @@ class La_Job_IndexTicket extends Job implements ITask {
      * @return bool
      */
     public function perform() {
-        usleep(4000000);
-        file_put_contents('/tmp/serialjob.txt', var_export($this->args, true) . "\n", FILE_APPEND);
+        usleep(400000);
+        file_put_contents('/tmp/serialjob.txt', var_export($this->job->getArgs(), true) . "\n", FILE_APPEND);
         return true;
     }
 
@@ -53,23 +53,29 @@ class La_Job_IndexTicket extends Job implements ITask {
 
 class __TestJob implements ITask {
 
-    private $arg;
+    /**
+     * @return bool
+     */
+    public function perform() {
+        return true;
+    }
+}
+
+class __SleepJob implements ITask {
 
     /**
      * @return bool
      */
     public function perform() {
-        sleep(@$this->args['arg']);
+        sleep(@$this->job->getArgs()['arg']);
         return true;
     }
 }
 
 class __FailJob implements ITask {
 
-    private $arg;
-
     public function perform() {
-        throw new Exception(@$this->args['arg']);
+        throw new Exception(@$this->job->getArgs()['arg']);
     }
 }
 
@@ -91,7 +97,7 @@ class __Pass__Perf {
     }
 
     public function perform() {
-        \ResqueSerial\Log::local()->notice("Performing job.");
+        \Resque\Log::notice("Performing job.");
     }
 }
 
@@ -104,4 +110,24 @@ class __ApplicationTask {
     public static function getRetryPerformer(array $args) {
         return new __Pass__Perf();
     }
+}
+
+class Descriptor extends JobDescriptor {
+
+    private $args;
+    private $class;
+
+    public function __construct($args, $class) {
+        $this->args = $args;
+        $this->class = $class;
+    }
+
+    public function getArgs() {
+        return $this->args;
+    }
+
+    public function getClass() {
+        return $this->class;
+    }
+
 }

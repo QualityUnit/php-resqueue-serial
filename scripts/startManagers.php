@@ -1,13 +1,17 @@
 #!/usr/bin/env php
 <?php
 
-use ResqueSerial\Redis;
-
 require_once 'bootstrap.php';
 
-Redis::prefix(ResqueSerial::VERSION);
+use Resque\Config\GlobalConfig;
+use Resque\Init\InitProcess;
+use Resque\Redis;
 
-$proc = new \ResqueSerial\Init\Process();
+$config = GlobalConfig::initialize('/etc/resque-serial/config.yml');
 
-$proc->start();
-$proc->maintain();
+Redis::prefix(Resque::VERSION);
+Resque::setBackend($config->getBackend());
+
+$process = new InitProcess();
+$process->start();
+$process->maintain();

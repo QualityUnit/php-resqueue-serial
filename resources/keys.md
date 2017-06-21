@@ -20,6 +20,13 @@ resque-v1:
     stat:retries: <retry_count>
     stat:retries:<worker_id>: <retry_count>
     
+    scheduler_pid:<hostname>: <pid>
+    
+    delayed:<timestamp>: <json_encoded JobImage>
+    delayed_queue_schedule: sorted_set(timestamp, timestamp)
+    
+    unique_list: hash(uniqueId, jobId)
+    
 resque-v1:serial:
     
     workers: set(worker_id)                                     # Reque-Serial workers

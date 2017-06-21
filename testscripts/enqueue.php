@@ -1,23 +1,21 @@
 <?php
 
-
-use ResqueSerial\Redis;
-
-require_once '/home/dmolnar/work/qu/php-resqueue-serial/vendor/autoload.php';
+require_once '../vendor/autoload.php';
 
 require_once 'shared.php';
 
-Redis::prefix(ResqueSerial::VERSION);
+use Resque\Config\GlobalConfig;
+use Resque\Init\InitProcess;
+use Resque\Redis;
+
+
+Redis::prefix(Resque::VERSION);
 
 unlink('/tmp/serialjob.txt');
 
-$PATH = __DIR__ . '/../resources/config.yml';
+GlobalConfig::initialize('./../resources/config.yml');
 
-if($PATH) {
-    \ResqueSerial\Init\GlobalConfig::$PATH = $PATH;
-}
-
-$proc = new \ResqueSerial\Init\Process();
+$proc = new InitProcess();
 
 $proc->start();
 $proc->maintain();

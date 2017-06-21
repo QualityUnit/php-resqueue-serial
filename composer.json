@@ -18,8 +18,8 @@
     },
     "autoload": {
         "psr-0": {
-            "Resque": "lib",
-            "ResqueSerial": "lib"
+            "ResqueSerial": "lib",
+            "Resque": "lib"
         }
     }
 }
