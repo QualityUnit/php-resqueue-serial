@@ -20,9 +20,9 @@ class RunApplicationTask implements ITask {
     }
 
     public function perform() {
-        list($applicationPath, $jobArgs, $taskClass) = $this->initializeArgs($this->job->getArgs());
+        list($version, $applicationPath, $jobArgs, $taskClass) = $this->initializeArgs($this->job->getArgs());
 
-        $this->includeApplication($applicationPath);
+        $this->includeApplication($version, $applicationPath);
 
         $this->checkTaskClass($taskClass);
 
@@ -71,10 +71,11 @@ class RunApplicationTask implements ITask {
     }
 
     /**
-     * @param $applicationPath
+     * @param string $version
+     * @param string $applicationPath
      */
-    private function includeApplication($applicationPath) {
-        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath()
+    private function includeApplication($version, $applicationPath) {
+        $fullPath = str_replace('{version}', $version, GlobalConfig::getInstance()->getTaskIncludePath())
                 . ltrim($applicationPath, '/');
         include_once $fullPath;
     }
@@ -86,10 +87,11 @@ class RunApplicationTask implements ITask {
      * @throws ApplicationTaskCreationException
      */
     private function initializeArgs(array $args) {
-        $applicationPath = @$args['include_path'];
-        $jobArgs = @$args['job_args'];
-        $taskClass = @$args['job_class'];
-        $environment = @$args['environment'];
+        $version = isset($args['version']) ? $args['version'] : null;
+        $applicationPath = isset($args['include_path']) ? $args['include_path'] : null;
+        $jobArgs = isset($args['job_args']) ? $args['job_args'] : null;
+        $taskClass = isset($args['job_class']) ? $args['job_class'] : null;
+        $environment = isset($args['environment']) ? $args['environment'] : null;
 
         if (is_array($environment)) {
             foreach ($environment as $key => $value) {
@@ -97,10 +99,10 @@ class RunApplicationTask implements ITask {
             }
         }
 
-        if ($applicationPath === null || !is_array($jobArgs) || $taskClass === null) {
+        if ($version === null || $applicationPath === null || !is_array($jobArgs) || $taskClass === null) {
             throw new ApplicationTaskCreationException("Job arguments incomplete.");
         }
 
-        return [$applicationPath, $jobArgs, $taskClass];
+        return [$version, $applicationPath, $jobArgs, $taskClass];
     }
 }
