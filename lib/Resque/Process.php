@@ -5,8 +5,8 @@ namespace Resque;
 
 
 class Process {
-
-    private static $prefix = "resque-unset";
+    /** @var string */
+    private static $prefix = null;
 
     /**
      * fork() helper method for php-resque that handles issues PHP socket
@@ -37,14 +37,18 @@ class Process {
     
     public static function setTitle($title) {
         if (function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
-            cli_set_process_title(self::$prefix . ": $title");
+            cli_set_process_title(self::getTitlePrefix() . ": $title");
         } else if (function_exists('setproctitle')) {
-            setproctitle(self::$prefix . ": $title");
+            setproctitle(self::getTitlePrefix() . ": $title");
         }
     }
 
     public static function setTitlePrefix($prefix) {
         self::$prefix = $prefix;
+    }
+
+    private static function getTitlePrefix() {
+        return \Resque::VERSION . '-' . (self::$prefix ? self::$prefix : 'resque-unset');
     }
 
     /**
