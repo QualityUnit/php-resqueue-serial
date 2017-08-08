@@ -21,7 +21,7 @@ class Scheduler {
     private $isShutDown = false;
 
     public function __construct() {
-        Process::setTitlePrefix('resque-scheduler');
+        Process::setTitlePrefix('scheduler');
     }
 
     public static function getLocalPid() {

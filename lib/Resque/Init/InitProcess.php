@@ -175,7 +175,7 @@ class InitProcess {
     }
 
     public function start() {
-        Process::setTitlePrefix("resque-init");
+        Process::setTitlePrefix("init");
         Process::setTitle("starting");
         $this->initialize();
         $this->recover();

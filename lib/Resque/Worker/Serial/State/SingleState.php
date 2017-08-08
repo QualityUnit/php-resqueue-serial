@@ -37,7 +37,7 @@ class SingleState extends WorkerBase implements ISerialWorkerState {
      */
     public function __construct(SerialQueueImage $queueImage, SerialWorkerImage $workerImage,
             QueueLock $lock) {
-        Process::setTitlePrefix('resque-serial-single');
+        Process::setTitlePrefix('serial-single');
 
         parent::__construct(
                 new SerialQueue($queueImage->getQueue()),

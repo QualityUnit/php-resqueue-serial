@@ -27,7 +27,7 @@ class StandardWorker extends WorkerBase {
      * @param string $queue
      */
     public function __construct($queue) {
-        Process::setTitlePrefix('resque-worker');
+        Process::setTitlePrefix('worker');
         $this->initLogger($queue);
 
         parent::__construct(

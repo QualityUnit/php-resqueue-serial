@@ -13,7 +13,7 @@ if($argc !== 2 || !file_exists($argv[1])) {
 
 $config = GlobalConfig::initialize($argv[1]);
 
-Redis::prefix(Resque::VERSION);
+Redis::prefix(Resque::VERSION_PREFIX);
 Resque::setBackend($config->getBackend());
 
 $process = new InitProcess();

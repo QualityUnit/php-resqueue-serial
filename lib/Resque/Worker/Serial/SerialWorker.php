@@ -33,7 +33,7 @@ class SerialWorker {
     private $stopping = false;
 
     public function __construct(SerialWorkerImage $image, $lock) {
-        Process::setTitlePrefix('resque-serial-worker');
+        Process::setTitlePrefix('serial-worker');
         $this->initLogger($image->getQueue());
         $this->queue = SerialQueueImage::fromName($image->getQueue());
         $this->lock = $lock;

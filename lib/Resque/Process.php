@@ -48,7 +48,7 @@ class Process {
     }
 
     private static function getTitlePrefix() {
-        return 'rq' . \Resque::VERSION . '-' . (self::$prefix ? self::$prefix : 'resque-unset');
+        return \Resque::VERSION_PREFIX . '-' . (self::$prefix ? self::$prefix : 'unset');
     }
 
     /**

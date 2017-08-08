@@ -40,7 +40,7 @@ class MultiState implements ISerialWorkerState {
      */
     public function __construct(SerialQueueImage $queueImage, SerialWorkerImage $workerImage,
             QueueLock $lock) {
-        Process::setTitlePrefix('resque-serial-multi');
+        Process::setTitlePrefix('serial-multi');
 
         $this->queue = $queueImage;
         $this->image = $workerImage;
@@ -105,7 +105,7 @@ class MultiState implements ISerialWorkerState {
         $childPid = Process::fork();
 
         if ($childPid === 0) { // IN CHILD
-            Process::setTitlePrefix("resque-serial-multi-{$this->image->getPid()}-sub$id");
+            Process::setTitlePrefix("serial-multi-{$this->image->getPid()}-sub$id");
             $this->initSubWorkerLogger($subQueue);
             $childImage = SerialWorkerImage::create($subQueue);
             $worker = new MultiStateWorker(
