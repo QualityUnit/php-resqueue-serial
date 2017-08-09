@@ -32,20 +32,20 @@ class MultiStateWorker extends WorkerBase {
      * @param QueueLock $lock
      */
     public function __construct(SerialQueue $queue, IStrategy $strategy, SerialWorkerImage $image,
-                                QueueLock $lock) {
+            QueueLock $lock) {
         parent::__construct($queue, $strategy, $image);
         $this->processor = new StandardProcessor();
         $this->lock = $lock;
-    }
-
-    public function shutdown() {
-        $this->isShutDown = true;
     }
 
     public function reload() {
         GlobalConfig::reload();
         Log::initialize(GlobalConfig::getInstance());
         Log::setLogger(Log::prefix($this->getImage()->getId()));
+    }
+
+    public function shutdown() {
+        $this->isShutDown = true;
     }
 
     public function work() {
@@ -75,10 +75,10 @@ class MultiStateWorker extends WorkerBase {
 
     private function registerSignalHandlers() {
         SignalHandler::instance()->unregisterAll()
-            ->register(SIGTERM, [$this, 'shutdown'])
-            ->register(SIGINT, [$this, 'shutdown'])
-            ->register(SIGQUIT, [$this, 'shutdown'])
-            ->register(SIGHUP, [$this, 'reload']);
+                ->register(SIGTERM, [$this, 'shutdown'])
+                ->register(SIGINT, [$this, 'shutdown'])
+                ->register(SIGQUIT, [$this, 'shutdown'])
+                ->register(SIGHUP, [$this, 'reload']);
     }
 
     private function unregisterSignalHandlers() {

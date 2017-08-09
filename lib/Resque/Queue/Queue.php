@@ -13,14 +13,19 @@ use Resque\Key;
 use Resque\Log;
 use Resque\ResqueImpl;
 use Resque\Stats;
+use Resque\Stats\QueueStats;
 use Resque\UniqueList;
 
 class Queue implements IJobSource {
 
+    /** @var string */
     private $name;
+    /** @var Stats */
+    private $stats;
 
     public function __construct($name) {
         $this->name = $name;
+        $this->stats = new QueueStats($name);
     }
 
     /**
@@ -44,6 +49,13 @@ class Queue implements IJobSource {
         $queuedJob->reportQueued();
 
         return $queuedJob;
+    }
+
+    /**
+     * @return Stats
+     */
+    public function getStats() {
+        return $this->stats;
     }
 
     /**
@@ -93,7 +105,7 @@ class Queue implements IJobSource {
 
     private function writeStats(QueuedJob $queuedJob) {
         $timeQueued = floor((microtime(true) - $queuedJob->getQueuedTime()) * 1000);
-        Stats::incQueue($this->name, 'queue_time', $timeQueued);
-        Stats::incQueue($this->name, 'dequeued');
+        $this->stats->incQueueTime($timeQueued);
+        $this->stats->incDequeued();
     }
 }

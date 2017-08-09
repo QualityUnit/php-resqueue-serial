@@ -14,14 +14,15 @@ use Resque\Queue\QueueLock;
 use Resque\Queue\SerialQueue;
 use Resque\Queue\SerialQueueImage;
 use Resque\SignalHandler;
+use Resque\Stats\SerialQueueStats;
 use Resque\Worker\Serial\SerialWorkerImage;
 use ResqueSerial\Resque\Worker\Serial\State\MultiStateStrategy;
 use ResqueSerial\Resque\Worker\Serial\State\MultiStateWorker;
 
 class MultiState implements ISerialWorkerState {
 
-    /** @var string */
-    private $queue;
+    /** @var SerialQueueImage */
+    private $queueImage;
     /** @var int[] */
     private $children = [];
     /** @var SerialWorkerImage */
@@ -42,7 +43,7 @@ class MultiState implements ISerialWorkerState {
             QueueLock $lock) {
         Process::setTitlePrefix('serial-multi');
 
-        $this->queue = $queueImage;
+        $this->queueImage = $queueImage;
         $this->image = $workerImage;
         $this->lock = $lock;
     }
@@ -93,23 +94,23 @@ class MultiState implements ISerialWorkerState {
 
     private function forkChildren() {
         //TODO: check if some workers already exist
-        $currentConfig = $this->queue->config()->getCurrent();
+        $currentConfig = $this->queueImage->config()->getCurrent();
         $queueCount = $currentConfig->getQueueCount();
         for ($i = 0; $i < $queueCount; $i++) {
-            $subQueue = $this->queue->getQueue() . $currentConfig->getQueuePostfix($i);
+            $subQueue = $this->queueImage->getSubQueue($currentConfig->getQueuePostfix($i));
             $this->forkSingleWorker($i, $subQueue);
         }
     }
 
-    private function forkSingleWorker($id, $subQueue) {
+    private function forkSingleWorker($id, SerialQueue $subQueue) {
         $childPid = Process::fork();
 
         if ($childPid === 0) { // IN CHILD
             Process::setTitlePrefix("serial-multi-{$this->image->getPid()}-sub$id");
-            $this->initSubWorkerLogger($subQueue);
-            $childImage = SerialWorkerImage::create($subQueue);
+            $this->initSubWorkerLogger($subQueue->toString());
+            $childImage = SerialWorkerImage::create($subQueue->toString());
             $worker = new MultiStateWorker(
-                    new SerialQueue($subQueue),
+                    $subQueue,
                     $this->resolveSubWorkerStrategy(),
                     $childImage,
                     $this->lock
@@ -134,13 +135,13 @@ class MultiState implements ISerialWorkerState {
      */
     private function resolveSubWorkerStrategy() {
         $workerConfig = GlobalConfig::getInstance()
-                ->getWorkerConfig($this->queue->getParentQueue());
+                ->getWorkerConfig($this->queueImage->getParentQueue());
         if ($workerConfig->getBlocking()) {
             $strategy = new BlockingStrategy($workerConfig->getInterval());
         } else {
             $strategy = new SleepStrategy($workerConfig->getInterval());
         }
 
-        return new MultiStateStrategy($strategy, $this->queue->config());
+        return new MultiStateStrategy($strategy, $this->queueImage->config());
     }
 }

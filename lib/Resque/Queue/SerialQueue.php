@@ -11,17 +11,23 @@ use Resque\Job\QueuedJob;
 use Resque\Job\SerialJobLink;
 use Resque\Key;
 use Resque\ResqueImpl;
+use Resque\Stats;
 
 class SerialQueue implements IJobSource {
 
+    /** @var string */
     private $name;
+    /** @var Stats */
+    private $stats;
 
-    public function __construct($name) {
+    public function __construct($name, Stats $stats) {
         $this->name = $name;
+        $this->stats = $stats;
     }
 
     /**
-     * @param Job $job\
+     * @param Job $job \
+     *
      * @return QueuedJob
      */
     public static function push(Job $job) {
@@ -36,7 +42,7 @@ class SerialQueue implements IJobSource {
 
         // push serial queue link to main queue if it's not already being worked on
         if (!$serialQueueImage->lockExists()) {
-            $serialLink = SerialJobLink::create($serialQueueImage->getQueue());
+            $serialLink = SerialJobLink::create($serialQueueImage->getQueueName());
             $queuedLink = new QueuedJob($serialLink, $queuedJob->getId());
             Resque::redis()->rpush(Key::queue($mainQueue), json_encode($queuedLink->toArray()));
         }
@@ -45,11 +51,18 @@ class SerialQueue implements IJobSource {
     }
 
     /**
+     * @return Stats
+     */
+    function getStats() {
+        return $this->stats;
+    }
+
+    /**
      * @inheritdoc
      */
     function popBlocking($timeout) {
         $payload = Resque::redis()->blpop(Key::serialQueue($this->name), $timeout);
-        if(!is_array($payload) || !isset($payload[1])) {
+        if (!is_array($payload) || !isset($payload[1])) {
             return null;
         }
 
@@ -59,6 +72,7 @@ class SerialQueue implements IJobSource {
         }
 
         $queuedJob = QueuedJob::fromArray($data);
+        $this->writeStats($queuedJob);
 
         return $queuedJob;
     }
@@ -73,6 +87,7 @@ class SerialQueue implements IJobSource {
         }
 
         $queuedJob = QueuedJob::fromArray($data);
+        $this->writeStats($queuedJob);
 
         return $queuedJob;
     }
@@ -82,5 +97,11 @@ class SerialQueue implements IJobSource {
      */
     public function toString() {
         return $this->name;
+    }
+
+    private function writeStats(QueuedJob $queuedJob) {
+        $timeQueued = floor((microtime(true) - $queuedJob->getQueuedTime()) * 1000);
+        $this->stats->incQueueTime($timeQueued);
+        $this->stats->incDequeued();
     }
 }

@@ -109,7 +109,7 @@ class SerialWorker {
 
         if ($current->getQueueCount() > 1) {
             for ($i = 0; $i < $current->getQueueCount(); $i++) {
-                $queue = $this->queue->getQueue() . $current->getQueuePostfix($i);
+                $queue = $this->queue->getQueueName() . $current->getQueuePostfix($i);
                 if (Resque::redis()->llen(Key::serialQueue($queue)) > 0) {
                     return false;
                 }
@@ -118,7 +118,7 @@ class SerialWorker {
             return true;
         }
 
-        return Resque::redis()->llen(Key::serialQueue($this->queue->getQueue())) == 0;
+        return Resque::redis()->llen(Key::serialQueue($this->queue->getQueueName())) == 0;
     }
 
     private function deinitializeWork() {

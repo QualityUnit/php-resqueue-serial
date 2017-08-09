@@ -6,6 +6,7 @@ use Resque;
 use Resque\Key;
 use Resque\Log;
 use Resque\Redis;
+use Resque\Stats;
 
 class SerialQueueImage {
 
@@ -73,7 +74,15 @@ class SerialQueueImage {
         return @$this->parts[0];
     }
 
+    /**
+     * @return SerialQueue
+     */
     public function getQueue() {
+        $stats = new Resque\Stats\QueueStats($this->getParentQueue());
+        return new SerialQueue($this->serialQueue, $stats);
+    }
+
+    public function getQueueName() {
         return $this->serialQueue;
     }
 
@@ -81,12 +90,22 @@ class SerialQueueImage {
         return @$this->parts[1];
     }
 
-    public function newLock() {
-        return new QueueLock($this->serialQueue);
+    /**
+     * @param String $postfix
+     *
+     * @return SerialQueue
+     */
+    public function getSubQueue($postfix) {
+        $stats = new Resque\Stats\QueueStats($this->getParentQueue());
+        return new SerialQueue($this->serialQueue . $postfix, $stats);
     }
 
     public function lockExists() {
         return QueueLock::exists($this->serialQueue);
+    }
+
+    public function newLock() {
+        return new QueueLock($this->serialQueue);
     }
 }
 
@@ -106,19 +125,19 @@ class __QueueIterator implements \Iterator {
         return substr($this->iterator->current(), $this->prefixLength);
     }
 
-    public function next() {
-        $this->iterator->next();
-    }
-
     public function key() {
         return $this->iterator->key();
     }
 
-    public function valid() {
-        return $this->iterator->valid();
+    public function next() {
+        $this->iterator->next();
     }
 
     public function rewind() {
         $this->iterator->rewind();
+    }
+
+    public function valid() {
+        return $this->iterator->valid();
     }
 }

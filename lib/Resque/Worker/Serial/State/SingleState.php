@@ -18,6 +18,7 @@ use Resque\Queue\QueueLock;
 use Resque\Queue\SerialQueue;
 use Resque\Queue\SerialQueueImage;
 use Resque\SignalHandler;
+use Resque\Stats\SerialQueueStats;
 use Resque\Worker\Serial\SerialWorkerImage;
 use Resque\Worker\WorkerBase;
 
@@ -40,7 +41,7 @@ class SingleState extends WorkerBase implements ISerialWorkerState {
         Process::setTitlePrefix('serial-single');
 
         parent::__construct(
-                new SerialQueue($queueImage->getQueue()),
+                $queueImage->getQueue(),
                 $this->resolveStrategy($queueImage),
                 $workerImage
         );

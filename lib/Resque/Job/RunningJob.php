@@ -5,7 +5,6 @@ namespace Resque\Job;
 use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\ResqueImpl;
-use Resque\Stats;
 use Resque\UniqueList;
 use Resque\Worker\WorkerBase;
 
@@ -90,7 +89,7 @@ class RunningJob {
         $this->job->incFailCount();
 
         $newJobId = ResqueImpl::getInstance()->jobEnqueue($this->job, false);
-        $this->reportFail($e, $newJobId);
+        $this->reportRetry($e, $newJobId);
         $this->status->setRetried();
     }
 
@@ -106,7 +105,7 @@ class RunningJob {
      *
      * @return string
      */
-    private function createFailReport(\Exception $e, $retryText) {
+    private function createFailReport(\Exception $e, $retryText = 'no retry') {
         $data = new \stdClass;
         $data->failed_at = strftime('%a %b %d %H:%M:%S %Z %Y');
         $data->payload = $this->job->toArray();
@@ -120,29 +119,28 @@ class RunningJob {
     }
 
     /**
-     * @param $statName
+     * @param \Exception $e
      */
-    private function report($statName) {
-        Stats::incGlobal($statName);
-        Stats::incQueue($this->job->getQueue(), $statName);
+    private function reportFail(\Exception $e) {
+        $this->worker->getStats()->incFailed();
+        Resque::redis()->rpush('failed', $this->createFailReport($e));
     }
 
     /**
      * @param \Exception $e
-     * @param string $retryText
+     * @param string $retryJobId
      */
-    private function reportFail(\Exception $e, $retryText = null) {
-        $statName = $retryText === null ? 'failed' : 'retries';
-        $this->report($statName);
-        Resque::redis()->rpush($statName, $this->createFailReport($e, $retryText));
+    private function reportRetry(\Exception $e, $retryJobId) {
+        $this->worker->getStats()->incRetried();
+        Resque::redis()->rpush('retries', $this->createFailReport($e, $retryJobId));
     }
 
     private function reportSuccess() {
         $duration = floor((microtime(true) - $this->startTime) * 1000);
         if ($duration > 0) {
-            Stats::incQueue($this->getJob()->getQueue(), 'processing_time', $duration);
+            $this->worker->getStats()->incProcessingTime($duration);
         }
 
-        $this->report('processed');
+        $this->worker->getStats()->incProcessed();
     }
 }

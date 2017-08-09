@@ -43,7 +43,7 @@ use Resque\Api\RedisException;
  * @method string        getRange(string $key, int $start, int $end)
  * @method string        getSet(string $key, string $value)
  * @method int           incr(string $key)
- * @method int           incrBy(string $key, int $decrement)
+ * @method int           incrBy(string $key, int $increment)
  * @method array         mGet(array $keys)
  * @method bool          mSet(array $keysValues)
  * @method int           mSetNx(array $keysValues)

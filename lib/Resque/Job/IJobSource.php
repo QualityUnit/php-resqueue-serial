@@ -5,8 +5,14 @@ namespace Resque\Job;
 
 
 use Resque\Job\Reservations\JobUnavailableException;
+use Resque\Stats;
 
 interface IJobSource {
+
+    /**
+     * @return Stats
+     */
+    function getStats();
 
     /**
      * @param int $timeout maximum wait time in seconds

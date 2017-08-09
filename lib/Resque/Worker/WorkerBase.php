@@ -13,6 +13,7 @@ use Resque\Job\Reservations\TerminateException;
 use Resque\Job\Reservations\WaitException;
 use Resque\Job\RunningJob;
 use Resque\Log;
+use Resque\Stats;
 
 abstract class WorkerBase {
 
@@ -39,6 +40,13 @@ abstract class WorkerBase {
      */
     public function getImage() {
         return $this->image;
+    }
+
+    /**
+     * @return Stats
+     */
+    public function getStats() {
+        return $this->source->getStats();
     }
 
     public function work() {
@@ -72,6 +80,7 @@ abstract class WorkerBase {
 
     /**
      * @param Job $job
+     *
      * @return IProcessor
      */
     protected abstract function resolveProcessor(Job $job);
@@ -82,8 +91,8 @@ abstract class WorkerBase {
 
     private function getWorkerStatusData(RunningJob $runningJob) {
         return json_encode(array(
-            'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y', $runningJob->getStartTime()),
-            'payload' => $runningJob->getJob()->toArray()
+                'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y', $runningJob->getStartTime()),
+                'payload' => $runningJob->getJob()->toArray()
         ));
     }
 
