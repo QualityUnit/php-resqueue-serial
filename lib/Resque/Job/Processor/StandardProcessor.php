@@ -11,6 +11,7 @@ use Resque\Job\RetryException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
+use Resque\ResqueImpl;
 use Resque\Task\CreationException;
 use Resque\Task\ITask;
 
@@ -38,6 +39,14 @@ class StandardProcessor implements IProcessor {
                 $runningJob->fail(new RetryException("Job execution failed with exit code: $exitCode"));
             }
         }
+    }
+
+    private function closeRedis() {
+        try {
+            \Resque::redis()->quit();
+        } catch (Exception $ignore) {
+        }
+        ResqueImpl::getInstance()->resetRedis();
     }
 
     private function createTask(RunningJob $runningJob) {
@@ -87,6 +96,7 @@ class StandardProcessor implements IProcessor {
             Log::error("Failed to perform job {$job->toString()}");
             $runningJob->retry($e);
         } finally {
+            $this->closeRedis();
             exit(0);
         }
     }
@@ -95,7 +105,7 @@ class StandardProcessor implements IProcessor {
         try {
             $runningJob->success();
         } catch (Exception $e) {
-            Log::error("Failed to report success of a job {$runningJob->getJob()->toString()}");
+            Log::error("Failed to report success of a job {$runningJob->getJob()->toString()}: {$e->getMessage()}");
         }
     }
 

@@ -110,6 +110,8 @@ use Resque\Api\RedisException;
  * @method string|int    script(string $command, string $arg1 = null)
  * @method string|int|array|bool eval(string $script, array $keys = null, array $args = null)
  * @method string|int|array|bool evalSha(string $script, array $keys = null, array $args = null)
+ * Special:
+ * @method string        quit()
  */
 class Redis {
     /**
