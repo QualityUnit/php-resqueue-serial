@@ -12,6 +12,7 @@ use Resque\Job\SerialJobLink;
 use Resque\Log;
 use Resque\Process;
 use Resque\Queue\QueueLock;
+use Resque\SignalHandler;
 use Resque\Worker\Serial\SerialWorker;
 use Resque\Worker\Serial\SerialWorkerImage;
 use Resque\Worker\WorkerImage;
@@ -41,22 +42,19 @@ class SerialLinkProcessor implements IProcessor {
             return;
         }
 
-        $serialWorkerImage = SerialWorkerImage::create($serialQueue);
-        $this->workerImage->addSerialWorker($serialWorkerImage->getId());
         try {
             $pid = Process::fork();
         } catch (Exception $e) {
-            Log::critical("Fork to start {$serialWorkerImage->getId()} failed.");
-            $this->workerImage->removeSerialWorker($serialWorkerImage->getId());
+            Log::critical("Fork to start serial worker failed.");
             return;
         }
 
         if ($pid === 0) {
-            $serialWorker = new SerialWorker($serialWorkerImage, $lock);
-            $serialWorker->work($this->workerImage->getId());
-            $this->workerImage->removeSerialWorker($serialWorkerImage->getId());
+            $this->spawnSerialProcess($lock, SerialWorkerImage::create($serialQueue));
             exit(0);
         } else {
+            Process::waitForPid($pid); // wait until worker spawned
+
             $workerConfig = GlobalConfig::getInstance()->getWorkerConfig($this->workerImage->getQueue());
             if (!$workerConfig) {
                 Log::critical("Can't find config for queue '{$this->workerImage->getQueue()}'.");
@@ -65,6 +63,26 @@ class SerialLinkProcessor implements IProcessor {
             while($this->serialWorkerLimitReached($workerConfig)) {
                 sleep(3);
             }
+        }
+    }
+
+    private function spawnSerialProcess(QueueLock $lock, SerialWorkerImage $image) {
+        SignalHandler::instance()->unregisterAll()->register(SIGCHLD, SIG_IGN);
+
+        $this->workerImage->addSerialWorker($image->getId());
+        try {
+            $pid = Process::fork();
+        } catch (Exception $e) {
+            Log::critical("Fork to spawn {$image->getId()} failed.");
+            $this->workerImage->removeSerialWorker($image->getId());
+            return;
+        }
+
+        if ($pid === 0) {
+            $serialWorker = new SerialWorker($image, $lock);
+            $serialWorker->work($this->workerImage->getId());
+            $this->workerImage->removeSerialWorker($image->getId());
+            exit(0);
         }
     }
 
