@@ -70,6 +70,8 @@ class ResqueImpl implements ResqueApi {
             $this->redis = new Redis($this->redisServer, $this->redisDatabase);
         }
 
+        Redis::prefix(\Resque::VERSION_PREFIX);
+
         return $this->redis;
     }
 
