@@ -4,16 +4,10 @@
 namespace Resque\Task;
 
 
+use Resque\Api\ApplicationTask;
 use Resque\Config\GlobalConfig;
 
 class RunApplicationTask implements ITask {
-
-    // task class methods (static)
-    const PERFORMER_GETTER = 'getPerformer';
-    const RETRY_PERFORMER_GETTER = 'getRetryPerformer';
-    // performer methods
-    const PERFORM_METHOD = 'perform';
-    const VALIDATION_METHOD = 'isValid';
 
     public static function className() {
         return get_class();
@@ -24,50 +18,17 @@ class RunApplicationTask implements ITask {
 
         $this->includeApplication($version, $applicationPath);
 
-        $this->checkTaskClass($taskClass);
+        ApplicationTask::checkTaskClass($taskClass);
 
-        $performerGetter = self::PERFORMER_GETTER;
+        $performerGetter = ApplicationTask::PERFORMER_GETTER;
         if ($this->job->getFailCount() > 0) {
-            $performerGetter = self::RETRY_PERFORMER_GETTER;
+            $performerGetter = ApplicationTask::RETRY_PERFORMER_GETTER;
         }
         $performer = $taskClass::{$performerGetter}($jobArgs);
 
-        $this->checkPerformer($performer);
+        ApplicationTask::checkPerformer($performer);
 
-        if ($performer->{self::VALIDATION_METHOD}()) {
-            $performer->{self::PERFORM_METHOD}();
-        }
-    }
-
-    /**
-     * @param $performer
-     *
-     * @throws ApplicationTaskCreationException
-     */
-    private function checkPerformer($performer) {
-        if (!method_exists($performer, self::VALIDATION_METHOD)) {
-            throw new ApplicationTaskCreationException("Performer $performer does not contain a validation method.");
-        }
-        if (!method_exists($performer, self::PERFORM_METHOD)) {
-            throw new ApplicationTaskCreationException("Performer $performer does not contain a perform method.");
-        }
-    }
-
-    /**
-     * @param $taskClass
-     *
-     * @throws ApplicationTaskCreationException
-     */
-    private function checkTaskClass($taskClass) {
-        if (!class_exists($taskClass)) {
-            throw new ApplicationTaskCreationException("Could not find application task class $taskClass.");
-        }
-        if (!method_exists($taskClass, self::PERFORMER_GETTER)) {
-            throw new ApplicationTaskCreationException("Task class $taskClass does not contain a performer getter.");
-        }
-        if (!method_exists($taskClass, self::RETRY_PERFORMER_GETTER)) {
-            throw new ApplicationTaskCreationException("Task class $taskClass does not contain a retry performer getter.");
-        }
+        $performer->{ApplicationTask::PERFORM_METHOD}();
     }
 
     /**
@@ -84,7 +45,7 @@ class RunApplicationTask implements ITask {
      * @param mixed[] $args
      *
      * @return mixed[]
-     * @throws ApplicationTaskCreationException
+     * @throws \Exception
      */
     private function initializeArgs(array $args) {
         $version = isset($args['version']) ? $args['version'] : null;
@@ -100,7 +61,7 @@ class RunApplicationTask implements ITask {
         }
 
         if ($version === null || $applicationPath === null || !is_array($jobArgs) || $taskClass === null) {
-            throw new ApplicationTaskCreationException("Job arguments incomplete.");
+            throw new \Exception("Job arguments incomplete.");
         }
 
         return [$version, $applicationPath, $jobArgs, $taskClass];
