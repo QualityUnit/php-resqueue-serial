@@ -4,7 +4,6 @@
 namespace Resque\Api;
 
 
-use Resque\Exception;
 use Resque\Task\ApplicationJobWrapper;
 
 /**
@@ -20,11 +19,11 @@ use Resque\Task\ApplicationJobWrapper;
  *
  *     perform() -> void
  *
- * Performer's method perform() may throw following exceptions:
+ * Performer's method perform() may throw following ApplicationTaskExceptions:
  *
- *     \Resque\Api\FailException -> reports job as failed without any attempts to retry
- *     \Resque\Api\RescheduleException -> reports job as successful and reschedules accordingly
- *     any other exception -> reports job as failed and re-queues it again if retry limit
+ *     \Resque\Api\FailApplicationTaskException -> reports job as failed without any attempts to retry
+ *     \Resque\Api\RescheduleApplicationTaskException -> reports job as successful and reschedules accordingly
+ *     any other ApplicationTaskException -> reports job as failed and re-queues it again if retry limit
  *                            wasn't reached, otherwise reports it as failed
  *
  *
@@ -41,28 +40,28 @@ final class ApplicationTask {
     /**
      * @param $performer
      *
-     * @throws \Exception
+     * @throws ApplicationTaskException
      */
     public static function checkPerformer($performer) {
         if (!method_exists($performer, self::PERFORM_METHOD)) {
-            throw new \Exception("Performer $performer does not contain a perform method.");
+            throw new ApplicationTaskException("Performer $performer does not contain a perform method.");
         }
     }
 
     /**
      * @param $taskClass
      *
-     * @throws \Exception
+     * @throws ApplicationTaskException
      */
     public static function checkTaskClass($taskClass) {
         if (!class_exists($taskClass)) {
-            throw new \Exception("Could not find application task class $taskClass.");
+            throw new ApplicationTaskException("Could not find application task class $taskClass.");
         }
         if (!method_exists($taskClass, self::PERFORMER_GETTER)) {
-            throw new \Exception("Task class $taskClass does not contain a performer getter.");
+            throw new ApplicationTaskException("Task class $taskClass does not contain a performer getter.");
         }
         if (!method_exists($taskClass, self::RETRY_PERFORMER_GETTER)) {
-            throw new \Exception("Task class $taskClass does not contain a retry performer getter.");
+            throw new ApplicationTaskException("Task class $taskClass does not contain a retry performer getter.");
         }
     }
 
@@ -74,7 +73,7 @@ final class ApplicationTask {
      * @param ApplicationEnvironment $environment
      *
      * @return JobDescriptor wrapped application task
-     * @throws Exception if class specified in job is not a valid task class
+     * @throws ApplicationTaskException if class specified in job is not a valid task class
      */
     public static function create(JobDescriptor $job, ApplicationEnvironment $environment) {
         self::checkTaskClass($job->getClass());
