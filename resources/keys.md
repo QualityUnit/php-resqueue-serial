@@ -1,24 +1,27 @@
-resque-v1:
+resque-v2:
     
     queues: set(queue_name)
     queue:<queue_name>: list(job_data)
-    queue:<queue_name>:temp:<time>: list(job_data)              # temporary queue created by removeItems()
-    queue:<queue_name>:temp:<time>:requeue: list(job_data)      # temporary queue created by removeItems()
+        temp:<time>: list(job_data)              # temporary queue created by removeItems()
+        temp:<time>:requeue: list(job_data)      # temporary queue created by removeItems()
     
     failed: list(fail_data)
     retries: list(fail_data)
     job:<job_id>:status: <status_data>
     
-    workers: set(worker_id)
-    worker:<worker_id>: <job_run_data>
-    worker:<worker_id>:started: <time_started>
+    queuestat:<hostname>:
+        dequeued:<queue_name>: <dequeued_count>
+        failed:<queue_name>: <failed_count>
+        processed:<queue_name>: <processed_count>
+        processing_time:<queue_name>: <time_spent_processing_ms>
+        queue_time:<queue_name>: <time_spent_queued_ms>
+        retries:<queue_name>: <retry_count>
+        
     
-    stat:failed: <failed_count>
-    stat:failed:<worker_id>: <failed_count>
-    stat:processed: <processed_count>
-    stat:processed:<worker_id>: <processed_count>
-    stat:retries: <retry_count>
-    stat:retries:<worker_id>: <retry_count>
+    stat:
+        failed: <failed_count>
+        processed: <processed_count>
+        retries: <retry_count>
     
     scheduler_pid:<hostname>: <pid>
     
@@ -27,22 +30,25 @@ resque-v1:
     
     unique_list: hash(uniqueId, jobId)
     
-resque-v1:serial:
+    serial:
     
-    workers: set(worker_id)                                     # Reque-Serial workers
-    worker:<worker_id>: <job_run_data>
-    worker:<worker_id>:started: <time_started>
-    worker:<worker_id>:serial_workers: set(serial_worker_id)    # Serial job workers
+        link:<serial_queue_name>: null # key presence signifies existence of a link job for the serial queue
     
-    serial_workers: set(serial_worker_id)                       # Serial job workers
-    serial_worker:<serial_worker_id>: <job_run_data>
-    serial_worker:<serial_worker_id>:parent: <worker_id>
-    serial_worker:<serial_worker_id>:runners: set(serial_runner_id)
-    serial_worker:<serial_worker_id>:started: <time_started>
-    
-    queue:<queue_name>: list(serial_job_data)
-    queuedata:<queue>:config: <queue_config>
-    queuedata:<queue>:lock: <lock_value>
-    queuedata:<queue>:completed_count: <completed_count>
+        workers: set(worker_id)                                     # standard workers
+        worker:<worker_id>: <job_run_data>
+            started: <time_started>
+            serial_workers: set(serial_worker_id)    # Serial job workers
+        
+        serial_workers: set(serial_worker_id)                       # Serial job workers
+        serial_worker:<serial_worker_id>: <job_run_data>
+            parent: <worker_id>
+            runners: set(serial_runner_id)
+            started: <time_started>
+        
+        queue:<serial_queue_name>: list(serial_job_data)
+        queuedata:<queue>:
+            config: <queue_config>
+            lock: <lock_value>
+            completed_count: <completed_count>
 
 serial_worker_id: <hostname>:<pid>:<queue>:<queue_count>:<queue_num>
