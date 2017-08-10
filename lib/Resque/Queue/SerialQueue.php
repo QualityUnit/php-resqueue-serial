@@ -35,14 +35,16 @@ class SerialQueue implements IJobSource {
         $serialQueueImage = SerialQueueImage::create($mainQueue, $job->getSerialId());
 
         // push serial job to proper serial sub-queue
-        $serialQueue = $serialQueueImage->generateSubqueueName($job->getSecondarySerialId());
-        $serialJob = Job::fromArray($job->toArray())->setQueue($serialQueue);
+        $subQueue = $serialQueueImage->generateSubqueueName($job->getSecondarySerialId());
+        $serialJob = Job::fromArray($job->toArray())->setQueue($subQueue);
         $queuedJob = new QueuedJob($serialJob, ResqueImpl::getInstance()->generateJobId());
-        Resque::redis()->rpush(Key::serialQueue($serialQueue), json_encode($queuedJob->toArray()));
+        Resque::redis()->rpush(Key::serialQueue($subQueue), json_encode($queuedJob->toArray()));
 
         // push serial queue link to main queue if it's not already being worked on
-        if (!$serialQueueImage->lockExists()) {
-            $serialLink = SerialJobLink::create($serialQueueImage->getQueueName());
+        $serialQueue = $serialQueueImage->getQueueName();
+        if (!$serialQueueImage->lockExists() && !SerialJobLink::exists($serialQueue)) {
+            SerialJobLink::register($serialQueue);
+            $serialLink = SerialJobLink::create($serialQueue);
             $queuedLink = new QueuedJob($serialLink, $queuedJob->getId());
             Resque::redis()->rpush(Key::queue($mainQueue), json_encode($queuedLink->toArray()));
         }

@@ -415,6 +415,9 @@ class InitProcess {
 
             return;
         }
+
+        Resque\Job\SerialJobLink::unregister($queueToStart);
+
         try {
             if (Process::fork() === 0) {
                 $this->unregisterSigHandlers(); // do not keep handlers from main process in child

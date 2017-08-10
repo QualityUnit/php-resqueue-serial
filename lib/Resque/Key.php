@@ -50,6 +50,15 @@ class Key {
      *
      * @return string
      */
+    public static function serialLink($queue) {
+        return Key::serial('link', $queue);
+    }
+
+    /**
+     * @param string $queue
+     *
+     * @return string
+     */
     public static function serialQueueConfig($queue) {
         return Key::serial('queuedata', $queue, 'config');
     }

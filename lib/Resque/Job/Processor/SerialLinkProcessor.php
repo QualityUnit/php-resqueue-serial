@@ -36,6 +36,7 @@ class SerialLinkProcessor implements IProcessor {
                     . json_encode($runningJob->getJob()->toArray()));
             return;
         }
+        SerialJobLink::unregister($serialQueue);
         $lock = new QueueLock($serialQueue);
 
         if(!$lock->acquire()) {
