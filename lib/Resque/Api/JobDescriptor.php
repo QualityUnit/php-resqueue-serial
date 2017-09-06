@@ -49,4 +49,12 @@ abstract class JobDescriptor {
     public function isMonitored() {
         return false;
     }
+
+    /**
+     * File to include, used to bootstrap the environment of the job.
+     * @return string|null
+     */
+    public function getIncludePath() {
+        return null;
+    }
 }

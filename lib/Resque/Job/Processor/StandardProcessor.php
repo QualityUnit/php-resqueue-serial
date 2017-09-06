@@ -6,7 +6,9 @@ namespace Resque\Job\Processor;
 
 use Resque\Api\FailException;
 use Resque\Api\RescheduleException;
+use Resque\Config\GlobalConfig;
 use Resque\Exception;
+use Resque\Job\Job;
 use Resque\Job\RetryException;
 use Resque\Job\RunningJob;
 use Resque\Log;
@@ -53,12 +55,14 @@ class StandardProcessor implements IProcessor {
         $job = $runningJob->getJob();
         try {
             if (!class_exists($job->getClass())) {
-                throw new CreationException("Task class {$job->getClass()} does not exist.");
+                throw new CreationException("Job class {$job->getClass()} does not exist.");
             }
 
             if (!method_exists($job->getClass(), 'perform')) {
                 throw new CreationException("Job class {$job->getClass()} does not contain a perform method.");
             }
+
+            $this->includePath($job);
 
             $className = $job->getClass();
             $task = new $className;
@@ -70,6 +74,17 @@ class StandardProcessor implements IProcessor {
             Log::error("$message from job {$job->toString()}", ['exception' => $e]);
             throw new FailException($message, 0, $e);
         }
+    }
+
+    private function includePath(Job $job) {
+        $includePath = trim(trim($job->getIncludePath()), '/\\');
+        if(!$includePath) {
+            return;
+        }
+
+        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath() . '/' . $includePath;
+
+        include_once $fullPath;
     }
 
     /**

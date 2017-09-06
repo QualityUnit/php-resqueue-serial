@@ -22,6 +22,8 @@ class Job {
     protected $secondarySerialId = null;
     /** @var boolean */
     protected $isMonitored = false;
+    /** @var string */
+    protected $includePath = null;
     /** @var integer */
     protected $failCount = 0;
 
@@ -42,6 +44,7 @@ class Job {
         $job->serialId = isset($array['serialId']) ? $array['serialId'] : $job->serialId;
         $job->secondarySerialId = isset($array['secondarySerialId']) ? $array['secondarySerialId'] : $job->secondarySerialId;
         $job->isMonitored = isset($array['isMonitored']) ? $array['isMonitored'] : $job->isMonitored;
+        $job->includePath = isset($array['includePath']) ? $array['includePath'] : $job->isMonitored;
         $job->failCount = isset($array['failCount']) ? $array['failCount'] : $job->failCount;
 
         return $job;
@@ -60,6 +63,7 @@ class Job {
         $job->serialId = $jobDescriptor->getSerialId();
         $job->secondarySerialId = $jobDescriptor->getSecondarySerialId();
         $job->isMonitored = $jobDescriptor->isMonitored();
+        $job->includePath = $jobDescriptor->getIncludePath();
 
         return $job;
     }
@@ -130,6 +134,13 @@ class Job {
     }
 
     /**
+     * @return string
+     */
+    public function getIncludePath() {
+        return $this->includePath;
+    }
+
+    /**
      * @return bool TRUE if job is serial; otherwise FALSE
      */
     public function isSerial() {
@@ -156,6 +167,7 @@ class Job {
                 'serialId' => $this->serialId,
                 'secondarySerialId' => $this->secondarySerialId,
                 'isMonitored' => $this->isMonitored,
+                'includePath' => $this->includePath,
                 'failCount' => $this->failCount,
         ]);
     }
