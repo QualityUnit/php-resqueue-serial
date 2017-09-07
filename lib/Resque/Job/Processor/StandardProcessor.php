@@ -54,6 +54,9 @@ class StandardProcessor implements IProcessor {
     private function createTask(RunningJob $runningJob) {
         $job = $runningJob->getJob();
         try {
+            $this->includePath($job);
+            $this->setupEnvironment($job);
+
             if (!class_exists($job->getClass())) {
                 throw new CreationException("Job class {$job->getClass()} does not exist.");
             }
@@ -61,8 +64,6 @@ class StandardProcessor implements IProcessor {
             if (!method_exists($job->getClass(), 'perform')) {
                 throw new CreationException("Job class {$job->getClass()} does not contain a perform method.");
             }
-
-            $this->includePath($job);
 
             $className = $job->getClass();
             $task = new $className;
@@ -77,14 +78,31 @@ class StandardProcessor implements IProcessor {
     }
 
     private function includePath(Job $job) {
-        $includePath = trim(trim($job->getIncludePath()), '/\\');
-        if(!$includePath) {
+        $jobPath = ltrim(trim($job->getIncludePath()), '/\\');
+        if(!$jobPath) {
             return;
         }
 
-        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath() . '/' . $includePath;
+        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath();
+        $pathVariables = $job->getPathVariables();
+        if(is_array($pathVariables)) {
+            foreach ($pathVariables as $key => $value) {
+                $fullPath = str_replace('{' . $key. '}', $value, $fullPath);
+            }
+        }
+
+        $fullPath .= $jobPath;
 
         include_once $fullPath;
+    }
+
+    private function setupEnvironment(Job $job) {
+        $env = $job->getEnvironment();
+        if(is_array($env)) {
+            foreach ($env as $key => $value) {
+                $_SERVER[$key] = $value;
+            }
+        }
     }
 
     /**

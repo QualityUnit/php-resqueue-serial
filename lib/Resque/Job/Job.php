@@ -24,6 +24,10 @@ class Job {
     protected $isMonitored = false;
     /** @var string */
     protected $includePath = null;
+    /** @var string[] */
+    protected $pathVariables = null;
+    /** @var string[] */
+    protected $environment = null;
     /** @var integer */
     protected $failCount = 0;
 
@@ -44,7 +48,9 @@ class Job {
         $job->serialId = isset($array['serialId']) ? $array['serialId'] : $job->serialId;
         $job->secondarySerialId = isset($array['secondarySerialId']) ? $array['secondarySerialId'] : $job->secondarySerialId;
         $job->isMonitored = isset($array['isMonitored']) ? $array['isMonitored'] : $job->isMonitored;
-        $job->includePath = isset($array['includePath']) ? $array['includePath'] : $job->isMonitored;
+        $job->includePath = isset($array['includePath']) ? $array['includePath'] : $job->includePath;
+        $job->pathVariables = isset($array['pathVariables']) ? $array['pathVariables'] : $job->pathVariables;
+        $job->environment = isset($array['environment']) ? $array['environment'] : $job->environment;
         $job->failCount = isset($array['failCount']) ? $array['failCount'] : $job->failCount;
 
         return $job;
@@ -64,6 +70,8 @@ class Job {
         $job->secondarySerialId = $jobDescriptor->getSecondarySerialId();
         $job->isMonitored = $jobDescriptor->isMonitored();
         $job->includePath = $jobDescriptor->getIncludePath();
+        $job->pathVariables = $jobDescriptor->getPathVariables();
+        $job->environment = $jobDescriptor->getEnvironment();
 
         return $job;
     }
@@ -141,6 +149,20 @@ class Job {
     }
 
     /**
+     * @return string[]
+     */
+    public function getPathVariables() {
+        return $this->pathVariables;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getEnvironment() {
+        return $this->environment;
+    }
+
+    /**
      * @return bool TRUE if job is serial; otherwise FALSE
      */
     public function isSerial() {
@@ -168,6 +190,8 @@ class Job {
                 'secondarySerialId' => $this->secondarySerialId,
                 'isMonitored' => $this->isMonitored,
                 'includePath' => $this->includePath,
+                'pathVariables' => $this->pathVariables,
+                'environment' => $this->environment,
                 'failCount' => $this->failCount,
         ]);
     }

@@ -57,4 +57,20 @@ abstract class JobDescriptor {
     public function getIncludePath() {
         return null;
     }
+
+    /**
+     * Used to replace variables in include path
+     * @return string[]|null
+     */
+    public function getPathVariables() {
+        return null;
+    }
+
+    /**
+     * Used to set $_SERVER environment for job
+     * @return string[]|null
+     */
+    public function getEnvironment() {
+        return null;
+    }
 }
