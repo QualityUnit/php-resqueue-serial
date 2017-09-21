@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Resque\Job;
+namespace Resque\Api;
 
 
 use Resque\Exception;

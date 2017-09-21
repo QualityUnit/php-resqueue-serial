@@ -4,12 +4,12 @@
 namespace Resque\Job\Processor;
 
 
-use Resque\Api\FailException;
 use Resque\Api\RescheduleException;
+use Resque\Api\RetryException;
 use Resque\Config\GlobalConfig;
 use Resque\Exception;
+use Resque\Job\FailException;
 use Resque\Job\Job;
-use Resque\Job\RetryException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
@@ -38,7 +38,7 @@ class StandardProcessor implements IProcessor {
         } else {
             $exitCode = $this->waitForChild($pid);
             if ($exitCode !== 0) {
-                $runningJob->fail(new RetryException("Job execution failed with exit code: $exitCode"));
+                $runningJob->fail(new FailException("Job execution failed with exit code: $exitCode"));
             }
         }
     }
@@ -123,11 +123,11 @@ class StandardProcessor implements IProcessor {
             } else {
                 $runningJob->reschedule();
             }
-        } catch (FailException $e) {
-            $runningJob->fail($e);
+        } catch (RetryException $e) {
+            $runningJob->retry($e);
         } catch (\Exception $e) {
             Log::error("Failed to perform job {$job->toString()}");
-            $runningJob->retry($e);
+            $runningJob->fail($e);
         } finally {
             $this->closeRedis();
             exit(0);
