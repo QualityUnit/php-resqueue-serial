@@ -25,8 +25,12 @@ resque-v2:
     
     scheduler_pid:<hostname>: <pid>
     
-    delayed:<timestamp>: <json_encoded JobImage>
+    delayed:<timestamp>: list(<json_encoded JobImage>)
     delayed_queue_schedule: sorted_set(timestamp, timestamp)
+    
+    plan_schedule: sorted_set(timestamp, timestamp)
+    plan_schedule:<timestamp>: list(plan_id)
+    plan:<id>: <json_encoded timestamp, period, queue, JobImage>
     
     unique_list: hash(uniqueId, jobId)
     

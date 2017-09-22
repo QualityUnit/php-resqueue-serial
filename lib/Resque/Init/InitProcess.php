@@ -11,7 +11,7 @@ use Resque\Log;
 use Resque\Process;
 use Resque\Queue\QueueLock;
 use Resque\Queue\SerialQueueImage;
-use Resque\Scheduler\Scheduler;
+use Resque\Scheduler\SchedulerProcess;
 use Resque\SignalHandler;
 use Resque\Worker\Serial\SerialWorker;
 use Resque\Worker\Serial\SerialWorkerImage;
@@ -345,7 +345,7 @@ class InitProcess {
     }
 
     private function maintainScheduler() {
-        $pid = Scheduler::getLocalPid();
+        $pid = SchedulerProcess::getLocalPid();
         if ($pid && posix_getpgid($pid) > 0) {
             return;
         }
@@ -356,7 +356,7 @@ class InitProcess {
         }
 
         if ($pid == 0) {
-            $worker = new Scheduler();
+            $worker = new SchedulerProcess();
             $worker->work();
             exit(0);
         }
@@ -373,7 +373,7 @@ class InitProcess {
     }
 
     private function signalScheduler($signal, $signalName) {
-        $pid = Scheduler::getLocalPid();
+        $pid = SchedulerProcess::getLocalPid();
         Log::debug("Signalling $signalName to scheduler $pid");
         posix_kill($pid, $signal);
     }
