@@ -41,7 +41,7 @@ class Resque {
      * @param JobDescriptor $job
      * @return string Plan identifier
      */
-    function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job) {
+    public static function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job) {
         return self::getInstance()->planCreate($startDate, $recurrencePeriod, $queue, $job);
     }
 
@@ -49,7 +49,7 @@ class Resque {
      * @param string $id Plan identifier
      * @return boolean
      */
-    function planRemove($id) {
+    public static function planRemove($id) {
         return self::getInstance()->planRemove($id);
     }
 
