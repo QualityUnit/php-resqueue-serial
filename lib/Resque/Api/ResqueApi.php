@@ -6,7 +6,6 @@ use Resque\Redis;
 
 interface ResqueApi {
 
-
     /**
      * @param string $queue The name of the queue to place the job in.
      * @param JobDescriptor $job
@@ -21,6 +20,21 @@ interface ResqueApi {
      * @param JobDescriptor $job
      */
     function enqueueDelayed($delay, $queue, JobDescriptor $job);
+
+    /**
+     * @param \DateTime $startDate
+     * @param \DateInterval $recurrencePeriod
+     * @param string $queue
+     * @param JobDescriptor $job
+     * @return string Plan identifier
+     */
+    function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job);
+
+    /**
+     * @param string $id Plan identifier
+     * @return boolean
+     */
+    function planRemove($id);
 
     /**
      * @return Redis

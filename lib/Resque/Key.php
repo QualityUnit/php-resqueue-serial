@@ -177,6 +177,7 @@ class Key {
 
     /**
      * @param int $at
+     *
      * @return string
      */
     public static function delayed($at) {
@@ -199,5 +200,27 @@ class Key {
 
     private static function serial(...$parts) {
         return self::of('serial', ...$parts);
+    }
+
+    public static function planSchedule() {
+        return self::of('plan_schedule');
+    }
+
+    /**
+     * @param int $timestamp
+     *
+     * @return string
+     */
+    public static function planTimestamp($timestamp) {
+        return self::of('plan_schedule', $timestamp);
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return string
+     */
+    public static function plan($id) {
+        return self::of('plan', $id);
     }
 }

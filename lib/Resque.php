@@ -35,6 +35,25 @@ class Resque {
     }
 
     /**
+     * @param \DateTime $startDate
+     * @param \DateInterval $recurrencePeriod
+     * @param string $queue
+     * @param JobDescriptor $job
+     * @return string Plan identifier
+     */
+    public static function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job) {
+        return self::getInstance()->planCreate($startDate, $recurrencePeriod, $queue, $job);
+    }
+
+    /**
+     * @param string $id Plan identifier
+     * @return boolean
+     */
+    public static function planRemove($id) {
+        return self::getInstance()->planRemove($id);
+    }
+
+    /**
      * @return ResqueApi
      */
     public static function getInstance() {

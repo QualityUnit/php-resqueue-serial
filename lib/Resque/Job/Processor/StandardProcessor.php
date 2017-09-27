@@ -4,10 +4,12 @@
 namespace Resque\Job\Processor;
 
 
-use Resque\Api\FailException;
 use Resque\Api\RescheduleException;
+use Resque\Api\RetryException;
+use Resque\Config\GlobalConfig;
 use Resque\Exception;
-use Resque\Job\RetryException;
+use Resque\Job\FailException;
+use Resque\Job\Job;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
@@ -36,7 +38,7 @@ class StandardProcessor implements IProcessor {
         } else {
             $exitCode = $this->waitForChild($pid);
             if ($exitCode !== 0) {
-                $runningJob->fail(new RetryException("Job execution failed with exit code: $exitCode"));
+                $runningJob->fail(new FailException("Job execution failed with exit code: $exitCode"));
             }
         }
     }
@@ -52,8 +54,11 @@ class StandardProcessor implements IProcessor {
     private function createTask(RunningJob $runningJob) {
         $job = $runningJob->getJob();
         try {
+            $this->includePath($job);
+            $this->setupEnvironment($job);
+
             if (!class_exists($job->getClass())) {
-                throw new CreationException("Task class {$job->getClass()} does not exist.");
+                throw new CreationException("Job class {$job->getClass()} does not exist.");
             }
 
             if (!method_exists($job->getClass(), 'perform')) {
@@ -69,6 +74,34 @@ class StandardProcessor implements IProcessor {
             $message = "Failed to create a task instance";
             Log::error("$message from job {$job->toString()}", ['exception' => $e]);
             throw new FailException($message, 0, $e);
+        }
+    }
+
+    private function includePath(Job $job) {
+        $jobPath = ltrim(trim($job->getIncludePath()), '/\\');
+        if(!$jobPath) {
+            return;
+        }
+
+        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath();
+        $pathVariables = $job->getPathVariables();
+        if(is_array($pathVariables)) {
+            foreach ($pathVariables as $key => $value) {
+                $fullPath = str_replace('{' . $key. '}', $value, $fullPath);
+            }
+        }
+
+        $fullPath .= $jobPath;
+
+        include_once $fullPath;
+    }
+
+    private function setupEnvironment(Job $job) {
+        $env = $job->getEnvironment();
+        if(is_array($env)) {
+            foreach ($env as $key => $value) {
+                $_SERVER[$key] = $value;
+            }
         }
     }
 
@@ -90,11 +123,11 @@ class StandardProcessor implements IProcessor {
             } else {
                 $runningJob->reschedule();
             }
-        } catch (FailException $e) {
-            $runningJob->fail($e);
+        } catch (RetryException $e) {
+            $runningJob->retry($e);
         } catch (\Exception $e) {
             Log::error("Failed to perform job {$job->toString()}");
-            $runningJob->retry($e);
+            $runningJob->fail($e);
         } finally {
             $this->closeRedis();
             exit(0);

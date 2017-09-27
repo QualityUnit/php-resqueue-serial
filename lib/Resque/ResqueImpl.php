@@ -8,7 +8,8 @@ use Resque\Api\ResqueApi;
 use Resque\Job\Job;
 use Resque\Queue\Queue;
 use Resque\Queue\SerialQueue;
-use Resque\Scheduler\Scheduler;
+use Resque\Scheduler\PlannedScheduler;
+use Resque\Scheduler\SchedulerProcess;
 
 class ResqueImpl implements ResqueApi {
 
@@ -55,7 +56,23 @@ class ResqueImpl implements ResqueApi {
     }
 
     public function jobEnqueueDelayed($delay, Job $job, $checkUnique) {
-        Scheduler::schedule(time() + $delay, $job, $checkUnique);
+        SchedulerProcess::schedule(time() + $delay, $job, $checkUnique);
+    }
+
+    /** @inheritdoc */
+    public function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue,
+            JobDescriptor $job) {
+        if ($recurrencePeriod->invert === 1) {
+            throw new Exception('Expected positive recurrence period');
+        }
+
+        return PlannedScheduler::insertJob($startDate, $recurrencePeriod, Job::fromJobDescriptor($job)
+                ->setQueue($queue));
+    }
+
+    /** @inheritdoc */
+    public function planRemove($id) {
+        return PlannedScheduler::removeJob($id);
     }
 
     /** @inheritdoc */

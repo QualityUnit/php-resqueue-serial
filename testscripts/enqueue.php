@@ -6,10 +6,6 @@ require_once 'shared.php';
 
 use Resque\Config\GlobalConfig;
 use Resque\Init\InitProcess;
-use Resque\Redis;
-
-
-Redis::prefix(Resque::VERSION);
 
 unlink('/tmp/serialjob.txt');
 
