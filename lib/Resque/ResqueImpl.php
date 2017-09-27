@@ -60,6 +60,22 @@ class ResqueImpl implements ResqueApi {
     }
 
     /** @inheritdoc */
+    public function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue,
+            JobDescriptor $job) {
+        if ($recurrencePeriod->invert === 1) {
+            throw new Exception('Expected positive recurrence period');
+        }
+
+        return PlannedScheduler::insertJob($startDate, $recurrencePeriod, Job::fromJobDescriptor($job)
+                ->setQueue($queue));
+    }
+
+    /** @inheritdoc */
+    public function planRemove($id) {
+        return PlannedScheduler::removeJob($id);
+    }
+
+    /** @inheritdoc */
     public function redis() {
         if ($this->redis !== null) {
             return $this->redis;
@@ -91,19 +107,5 @@ class ResqueImpl implements ResqueApi {
         $this->redisServer = $server;
         $this->redisDatabase = $database;
         $this->redis = null;
-    }
-
-    /** @inheritdoc */
-    public function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job) {
-        if($recurrencePeriod->invert === 1) {
-            throw new Exception('Expected positive recurrence period');
-        }
-
-        return PlannedScheduler::insertJob($startDate, $recurrencePeriod, Job::fromJobDescriptor($job)->setQueue($queue));
-    }
-
-    /** @inheritdoc */
-    public function planRemove($id) {
-        PlannedScheduler::removeJob($id);
     }
 }

@@ -20,7 +20,7 @@ class PlannedJob {
     public static function fromArray(array $array) {
         $job = Job::fromArray($array);
 
-        $nextRun = new \DateTime($array['nextRun']);
+        $nextRun = new \DateTime('@' . $array['nextRun']);
         $recurrenceInterval = new \DateInterval($array['recurrenceInterval']);
 
         return new PlannedJob($array['id'], $nextRun, $recurrenceInterval, $job);
@@ -28,7 +28,7 @@ class PlannedJob {
 
     public function __construct($id, \DateTime $nextRun, \DateInterval $recurrenceInterval, Job $job) {
         $this->nextRun = clone $nextRun;
-        $this->recurrenceInterval = clone $recurrenceInterval;
+        $this->recurrenceInterval = $recurrenceInterval;
         $this->job = $job;
         $this->id = $id;
     }
@@ -60,7 +60,7 @@ class PlannedJob {
 
     public function moveAfter($timestamp) {
 
-        while($this->nextRun->getTimestamp() < $timestamp) {
+        while($this->nextRun->getTimestamp() <= $timestamp) {
             $this->nextRun->add($this->recurrenceInterval);
         }
     }

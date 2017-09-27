@@ -9,61 +9,85 @@ use Resque\Job\PlannedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
+use Resque\Redis;
 use Resque\ResqueImpl;
 
 class PlannedScheduler implements IScheduler {
 
     const ENQUEUE_SCRIPT = <<<LUA
-redis.call('sadd', KEYS[1], ARGV[1])
-redis.call('lrem', KEYS[2], ARGV[2])
-redis.call('lpush', KEYS[3], ARGV[2])
+redis.call('zadd', KEYS[1], ARGV[1], ARGV[1])
+redis.call('lrem', KEYS[2], 0, ARGV[2])
+redis.call('rpush', KEYS[3], ARGV[2])
 LUA;
 
 
-    public static function insertJob(\DateTime $nextRun, \DateInterval $recurrencePeriod, Job $job) {
+    public static function insertJob(\DateTime $nextRun, \DateInterval $recurrenceInterval,
+            Job $job) {
         $id = null;
         do {
             $id = microtime(true);
-            $plannedJob = new PlannedJob($id, $nextRun, $recurrencePeriod, $job);
+            $plannedJob = new PlannedJob($id, $nextRun, $recurrenceInterval, $job);
             $plannedJob->moveAfter(time());
-        } while (!Resque::redis()->setNx(Key::plan($id), $plannedJob));
+        } while (!Resque::redis()->setNx(Key::plan($id), $plannedJob->toString()));
 
         $nextRun = $plannedJob->getNextRunTimestamp();
 
         Resque::redis()->zadd(Key::planSchedule(), $nextRun, $nextRun);
-        Resque::redis()->rpush(Key::planTimestamp($nextRun), json_encode($plannedJob->toArray()));
+        Resque::redis()->rpush(Key::planTimestamp($nextRun), $plannedJob->getId());
 
         return $id;
     }
 
     public static function removeJob($id) {
-        $redis = Resque::redis();
         $plannedJob = self::getPlannedJob($id);
-        $redis->del(Key::plan($id));
+        Resque::redis()->del(Key::plan($id));
+
+        if ($plannedJob == null) {
+            return false;
+        }
 
         $timestamp = $plannedJob->getNextRunTimestamp();
-        $timestampKey = Key::planTimestamp($timestamp);
+        Resque::redis()->lRem(Key::planTimestamp($timestamp), 0, $id);
 
-        $redis->lRem($timestampKey, 1, $id);
-        if ($redis->llen($timestampKey) == 0) {
-            $redis->del($timestampKey);
+        self::cleanupTimestamp($timestamp);
+
+        return true;
+    }
+
+    /**
+     * If there are no jobs for a given key/timestamp, delete references to it.
+     * Used internally to remove empty planned: items in Redis when there are
+     * no more jobs left to run at that timestamp.
+     *
+     * @param int $timestamp Matching timestamp for $key.
+     */
+    private static function cleanupTimestamp($timestamp) {
+        $redis = Resque::redis();
+
+        if ($redis->llen(Key::planTimestamp($timestamp)) == 0) {
+            Log::info("[planner] Cleaning timestamp $timestamp");
+            $redis->del(Key::planTimestamp($timestamp));
             $redis->zrem(Key::planSchedule(), $timestamp);
         }
     }
 
     /**
      * @param $planId
+     *
      * @return null|PlannedJob
      */
     private static function getPlannedJob($planId) {
         $data = Resque::redis()->get(Key::plan($planId));
         if (!$data) {
+            Log::info("[planner] No planned job '$planId'");
+
             return null;
         }
 
-        $decoded = json_decode($data);
+        $decoded = json_decode($data, true);
         if (!is_array($decoded)) {
-            Log::critical("Unknown format for planned job '$id':\n $data");
+            Log::critical("[planner] Unknown format for planned job '$planId':\n $data");
+
             return null;
         }
 
@@ -80,15 +104,16 @@ LUA;
     public function enqueueItemsForTimestamp($timestamp) {
         while (($plannedJob = $this->nextJobForTimestamp($timestamp)) !== null) {
             $job = $plannedJob->getJob();
-            Log::info("queueing {$job->getClass()} in {$job->getQueue()} [planned]");
+            Log::info("[planner] queueing {$job->getClass()} in {$job->getQueue()}");
 
             $futurePlannedJob = $this->moveTimestamp($plannedJob, $timestamp);
+            $prefix = Redis::getPrefix();
             Resque::redis()->eval(
                     self::ENQUEUE_SCRIPT,
                     [
-                            Key::planSchedule(),
-                            Key::planTimestamp($timestamp),
-                            Key::planTimestamp($futurePlannedJob->getNextRunTimestamp())
+                            $prefix . Key::planSchedule(),
+                            $prefix . Key::planTimestamp($plannedJob->getNextRunTimestamp()),
+                            $prefix . Key::planTimestamp($futurePlannedJob->getNextRunTimestamp())
                     ],
                     [
                             $futurePlannedJob->getNextRunTimestamp(),
@@ -102,30 +127,16 @@ LUA;
 
     public function execute() {
         while (($oldestJobTimestamp = $this->nextTimestamp()) !== false) {
+            Log::info("[planner] Running plans for $oldestJobTimestamp");
             Process::setTitle('Processing Planned Items');
             $this->enqueueItemsForTimestamp($oldestJobTimestamp);
         }
     }
 
     /**
-     * If there are no jobs for a given key/timestamp, delete references to it.
-     * Used internally to remove empty planned: items in Redis when there are
-     * no more jobs left to run at that timestamp.
-     *
-     * @param int $timestamp Matching timestamp for $key.
-     */
-    private function cleanupTimestamp($timestamp) {
-        $redis = Resque::redis();
-
-        if ($redis->llen(Key::planTimestamp($timestamp)) == 0) {
-            $redis->del(Key::planTimestamp($timestamp));
-            $redis->zrem(Key::delayedQueueSchedule(), $timestamp);
-        }
-    }
-
-    /**
      * @param PlannedJob $plannedJob
      * @param $timestamp
+     *
      * @return PlannedJob
      */
     private function moveTimestamp(PlannedJob $plannedJob, $timestamp) {
@@ -133,6 +144,10 @@ LUA;
         $futurePlannedJob->moveAfter($timestamp);
 
         Resque::redis()->set(Key::plan($plannedJob->getId()), $plannedJob->toString());
+
+        Log::info("[planner] Moved job {$plannedJob->getId()}"
+                . " from {$plannedJob->getNextRunTimestamp()}"
+                . " to {$futurePlannedJob->getNextRunTimestamp()}.");
 
         return $futurePlannedJob;
     }
@@ -147,14 +162,17 @@ LUA;
     private function nextJobForTimestamp($timestamp) {
         $planId = Resque::redis()->lpop(Key::planTimestamp($timestamp));
 
-        $plannedJob = self::getPlannedJob($planId);
-        if (!$plannedJob) {
+        self::cleanupTimestamp($timestamp);
+
+        if ($planId == null) {
             return null;
         }
 
-        self::cleanupTimestamp($timestamp);
+        Log::info("[planner] Looking for planned job $planId..");
 
-        return $plannedJob;
+        $plannedJob = self::getPlannedJob($planId);
+
+        return $plannedJob ?: null;
     }
 
     /**
@@ -173,7 +191,9 @@ LUA;
             $at = time();
         }
 
-        $items = Resque::redis()->zrangebyscore(Key::planSchedule(), '-inf', $at, ['limit' => [0, 1]]);
+        $items = Resque::redis()->zrangebyscore(Key::planSchedule(), '-inf', $at, [
+                'limit' => [0, 1]
+        ]);
         if (!empty($items)) {
             return $items[0];
         }
