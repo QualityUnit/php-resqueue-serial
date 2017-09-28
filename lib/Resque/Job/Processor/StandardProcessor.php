@@ -15,26 +15,13 @@ use Resque\Log;
 use Resque\Process;
 use Resque\ResqueImpl;
 use Resque\Task\CreationException;
-use Resque\Task\ITask;
 
 class StandardProcessor implements IProcessor {
 
     public function process(RunningJob $runningJob) {
-        $job = $runningJob->getJob();
-
-        Log::debug("Creating task {$job->getClass()}");
-        try {
-            $task = $this->createTask($runningJob);
-        } catch (FailException $e) {
-            $runningJob->fail($e->getPrevious() ?: $e);
-
-            return;
-        }
-
-        Log::debug("Performing task {$job->getClass()}");
         $pid = Process::fork();
         if ($pid === 0) {
-            $this->handleChild($task, $runningJob);
+            $this->handleChild($runningJob);
         } else {
             $exitCode = $this->waitForChild($pid);
             if ($exitCode !== 0) {
@@ -106,14 +93,16 @@ class StandardProcessor implements IProcessor {
     }
 
     /**
-     * @param ITask $task
      * @param RunningJob $runningJob
      *
      * @throws RescheduleException
      */
-    private function handleChild($task, RunningJob $runningJob) {
+    private function handleChild(RunningJob $runningJob) {
         $job = $runningJob->getJob();
         try {
+            Log::debug("Creating task {$job->getClass()}");
+            $task = $this->createTask($runningJob);
+            Log::debug("Performing task {$job->getClass()}");
             $task->perform();
             $this->reportSuccess($runningJob);
         } catch (RescheduleException $e) {
