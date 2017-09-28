@@ -64,34 +64,6 @@ class StandardProcessor implements IProcessor {
         }
     }
 
-    private function includePath(Job $job) {
-        $jobPath = ltrim(trim($job->getIncludePath()), '/\\');
-        if(!$jobPath) {
-            return;
-        }
-
-        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath();
-        $pathVariables = $job->getPathVariables();
-        if(is_array($pathVariables)) {
-            foreach ($pathVariables as $key => $value) {
-                $fullPath = str_replace('{' . $key. '}', $value, $fullPath);
-            }
-        }
-
-        $fullPath .= $jobPath;
-
-        include_once $fullPath;
-    }
-
-    private function setupEnvironment(Job $job) {
-        $env = $job->getEnvironment();
-        if(is_array($env)) {
-            foreach ($env as $key => $value) {
-                $_SERVER[$key] = $value;
-            }
-        }
-    }
-
     /**
      * @param RunningJob $runningJob
      *
@@ -123,11 +95,39 @@ class StandardProcessor implements IProcessor {
         }
     }
 
+    private function includePath(Job $job) {
+        $jobPath = ltrim(trim($job->getIncludePath()), '/\\');
+        if (!$jobPath) {
+            return;
+        }
+
+        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath();
+        $pathVariables = $job->getPathVariables();
+        if (is_array($pathVariables)) {
+            foreach ($pathVariables as $key => $value) {
+                $fullPath = str_replace('{' . $key . '}', $value, $fullPath);
+            }
+        }
+
+        $fullPath .= $jobPath;
+
+        include_once $fullPath;
+    }
+
     private function reportSuccess(RunningJob $runningJob) {
         try {
             $runningJob->success();
         } catch (Exception $e) {
             Log::error("Failed to report success of a job {$runningJob->getJob()->toString()}: {$e->getMessage()}");
+        }
+    }
+
+    private function setupEnvironment(Job $job) {
+        $env = $job->getEnvironment();
+        if (is_array($env)) {
+            foreach ($env as $key => $value) {
+                $_SERVER[$key] = $value;
+            }
         }
     }
 
