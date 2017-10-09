@@ -35,6 +35,7 @@ class RunningJob {
     }
 
     public function fail(\Exception $e = null) {
+        UniqueList::remove($this->job->getUniqueId());
         $this->reportFail($e);
         $this->status->setFailed();
     }
