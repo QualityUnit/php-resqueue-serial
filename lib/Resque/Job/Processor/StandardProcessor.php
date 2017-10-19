@@ -41,8 +41,8 @@ class StandardProcessor implements IProcessor {
     private function createTask(RunningJob $runningJob) {
         $job = $runningJob->getJob();
         try {
-            $this->includePath($job);
             $this->setupEnvironment($job);
+            $this->includePath($job);
 
             if (!class_exists($job->getClass())) {
                 throw new CreationException("Job class {$job->getClass()} does not exist.");
