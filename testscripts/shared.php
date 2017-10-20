@@ -117,7 +117,7 @@ class Descriptor extends JobDescriptor {
     private $args;
     private $class;
 
-    public function __construct($args, $class) {
+    public function __construct($class, $args) {
         $this->args = $args;
         $this->class = $class;
     }

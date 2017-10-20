@@ -15,6 +15,7 @@ use Resque\Log;
 use Resque\Process;
 use Resque\ResqueImpl;
 use Resque\Task\CreationException;
+use Resque\UniqueList;
 
 class StandardProcessor implements IProcessor {
 
@@ -67,15 +68,15 @@ class StandardProcessor implements IProcessor {
             Log::debug("Creating task {$job->getClass()}");
             $task = $this->createTask($runningJob);
             Log::debug("Performing task {$job->getClass()}");
+
+            UniqueList::edit($runningJob->getJob()->getUniqueId(), UniqueList::STATE_RUNNING);
+
             $task->perform();
             $this->reportSuccess($runningJob);
         } catch (RescheduleException $e) {
             Log::debug("Rescheduling task {$job->getClass()} in {$e->getDelay()}s");
-            if ($e->getDelay() > 0) {
-                $runningJob->rescheduleDelayed($e->getDelay());
-            } else {
-                $runningJob->reschedule();
-            }
+
+            $this->rescheduleJob($runningJob, $e->getDelay());
         } catch (RetryException $e) {
             $runningJob->retry($e);
         } catch (\Exception $e) {
@@ -111,6 +112,24 @@ class StandardProcessor implements IProcessor {
             $runningJob->success();
         } catch (Exception $e) {
             Log::error("Failed to report success of a job {$runningJob->getJob()->toString()}: {$e->getMessage()}");
+        }
+    }
+
+    /**
+     * @param RunningJob $runningJob
+     * @param $delay
+     */
+    private function rescheduleJob(RunningJob $runningJob, $delay) {
+        try {
+            if ($delay > 0) {
+                $runningJob->rescheduleDelayed($delay);
+            } else {
+                $runningJob->reschedule();
+            }
+            UniqueList::edit($runningJob->getJob()->getUniqueId(), UniqueList::STATE_QUEUED);
+        } catch (\Exception $e) {
+            UniqueList::remove($runningJob->getJob()->getUniqueId());
+            Log::critical("Failed to reschedule job {$runningJob->getJob()->toString()}");
         }
     }
 

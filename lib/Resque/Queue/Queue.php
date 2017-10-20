@@ -38,7 +38,7 @@ class Queue implements IJobSource {
     public static function push(Job $job, $checkUnique = true) {
         $queuedJob = new QueuedJob($job, ResqueImpl::getInstance()->generateJobId());
 
-        if (!UniqueList::add($job->getUniqueId(), $queuedJob->getId()) && $checkUnique) {
+        if (!UniqueList::add($job->getUniqueId()) && $checkUnique) {
             throw new UniqueException($job->getUniqueId());
         }
 

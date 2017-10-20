@@ -16,8 +16,18 @@ unlink('/tmp/serialjob.txt');
 //}
 
 
-//Resque::enqueue('example_queue', __FailJob::class, ['arg' => 'test']);
+//Resque::enqueue('example_queue', new Descriptor(__FailJob::class, [
+//        'arg' => 'test',
+//        'uniqueId' => 'testId'
+//]));
 
+
+var_dump(\Resque\UniqueList::add('plain'));
+var_dump(\Resque\UniqueList::add('new'));
+var_dump(\Resque\UniqueList::edit('new', "EDITED"));
+var_dump(\Resque\UniqueList::edit('fake', 'TEST'));
+//var_dump(\Resque\UniqueList::remove('new'));
+//var_dump(\Resque\UniqueList::remove('fake'));
 
 //Resque::enqueue('example_queue', RunApplicationTask::class, [
 //        'include_path' => 'something.php',
@@ -25,9 +35,9 @@ unlink('/tmp/serialjob.txt');
 //        'job_class' => '__ApplicationTask',
 //]);
 
-$start = new DateTime('2017-9-25T14:40:0');
-echo $start->format(DateTime::ATOM) . PHP_EOL;
-
-$interval = new DateInterval('PT1M');
-
-echo Resque::planCreate($start, $interval, 'example_queue', new Descriptor([], __TestJob::class));
+//$start = new DateTime('2017-9-25T14:40:0');
+//echo $start->format(DateTime::ATOM) . PHP_EOL;
+//
+//$interval = new DateInterval('PT1M');
+//
+//echo Resque::planCreate($start, $interval, 'example_queue', new Descriptor(__TestJob::class, []));
