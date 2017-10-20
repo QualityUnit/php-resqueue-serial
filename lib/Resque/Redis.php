@@ -15,101 +15,124 @@ use Resque\Api\RedisException;
  * @license        http://www.opensource.org/licenses/mit-license.php
  * COPIED FROM CREDIS CLIENT PHPDOC
  * Server/Connection:
- * @method Credis_Client pipeline()
- * @method Credis_Client multi()
- * @method array         exec()
- * @method string        flushAll()
- * @method string        flushDb()
- * @method array         info()
- * @method bool|array    config(string $setGet, string $key, string $value = null)
+ * @method Credis_Client               pipeline()
+ * @method Credis_Client               multi()
+ * @method Credis_Client               watch(string ...$keys)
+ * @method Credis_Client               unwatch()
+ * @method array                       exec()
+ * @method string|Credis_Client        flushAll()
+ * @method string|Credis_Client        flushDb()
+ * @method array|Credis_Client         info(string $section = null)
+ * @method bool|array|Credis_Client    config(string $setGet, string $key, string $value = null)
+ * @method array|Credis_Client         role()
+ * @method array|Credis_Client         time()
+ *
  * Keys:
- * @method int           del(string $key)
- * @method int           exists(string $key)
- * @method int           expire(string $key, int $seconds)
- * @method int           expireAt(string $key, int $timestamp)
- * @method array         keys(string $key)
- * @method int           persist(string $key)
- * @method bool          rename(string $key, string $newKey)
- * @method bool          renameNx(string $key, string $newKey)
- * @method array         sort(string $key, string $arg1, string $valueN = null)
- * @method int           ttl(string $key)
- * @method string        type(string $key)
+ * @method int|Credis_Client           del(string $key)
+ * @method int|Credis_Client           exists(string $key)
+ * @method int|Credis_Client           expire(string $key, int $seconds)
+ * @method int|Credis_Client           expireAt(string $key, int $timestamp)
+ * @method array|Credis_Client         keys(string $key)
+ * @method int|Credis_Client           persist(string $key)
+ * @method bool|Credis_Client          rename(string $key, string $newKey)
+ * @method bool|Credis_Client          renameNx(string $key, string $newKey)
+ * @method array|Credis_Client         sort(string $key, string $arg1, string $valueN = null)
+ * @method int|Credis_Client           ttl(string $key)
+ * @method string|Credis_Client        type(string $key)
+ *
  * Scalars:
- * @method int           append(string $key, string $value)
- * @method int           decr(string $key)
- * @method int           decrBy(string $key, int $decrement)
- * @method bool|string   get(string $key)
- * @method int           getBit(string $key, int $offset)
- * @method string        getRange(string $key, int $start, int $end)
- * @method string        getSet(string $key, string $value)
- * @method int           incr(string $key)
- * @method int           incrBy(string $key, int $increment)
- * @method array         mGet(array $keys)
- * @method bool          mSet(array $keysValues)
- * @method int           mSetNx(array $keysValues)
- * @method bool          set(string $key, string $value)
- * @method int           setBit(string $key, int $offset, int $value)
- * @method bool          setEx(string $key, int $seconds, string $value)
- * @method int           setNx(string $key, string $value)
- * @method int           setRange(string $key, int $offset, int $value)
- * @method int           strLen(string $key)
+ * @method int|Credis_Client           append(string $key, string $value)
+ * @method int|Credis_Client           decr(string $key)
+ * @method int|Credis_Client           decrBy(string $key, int $decrement)
+ * @method bool|string|Credis_Client   get(string $key)
+ * @method int|Credis_Client           getBit(string $key, int $offset)
+ * @method string|Credis_Client        getRange(string $key, int $start, int $end)
+ * @method string|Credis_Client        getSet(string $key, string $value)
+ * @method int|Credis_Client           incr(string $key)
+ * @method int|Credis_Client           incrBy(string $key, int $decrement)
+ * @method array|Credis_Client         mGet(array $keys)
+ * @method bool|Credis_Client          mSet(array $keysValues)
+ * @method int|Credis_Client           mSetNx(array $keysValues)
+ * @method bool|Credis_Client          set(string $key, string $value, int | array $options = null)
+ * @method int|Credis_Client           setBit(string $key, int $offset, int $value)
+ * @method bool|Credis_Client          setEx(string $key, int $seconds, string $value)
+ * @method int|Credis_Client           setNx(string $key, string $value)
+ * @method int |Credis_Client          setRange(string $key, int $offset, int $value)
+ * @method int|Credis_Client           strLen(string $key)
+ *
  * Sets:
- * @method int           sAdd(string $key, mixed $value, string $valueN = null)
- * @method int           sRem(string $key, mixed $value, string $valueN = null)
- * @method array         sMembers(string $key)
- * @method array         sUnion(mixed $keyOrArray, string $valueN = null)
- * @method array         sInter(mixed $keyOrArray, string $valueN = null)
- * @method array         sDiff(mixed $keyOrArray, string $valueN = null)
- * @method string        sPop(string $key)
- * @method int           sCard(string $key)
- * @method int           sIsMember(string $key, string $member)
- * @method int           sMove(string $source, string $dest, string $member)
- * @method string|array  sRandMember(string $key, int $count = null)
- * @method int           sUnionStore(string $dest, string $key1, string $key2 = null)
- * @method int           sInterStore(string $dest, string $key1, string $key2 = null)
- * @method int           sDiffStore(string $dest, string $key1, string $key2 = null)
+ * @method int|Credis_Client           sAdd(string $key, mixed $value, string $valueN = null)
+ * @method int|Credis_Client           sRem(string $key, mixed $value, string $valueN = null)
+ * @method array|Credis_Client         sMembers(string $key)
+ * @method array|Credis_Client         sUnion(mixed $keyOrArray, string $valueN = null)
+ * @method array|Credis_Client         sInter(mixed $keyOrArray, string $valueN = null)
+ * @method array |Credis_Client        sDiff(mixed $keyOrArray, string $valueN = null)
+ * @method string|Credis_Client        sPop(string $key)
+ * @method int|Credis_Client           sCard(string $key)
+ * @method int|Credis_Client           sIsMember(string $key, string $member)
+ * @method int|Credis_Client           sMove(string $source, string $dest, string $member)
+ * @method string|array|Credis_Client  sRandMember(string $key, int $count = null)
+ * @method int|Credis_Client           sUnionStore(string $dest, string $key1, string $key2 = null)
+ * @method int|Credis_Client           sInterStore(string $dest, string $key1, string $key2 = null)
+ * @method int|Credis_Client           sDiffStore(string $dest, string $key1, string $key2 = null)
+ *
  * Hashes:
- * @method bool|int      hSet(string $key, string $field, string $value)
- * @method bool          hSetNx(string $key, string $field, string $value)
- * @method bool|string   hGet(string $key, string $field)
- * @method bool|int      hLen(string $key)
- * @method bool          hDel(string $key, string $field)
- * @method array         hKeys(string $key, string $field)
- * @method array         hVals(string $key)
- * @method array         hGetAll(string $key)
- * @method bool          hExists(string $key, string $field)
- * @method int           hIncrBy(string $key, string $field, int $value)
- * @method bool          hMSet(string $key, array $keysValues)
- * @method array         hMGet(string $key, array $fields)
+ * @method bool|int|Credis_Client      hSet(string $key, string $field, string $value)
+ * @method bool|Credis_Client          hSetNx(string $key, string $field, string $value)
+ * @method bool|string|Credis_Client   hGet(string $key, string $field)
+ * @method bool|int|Credis_Client      hLen(string $key)
+ * @method bool|Credis_Client          hDel(string $key, string $field)
+ * @method array|Credis_Client         hKeys(string $key, string $field)
+ * @method array|Credis_Client         hVals(string $key)
+ * @method array|Credis_Client         hGetAll(string $key)
+ * @method bool|Credis_Client          hExists(string $key, string $field)
+ * @method int|Credis_Client           hIncrBy(string $key, string $field, int $value)
+ * @method bool|Credis_Client          hMSet(string $key, array $keysValues)
+ * @method array|Credis_Client         hMGet(string $key, array $fields)
+ *
  * Lists:
- * @method array|null    blPop(string $keyN, int $timeout)
- * @method array|null    brPop(string $keyN, int $timeout)
- * @method array|null    brPoplPush(string $source, string $destination, int $timeout)
- * @method string|null   lIndex(string $key, int $index)
- * @method int           lInsert(string $key, string $beforeAfter, string $pivot, string $value)
- * @method int           lLen(string $key)
- * @method string|null   lPop(string $key)
- * @method int           lPush(string $key, mixed $value, mixed $valueN = null)
- * @method int           lPushX(string $key, mixed $value)
- * @method array         lRange(string $key, int $start, int $stop)
- * @method int           lRem(string $key, int $count, mixed $value)
- * @method bool          lSet(string $key, int $index, mixed $value)
- * @method bool          lTrim(string $key, int $start, int $stop)
- * @method string|null   rPop(string $key)
- * @method string|null   rPoplPush(string $source, string $destination)
- * @method int           rPush(string $key, mixed $value, mixed $valueN = null)
- * @method int           rPushX(string $key, mixed $value)
+ * @method array|null|Credis_Client    blPop(string $keyN, int $timeout)
+ * @method array|null|Credis_Client    brPop(string $keyN, int $timeout)
+ * @method array|null |Credis_Client   brPoplPush(string $source, string $destination, int $timeout)
+ * @method string|null|Credis_Client   lIndex(string $key, int $index)
+ * @method int|Credis_Client           lInsert(string $key, string $beforeAfter, string $pivot, string $value)
+ * @method int|Credis_Client           lLen(string $key)
+ * @method string|null|Credis_Client   lPop(string $key)
+ * @method int|Credis_Client           lPush(string $key, mixed $value, mixed $valueN = null)
+ * @method int|Credis_Client           lPushX(string $key, mixed $value)
+ * @method array|Credis_Client         lRange(string $key, int $start, int $stop)
+ * @method int|Credis_Client           lRem(string $key, int $count, mixed $value)
+ * @method bool|Credis_Client          lSet(string $key, int $index, mixed $value)
+ * @method bool|Credis_Client          lTrim(string $key, int $start, int $stop)
+ * @method string|null|Credis_Client   rPop(string $key)
+ * @method string|null|Credis_Client   rPoplPush(string $source, string $destination)
+ * @method int|Credis_Client           rPush(string $key, mixed $value, mixed $valueN = null)
+ * @method int |Credis_Client          rPushX(string $key, mixed $value)
+ *
  * Sorted Sets:
- * @method int           zadd(string $key, double $score, mixed $value)
- * @method array         zrangebyscore(string $key, mixed $start, mixed $stop, array $args = null)
- * @method int           zrem(string $key, mixed $member, mixed $memberN = null)
+ * @method int|Credis_Client           zAdd(string $key, double $score, string $value)
+ * @method int|Credis_Client           zCard(string $key)
+ * @method int|Credis_Client           zSize(string $key)
+ * @method int|Credis_Client           zCount(string $key, mixed $start, mixed $stop)
+ * @method int|Credis_Client           zIncrBy(string $key, double $value, string $member)
+ * @method array|Credis_Client         zRangeByScore(string $key, mixed $start, mixed $stop, array $args = null)
+ * @method array|Credis_Client         zRevRangeByScore(string $key, mixed $start, mixed $stop, array $args = null)
+ * @method int|Credis_Client           zRemRangeByScore(string $key, mixed $start, mixed $stop)
+ * @method array|Credis_Client         zRange(string $key, mixed $start, mixed $stop, array $args = null)
+ * @method array|Credis_Client         zRevRange(string $key, mixed $start, mixed $stop, array $args = null)
+ * @method int|Credis_Client           zRank(string $key, string $member)
+ * @method int|Credis_Client           zRevRank(string $key, string $member)
+ * @method int|Credis_Client           zRem(string $key, string $member)
+ * @method int|Credis_Client           zDelete(string $key, string $member)
+ *
  * Pub/Sub
- * @method int           publish(string $channel, string $message)
- * @method int|array     pubsub(string $subCommand, $arg = null)
+ * @method int |Credis_Client          publish(string $channel, string $message)
+ * @method int|array|Credis_Client     pubsub(string $subCommand, $arg = null)
+ *
  * Scripting:
- * @method string|int    script(string $command, string $arg1 = null)
- * @method string|int|array|bool eval(string $script, array $keys = null, array $args = null)
- * @method string|int|array|bool evalSha(string $script, array $keys = null, array $args = null)
+ * @method string|int|Credis_Client    script(string $command, string $arg1 = null)
+ * @method string|int|array|bool|Credis_Client eval(string $script, array $keys = null, array $args = null)
+ * @method string|int|array|bool|Credis_Client evalSha(string $script, array $keys = null, array $args = null)
  * Special:
  * @method string        quit()
  */
@@ -134,6 +157,11 @@ class Redis {
      * The default Redis Database number
      */
     const DEFAULT_DATABASE = 0;
+
+    /**
+     * @var Credis_Client
+     */
+    private $driver = null;
 
     /**
      * @var array List of all commands in Redis that supply a key as their
@@ -202,37 +230,30 @@ class Redis {
      * @param string|array $server A DSN or array
      * @param int $database A database number to select. However, if we find a valid database number
      * in the DSN the DSN-supplied value will be used instead and this parameter is ignored.
-     * @param object $client Optional Credis_Cluster or Credis_Client instance instantiated by you
      * @throws RedisException
      */
-    public function __construct($server, $database = null, $client = null) {
+    public function __construct($server, $database = null) {
         try {
-            if (is_array($server)) {
-                $this->driver = new Credis_Cluster($server);
-            } else if (is_object($client)) {
-                $this->driver = $client;
-            } else {
-                /** @noinspection PhpUnusedLocalVariableInspection */
-                list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
-                // $user is not used, only $password
+            /** @noinspection PhpUnusedLocalVariableInspection */
+            list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
+            // $user is not used, only $password
 
-                // Look for known Credis_Client options
-                $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-                $persistent = isset($options['persistent']) ? $options['persistent'] : '';
-                $maxRetries = isset($options['max_connect_retries'])
-                        ? $options['max_connect_retries'] : 0;
+            // Look for known Credis_Client options
+            $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
+            $persistent = isset($options['persistent']) ? $options['persistent'] : '';
+            $maxRetries = isset($options['max_connect_retries'])
+                    ? $options['max_connect_retries'] : 0;
 
-                $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
-                $this->driver->setMaxConnectRetries($maxRetries);
-                if ($password) {
-                    $this->driver->auth($password);
-                }
+            $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
+            $this->driver->setMaxConnectRetries($maxRetries);
+            if ($password) {
+                $this->driver->auth($password);
+            }
 
-                // If we have found a database in our DSN, use it instead of the `$database`
-                // value passed into the constructor.
-                if ($dsnDatabase !== false) {
-                    $database = $dsnDatabase;
-                }
+            // If we have found a database in our DSN, use it instead of the `$database`
+            // value passed into the constructor.
+            if ($dsnDatabase !== false) {
+                $database = $dsnDatabase;
             }
 
             if ($database !== null) {
@@ -355,8 +376,6 @@ class Redis {
     }
 
     public function close() {
-        if (method_exists($this->driver, 'close')) {
-            $this->driver->close();
-        }
+        $this->driver->close();
     }
 }

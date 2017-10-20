@@ -81,11 +81,7 @@ class ResqueImpl implements ResqueApi {
             return $this->redis;
         }
 
-        if (is_callable($this->redisServer)) {
-            $this->redis = call_user_func($this->redisServer, $this->redisDatabase);
-        } else {
-            $this->redis = new Redis($this->redisServer, $this->redisDatabase);
-        }
+        $this->redis = new Redis($this->redisServer, $this->redisDatabase);
 
         Redis::prefix(\Resque::VERSION_PREFIX);
 

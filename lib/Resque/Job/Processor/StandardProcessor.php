@@ -30,14 +30,6 @@ class StandardProcessor implements IProcessor {
         }
     }
 
-    private function closeRedis() {
-        try {
-            \Resque::redis()->quit();
-        } catch (Exception $ignore) {
-        }
-        ResqueImpl::getInstance()->resetRedis();
-    }
-
     private function createTask(RunningJob $runningJob) {
         $job = $runningJob->getJob();
         try {
@@ -90,7 +82,7 @@ class StandardProcessor implements IProcessor {
             Log::error("Failed to perform job {$job->toString()}");
             $runningJob->fail($e);
         } finally {
-            $this->closeRedis();
+            ResqueImpl::getInstance()->resetRedis();
             exit(0);
         }
     }
