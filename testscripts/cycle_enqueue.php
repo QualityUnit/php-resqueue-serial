@@ -8,12 +8,11 @@ Resque::setBackend("localhost:6379");
 
 unlink('/tmp/serialjob.txt');
 
-//$i = 0;
-//while ($i < 50) {
-//    $i++;
-//    Resque::enqueue('example_queue', new __SerialJob());
-//    usleep(100000);
-//}
+$i = 0;
+while ($i < 50) {
+    $i++;
+    Resque::enqueue('example_queue', new Descriptor(__TestJob::class, []));
+}
 
 
 //Resque::enqueue('example_queue', new Descriptor(__FailJob::class, [
@@ -21,13 +20,6 @@ unlink('/tmp/serialjob.txt');
 //        'uniqueId' => 'testId'
 //]));
 
-
-var_dump(\Resque\UniqueList::add('plain'));
-var_dump(\Resque\UniqueList::add('new'));
-var_dump(\Resque\UniqueList::edit('new', "EDITED"));
-var_dump(\Resque\UniqueList::edit('fake', 'TEST'));
-//var_dump(\Resque\UniqueList::remove('new'));
-//var_dump(\Resque\UniqueList::remove('fake'));
 
 //Resque::enqueue('example_queue', RunApplicationTask::class, [
 //        'include_path' => 'something.php',

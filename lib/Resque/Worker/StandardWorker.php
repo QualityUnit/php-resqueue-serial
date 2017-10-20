@@ -6,12 +6,10 @@ namespace Resque\Worker;
 
 use Resque\Config\GlobalConfig;
 use Resque\Job\Job;
-use Resque\Job\Processor\SerialLinkProcessor;
 use Resque\Job\Processor\StandardProcessor;
 use Resque\Job\Reservations\BlockingStrategy;
 use Resque\Job\Reservations\IStrategy;
 use Resque\Job\Reservations\SleepStrategy;
-use Resque\Job\SerialJobLink;
 use Resque\Log;
 use Resque\Process;
 use Resque\Queue\Queue;
@@ -20,7 +18,6 @@ use Resque\SignalHandler;
 class StandardWorker extends WorkerBase {
 
     private $isShutDown = false;
-    private $serialProc = null;
     private $standardProc = null;
 
     /**
@@ -36,7 +33,6 @@ class StandardWorker extends WorkerBase {
                 WorkerImage::create($queue)
         );
 
-        $this->serialProc = new SerialLinkProcessor($this->getImage());
         $this->standardProc = new StandardProcessor();
     }
 
@@ -86,10 +82,6 @@ class StandardWorker extends WorkerBase {
     }
 
     protected function resolveProcessor(Job $job) {
-        if (SerialJobLink::isSerialLink($job)) {
-            return $this->serialProc;
-        }
-
         return $this->standardProc;
     }
 

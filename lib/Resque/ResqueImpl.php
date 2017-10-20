@@ -7,7 +7,6 @@ use Resque\Api\JobDescriptor;
 use Resque\Api\ResqueApi;
 use Resque\Job\Job;
 use Resque\Queue\Queue;
-use Resque\Queue\SerialQueue;
 use Resque\Scheduler\PlannedScheduler;
 use Resque\Scheduler\SchedulerProcess;
 
@@ -48,10 +47,6 @@ class ResqueImpl implements ResqueApi {
     }
 
     public function jobEnqueue(Job $job, $checkUnique) {
-        if ($job->isSerial()) {
-            return SerialQueue::push($job)->getId();
-        }
-
         return Queue::push($job, $checkUnique)->getId();
     }
 

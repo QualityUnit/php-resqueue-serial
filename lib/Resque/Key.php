@@ -16,16 +16,7 @@ class Key {
      * @return string
      */
     public static function queueLock($queue) {
-        return Key::serial('queuedata', $queue, 'lock');
-    }
-
-    /**
-     * @param string $queue
-     *
-     * @return string
-     */
-    public static function serialCompletedCount($queue) {
-        return Key::serial('queuedata', $queue, 'completed_count');
+        return Key::of('queuedata', $queue, 'lock');
     }
 
     /**
@@ -37,91 +28,12 @@ class Key {
     }
 
     /**
-     * @param string $queue
-     *
-     * @return string
-     */
-    public static function serialQueue($queue) {
-        return Key::serial('queue', $queue);
-    }
-
-    /**
-     * @param string $queue
-     *
-     * @return string
-     */
-    public static function serialLink($queue) {
-        return Key::serial('link', $queue);
-    }
-
-    /**
-     * @param string $queue
-     *
-     * @return string
-     */
-    public static function serialQueueConfig($queue) {
-        return Key::serial('queuedata', $queue, 'config');
-    }
-
-    /**
-     * @param string $worker
-     *
-     * @return string
-     */
-    public static function serialWorker($worker) {
-        return Key::serial('serial_worker', $worker);
-    }
-
-    /**
-     * @param string $worker
-     *
-     * @return string
-     */
-    public static function serialWorkerParent($worker) {
-        return Key::serial('serial_worker', $worker, 'parent');
-    }
-
-    /**
-     * @param string $worker
-     *
-     * @return string
-     */
-    public static function serialWorkerRunners($worker) {
-        return Key::serial('serial_worker', $worker, 'runners');
-    }
-
-    /**
-     * @param string $worker
-     *
-     * @return string
-     */
-    public static function serialWorkerStart($worker) {
-        return Key::serial('serial_worker', $worker, 'started');
-    }
-
-    /**
-     * @return string
-     */
-    public static function serialWorkers() {
-        return Key::serial('serial_workers');
-    }
-
-    /**
      * @param string $worker
      *
      * @return string
      */
     public static function worker($worker) {
-        return Key::serial('worker', $worker);
-    }
-
-    /**
-     * @param string $worker
-     *
-     * @return string
-     */
-    public static function workerSerialWorkers($worker) {
-        return Key::serial('worker', $worker, 'serial_workers');
+        return Key::of('worker', $worker);
     }
 
     /**
@@ -130,14 +42,14 @@ class Key {
      * @return string
      */
     public static function workerStart($worker) {
-        return Key::serial('worker', $worker, 'started');
+        return Key::of('worker', $worker, 'started');
     }
 
     /**
      * @return string
      */
     public static function workers() {
-        return Key::serial('workers');
+        return Key::of('workers');
     }
 
     /**
@@ -196,10 +108,6 @@ class Key {
      */
     public static function queues() {
         return 'queues';
-    }
-
-    private static function serial(...$parts) {
-        return self::of('serial', ...$parts);
     }
 
     public static function planSchedule() {

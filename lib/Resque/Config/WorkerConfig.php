@@ -11,10 +11,6 @@ class WorkerConfig {
     /** @var bool */
     private $blocking;
     /** @var int */
-    private $maxSerialWorkers;
-    /** @var int */
-    private $maxSerialSubqueues;
-    /** @var int */
     private $interval = 3;
 
     public function __construct($data) {
@@ -24,9 +20,6 @@ class WorkerConfig {
         $this->workerCount = $data['worker_count'];
         $this->blocking = $data['blocking'];
         $this->interval = isset($data['interval']) ? $data['interval'] : $this->interval;
-        $serial = $data['serial'];
-        $this->maxSerialSubqueues = $serial['max_subqueues'];
-        $this->maxSerialWorkers = $serial['max_workers'];
     }
 
     /**
@@ -46,20 +39,6 @@ class WorkerConfig {
     /**
      * @return int
      */
-    public function getMaxSerialSubqueues() {
-        return (int)$this->maxSerialSubqueues;
-    }
-
-    /**
-     * @return int
-     */
-    public function getMaxSerialWorkers() {
-        return (int)$this->maxSerialWorkers;
-    }
-
-    /**
-     * @return int
-     */
     public function getWorkerCount() {
         return (int)$this->workerCount;
     }
@@ -70,11 +49,6 @@ class WorkerConfig {
      * @return bool
      */
     private function hasRequiredFields($data) {
-        if (!isset($data['worker_count']) || !isset($data['blocking']) || !isset($data['serial'])) {
-            return false;
-        }
-        $serial = $data['serial'];
-
-        return isset($serial['max_subqueues']) && isset($serial['max_workers']);
+        return isset($data['worker_count']) || isset($data['blocking']);
     }
 }

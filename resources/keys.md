@@ -34,25 +34,7 @@ resque-v2:
     
     unique_list: hash(uniqueId, jobId)
     
-    serial:
-    
-        link:<serial_queue_name>: null # key presence signifies existence of a link job for the serial queue
-    
-        workers: set(worker_id)                                     # standard workers
-        worker:<worker_id>: <job_run_data>
-            started: <time_started>
-            serial_workers: set(serial_worker_id)    # Serial job workers
-        
-        serial_workers: set(serial_worker_id)                       # Serial job workers
-        serial_worker:<serial_worker_id>: <job_run_data>
-            parent: <worker_id>
-            runners: set(serial_runner_id)
-            started: <time_started>
-        
-        queue:<serial_queue_name>: list(serial_job_data)
-        queuedata:<queue>:
-            config: <queue_config>
-            lock: <lock_value>
-            completed_count: <completed_count>
-
-serial_worker_id: <hostname>:<pid>:<queue>:<queue_count>:<queue_num>
+    queuedata:<queue>:lock: <lock_value>
+    workers: set(worker_id)                                     # standard workers
+    worker:<worker_id>: <job_run_data>
+        started: <time_started>

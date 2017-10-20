@@ -1,5 +1,5 @@
 # php-resqueue-serial
-Serial job support for php-resqueue
+Php queue implementation
 
 ## Dependencies
 * [PHP 5.6+](http://php.net/manual/en/install.php) (runtime)

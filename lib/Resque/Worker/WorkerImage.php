@@ -17,28 +17,10 @@ class WorkerImage extends WorkerImageBase {
     }
 
     /**
-     * @param string $serialWorkerId
-     *
-     * @return $this
-     */
-    public function addSerialWorker($serialWorkerId) {
-        Resque::redis()->sadd(Key::workerSerialWorkers($this->id), $serialWorkerId);
-        return $this;
-    }
-
-    /**
      * @return $this
      */
     public function addToPool() {
         Resque::redis()->sadd(Key::workers(), $this->id);
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function clearSerialWorkers() {
-        Resque::redis()->del(Key::workerSerialWorkers($this->id));
         return $this;
     }
 
@@ -65,25 +47,11 @@ class WorkerImage extends WorkerImageBase {
         return (bool)Resque::redis()->sismember(Key::workers(), $this->id);
     }
 
-    public function getSerialWorkers() {
-        return Resque::redis()->smembers(Key::workerSerialWorkers($this->id));
-    }
-
     /**
      * @return $this
      */
     public function removeFromPool() {
         Resque::redis()->srem(Key::workers(), $this->id);
-        return $this;
-    }
-
-    /**
-     * @param string $serialWorkerId
-     *
-     * @return $this
-     */
-    public function removeSerialWorker($serialWorkerId) {
-        Resque::redis()->srem(Key::workerSerialWorkers($this->id), $serialWorkerId);
         return $this;
     }
 

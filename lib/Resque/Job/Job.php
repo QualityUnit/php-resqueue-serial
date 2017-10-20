@@ -16,10 +16,6 @@ class Job {
     protected $queue = null;
     /** @var string */
     protected $uniqueId = null;
-    /** @var string */
-    protected $serialId = null;
-    /** @var string */
-    protected $secondarySerialId = null;
     /** @var boolean */
     protected $isMonitored = false;
     /** @var string */
@@ -45,8 +41,6 @@ class Job {
         $job->args = isset($array['args']) ? $array['args'] : $job->args;
         $job->queue = isset($array['queue']) ? $array['queue'] : $job->queue;
         $job->uniqueId = isset($array['uniqueId']) ? $array['uniqueId'] : $job->uniqueId;
-        $job->serialId = isset($array['serialId']) ? $array['serialId'] : $job->serialId;
-        $job->secondarySerialId = isset($array['secondarySerialId']) ? $array['secondarySerialId'] : $job->secondarySerialId;
         $job->isMonitored = isset($array['isMonitored']) ? $array['isMonitored'] : $job->isMonitored;
         $job->includePath = isset($array['includePath']) ? $array['includePath'] : $job->includePath;
         $job->pathVariables = isset($array['pathVariables']) ? $array['pathVariables'] : $job->pathVariables;
@@ -66,8 +60,6 @@ class Job {
         $job->class = $jobDescriptor->getClass();
         $job->args = $jobDescriptor->getArgs();
         $job->uniqueId = $jobDescriptor->getUniqueId();
-        $job->serialId = $jobDescriptor->getSerialId();
-        $job->secondarySerialId = $jobDescriptor->getSecondarySerialId();
         $job->isMonitored = $jobDescriptor->isMonitored();
         $job->includePath = $jobDescriptor->getIncludePath();
         $job->pathVariables = $jobDescriptor->getPathVariables();
@@ -102,20 +94,6 @@ class Job {
      */
     public function getQueue() {
         return $this->queue;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSecondarySerialId() {
-        return $this->secondarySerialId;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSerialId() {
-        return $this->serialId;
     }
 
     /**
@@ -163,13 +141,6 @@ class Job {
     }
 
     /**
-     * @return bool TRUE if job is serial; otherwise FALSE
-     */
-    public function isSerial() {
-        return strlen(trim($this->getSerialId())) > 0;
-    }
-
-    /**
      * @param string $queue
      *
      * @return Job
@@ -186,8 +157,6 @@ class Job {
                 'args' => $this->args,
                 'queue' => $this->queue,
                 'uniqueId' => $this->uniqueId,
-                'serialId' => $this->serialId,
-                'secondarySerialId' => $this->secondarySerialId,
                 'isMonitored' => $this->isMonitored,
                 'includePath' => $this->includePath,
                 'pathVariables' => $this->pathVariables,
