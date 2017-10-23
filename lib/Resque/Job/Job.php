@@ -5,6 +5,7 @@ namespace Resque\Job;
 
 
 use Resque\Api\JobDescriptor;
+use Resque\Api\JobUid;
 
 class Job {
 
@@ -14,8 +15,8 @@ class Job {
     protected $args = [];
     /** @var string */
     protected $queue = null;
-    /** @var string */
-    protected $uniqueId = null;
+    /** @var JobUid|null */
+    protected $uid = null;
     /** @var boolean */
     protected $isMonitored = false;
     /** @var string */
@@ -40,12 +41,13 @@ class Job {
         $job->class = isset($array['class']) ? $array['class'] : $job->class;
         $job->args = isset($array['args']) ? $array['args'] : $job->args;
         $job->queue = isset($array['queue']) ? $array['queue'] : $job->queue;
-        $job->uniqueId = isset($array['uniqueId']) ? $array['uniqueId'] : $job->uniqueId;
         $job->isMonitored = isset($array['isMonitored']) ? $array['isMonitored'] : $job->isMonitored;
         $job->includePath = isset($array['includePath']) ? $array['includePath'] : $job->includePath;
         $job->pathVariables = isset($array['pathVariables']) ? $array['pathVariables'] : $job->pathVariables;
         $job->environment = isset($array['environment']) ? $array['environment'] : $job->environment;
         $job->failCount = isset($array['failCount']) ? $array['failCount'] : $job->failCount;
+        $uidValid = isset($array['unique']) && is_array($array['unique']);
+        $job->uid = JobUid::fromArray($uidValid ? $array['unique'] : []);
 
         return $job;
     }
@@ -59,7 +61,7 @@ class Job {
         $job = new Job();
         $job->class = $jobDescriptor->getClass();
         $job->args = $jobDescriptor->getArgs();
-        $job->uniqueId = $jobDescriptor->getUniqueId();
+        $job->uid = $jobDescriptor->getUid();
         $job->isMonitored = $jobDescriptor->isMonitored();
         $job->includePath = $jobDescriptor->getIncludePath();
         $job->pathVariables = $jobDescriptor->getPathVariables();
@@ -83,10 +85,31 @@ class Job {
     }
 
     /**
+     * @return string[]
+     */
+    public function getEnvironment() {
+        return $this->environment;
+    }
+
+    /**
      * @return int
      */
     public function getFailCount() {
         return $this->failCount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIncludePath() {
+        return $this->includePath;
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getPathVariables() {
+        return $this->pathVariables;
     }
 
     /**
@@ -97,10 +120,17 @@ class Job {
     }
 
     /**
+     * @return null|JobUid
+     */
+    public function getUid() {
+        return $this->uid;
+    }
+
+    /**
      * @return string
      */
     public function getUniqueId() {
-        return $this->uniqueId;
+        return $this->uid != null ? $this->uid->getId() : null;
     }
 
     /**
@@ -120,27 +150,6 @@ class Job {
     }
 
     /**
-     * @return string
-     */
-    public function getIncludePath() {
-        return $this->includePath;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getPathVariables() {
-        return $this->pathVariables;
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getEnvironment() {
-        return $this->environment;
-    }
-
-    /**
      * @param string $queue
      *
      * @return Job
@@ -156,7 +165,7 @@ class Job {
                 'class' => $this->class,
                 'args' => $this->args,
                 'queue' => $this->queue,
-                'uniqueId' => $this->uniqueId,
+                'unique' => $this->uid,
                 'isMonitored' => $this->isMonitored,
                 'includePath' => $this->includePath,
                 'pathVariables' => $this->pathVariables,

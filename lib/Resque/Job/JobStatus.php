@@ -57,5 +57,4 @@ class JobStatus {
             'updated' => time(),
         ]));
     }
-
 }
