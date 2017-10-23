@@ -6,8 +6,66 @@ namespace Resque;
 
 class Key {
 
-    public static function of(...$parts) {
-        return implode(':', $parts);
+    /**
+     * @param int $at
+     *
+     * @return string
+     */
+    public static function delayed($at) {
+        return self::of('delayed', $at);
+    }
+
+    /**
+     * @return string
+     */
+    public static function delayedQueueSchedule() {
+        return 'delayed_queue_schedule';
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return string
+     */
+    public static function jobStatus($id) {
+        return self::of('job', $id, 'status');
+    }
+
+    /**
+     * @return string
+     */
+    public static function localSchedulerPid() {
+        return Key::of('scheduler_pid', gethostname());
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return string
+     */
+    public static function plan($id) {
+        return self::of('plan', $id);
+    }
+
+    public static function planSchedule() {
+        return self::of('plan_schedule');
+    }
+
+    /**
+     * @param int $timestamp
+     *
+     * @return string
+     */
+    public static function planTimestamp($timestamp) {
+        return self::of('plan_schedule', $timestamp);
+    }
+
+    /**
+     * @param string $name
+     * @return string
+     */
+    public static function queue($name) {
+        return Key::of('queue', $name);
     }
 
     /**
@@ -20,11 +78,29 @@ class Key {
     }
 
     /**
-     * @param string $name
      * @return string
      */
-    public static function queue($name) {
-        return Key::of('queue', $name);
+    public static function queues() {
+        return 'queues';
+    }
+
+    /**
+     * @param string $stat
+     *
+     * @return string
+     */
+    public static function statsGlobal($stat) {
+        return self::of('stat', $stat);
+    }
+
+    /**
+     * @param string $queue
+     * @param string $stat
+     *
+     * @return string
+     */
+    public static function statsQueue($queue, $stat) {
+        return self::of('queuestat', gethostname(), $stat, $queue);
     }
 
     /**
@@ -52,83 +128,7 @@ class Key {
         return Key::of('workers');
     }
 
-    /**
-     * @return string
-     */
-    public static function localSchedulerPid() {
-        return Key::of('scheduler_pid', gethostname());
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return string
-     */
-    public static function jobStatus($id) {
-        return self::of('job', $id, 'status');
-    }
-
-    /**
-     * @param string $stat
-     *
-     * @return string
-     */
-    public static function statsGlobal($stat) {
-        return self::of('stat', $stat);
-    }
-
-    /**
-     * @param string $queue
-     * @param string $stat
-     *
-     * @return string
-     */
-    public static function statsQueue($queue, $stat) {
-        return self::of('queuestat', gethostname(), $stat, $queue);
-    }
-
-    /**
-     * @param int $at
-     *
-     * @return string
-     */
-    public static function delayed($at) {
-        return self::of('delayed', $at);
-    }
-
-    /**
-     * @return string
-     */
-    public static function delayedQueueSchedule() {
-        return 'delayed_queue_schedule';
-    }
-
-    /**
-     * @return string
-     */
-    public static function queues() {
-        return 'queues';
-    }
-
-    public static function planSchedule() {
-        return self::of('plan_schedule');
-    }
-
-    /**
-     * @param int $timestamp
-     *
-     * @return string
-     */
-    public static function planTimestamp($timestamp) {
-        return self::of('plan_schedule', $timestamp);
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return string
-     */
-    public static function plan($id) {
-        return self::of('plan', $id);
+    private static function of(...$parts) {
+        return implode(':', $parts);
     }
 }
