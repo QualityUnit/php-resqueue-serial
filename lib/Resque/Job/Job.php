@@ -165,7 +165,7 @@ class Job {
                 'class' => $this->class,
                 'args' => $this->args,
                 'queue' => $this->queue,
-                'unique' => $this->uid,
+                'unique' => $this->uid->toArray(),
                 'isMonitored' => $this->isMonitored,
                 'includePath' => $this->includePath,
                 'pathVariables' => $this->pathVariables,

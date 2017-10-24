@@ -9,7 +9,7 @@ use Resque\ResqueImpl;
 
 class Resque {
 
-    const VERSION_PREFIX = 'resque-v2';
+    const VERSION_PREFIX = 'resque-v3';
 
     /** @var ResqueApi */
     private static $instance;

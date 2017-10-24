@@ -57,6 +57,21 @@ class StandardProcessor implements IProcessor {
         }
     }
 
+    private function enqueueDeferred(Job $job) {
+        $deferred = json_decode(UniqueList::finalize($job->getUniqueId()), true);
+        if (!is_array($deferred)) {
+            return;
+        }
+
+        $deferredJob = Job::fromArray($deferred);
+        $delay = $deferredJob->getUid()->getDeferralDelay();
+        if ($delay > 0) {
+            ResqueImpl::getInstance()->jobEnqueueDelayed($delay, $deferredJob, true);
+        } else {
+            ResqueImpl::getInstance()->jobEnqueue($deferredJob, true);
+        }
+    }
+
     /**
      * @param RunningJob $runningJob
      *
@@ -69,18 +84,22 @@ class StandardProcessor implements IProcessor {
             $task = $this->createTask($runningJob);
             Log::debug("Performing task {$job->getClass()}");
 
-            UniqueList::edit($runningJob->getJob()->getUniqueId(), UniqueList::STATE_RUNNING);
+            UniqueList::editState($job->getUniqueId(), UniqueList::STATE_RUNNING);
 
             $task->perform();
             $this->reportSuccess($runningJob);
+
+            $this->enqueueDeferred($job);
         } catch (RescheduleException $e) {
             Log::debug("Rescheduling task {$job->getClass()} in {$e->getDelay()}s");
 
             $this->rescheduleJob($runningJob, $e->getDelay());
         } catch (RetryException $e) {
+            UniqueList::removeAll($job->getUniqueId());
             $runningJob->retry($e);
         } catch (\Exception $e) {
             Log::error("Failed to perform job {$job->toString()}");
+            UniqueList::removeAll($job->getUniqueId());
             $runningJob->fail($e);
         } finally {
             ResqueImpl::getInstance()->resetRedis();
@@ -121,14 +140,15 @@ class StandardProcessor implements IProcessor {
      */
     private function rescheduleJob(RunningJob $runningJob, $delay) {
         try {
+            UniqueList::editState($runningJob->getJob()->getUniqueId(), UniqueList::STATE_QUEUED);
+            UniqueList::removeDeferred($runningJob->getJob()->getUniqueId());
             if ($delay > 0) {
                 $runningJob->rescheduleDelayed($delay);
             } else {
                 $runningJob->reschedule();
             }
-            UniqueList::edit($runningJob->getJob()->getUniqueId(), UniqueList::STATE_QUEUED);
         } catch (\Exception $e) {
-            UniqueList::remove($runningJob->getJob()->getUniqueId());
+            UniqueList::removeAll($runningJob->getJob()->getUniqueId());
             Log::critical("Failed to reschedule job {$runningJob->getJob()->toString()}");
         }
     }

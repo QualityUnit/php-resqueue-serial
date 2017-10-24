@@ -35,7 +35,6 @@ class RunningJob {
     }
 
     public function fail(\Exception $e = null) {
-        UniqueList::remove($this->job->getUniqueId());
         $this->reportFail($e);
         $this->status->setFailed();
     }
@@ -95,7 +94,6 @@ class RunningJob {
     }
 
     public function success() {
-        UniqueList::remove($this->job->getUniqueId());
         $this->status->setFinished();
         $this->reportSuccess();
     }

@@ -3,7 +3,6 @@
 namespace Resque;
 
 use Credis_Client;
-use Credis_Cluster;
 use CredisException;
 use Resque\Api\RedisException;
 
@@ -28,7 +27,7 @@ use Resque\Api\RedisException;
  * @method array|Credis_Client         time()
  *
  * Keys:
- * @method int|Credis_Client           del(string $key)
+ * @method int|Credis_Client           del(string|string[] $key)
  * @method int|Credis_Client           exists(string $key)
  * @method int|Credis_Client           expire(string $key, int $seconds)
  * @method int|Credis_Client           expireAt(string $key, int $timestamp)
@@ -179,6 +178,18 @@ class Redis {
             'setex',
             'get',
             'getset',
+            'hset',
+            'hsetnx',
+            'hget',
+            'hlen',
+            'hdel',
+            'hkeys',
+            'hvals',
+            'hgetall',
+            'hexists',
+            'hincrby',
+            'hmset',
+            'hmget',
             'setnx',
             'incr',
             'incrby',

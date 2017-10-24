@@ -1,4 +1,4 @@
-resque-v2:
+resque-v3:
     
     queues: set(queue_name)
     queue:<queue_name>: list(job_data)
@@ -32,7 +32,9 @@ resque-v2:
     plan_schedule:<timestamp>: list(plan_id)
     plan:<id>: <json_encoded timestamp, period, queue, JobImage>
     
-    unique_list: hash(uniqueId, jobId)
+    unique:<unique_id>:
+        state: {'queued', 'running'}
+        deferred: job_data
     
     queuedata:<queue>:lock: <lock_value>
     workers: set(worker_id)                                     # standard workers

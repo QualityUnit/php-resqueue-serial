@@ -26,9 +26,7 @@ class SchedulerProcess {
     }
 
     public static function schedule($at, Job $job, $checkUnique = true) {
-        if (!UniqueList::add($job->getUniqueId()) && $checkUnique) {
-            throw new UniqueException($job->getUniqueId());
-        }
+        UniqueList::add($job, !$checkUnique);
 
         Resque::redis()->rpush(Key::delayed($at), json_encode($job->toArray()));
         Resque::redis()->zadd(Key::delayedQueueSchedule(), $at, $at);

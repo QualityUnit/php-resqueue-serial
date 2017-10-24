@@ -38,9 +38,7 @@ class Queue implements IJobSource {
     public static function push(Job $job, $checkUnique = true) {
         $queuedJob = new QueuedJob($job, ResqueImpl::getInstance()->generateJobId());
 
-        if (!UniqueList::add($job->getUniqueId()) && $checkUnique) {
-            throw new UniqueException($job->getUniqueId());
-        }
+        UniqueList::add($job, !$checkUnique);
 
         // Push a job to the end of a specific queue. If the queue does not exist, then create it as well.
         Resque::redis()->sadd(Key::queues(), $job->getQueue());

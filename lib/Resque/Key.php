@@ -62,6 +62,7 @@ class Key {
 
     /**
      * @param string $name
+     *
      * @return string
      */
     public static function queue($name) {
@@ -101,6 +102,14 @@ class Key {
      */
     public static function statsQueue($queue, $stat) {
         return self::of('queuestat', gethostname(), $stat, $queue);
+    }
+
+    public static function uniqueDeferred($uniqueId) {
+        return self::of('unique', $uniqueId, 'deferred');
+    }
+
+    public static function uniqueState($uniqueId) {
+        return self::of('unique', $uniqueId, 'state');
     }
 
     /**
