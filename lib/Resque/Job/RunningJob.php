@@ -115,6 +115,7 @@ class RunningJob {
         $data->backtrace = explode("\n", $e->getTraceAsString());
         $data->queue = $this->job->getQueue();
         $data->retried_by = $retryText;
+        $data->processed_by = gethostname();
 
         return json_encode($data);
     }
