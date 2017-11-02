@@ -92,7 +92,10 @@ class DelayedScheduler implements IScheduler {
      */
     private function nextJobForTimestamp($timestamp) {
         $item = Resque::redis()->lpop(Key::delayed($timestamp));
+
         if (!$item) {
+            // apparently broken timestamp
+            Resque::redis()->zrem(Key::delayedQueueSchedule(), $timestamp);
             return null;
         }
 
