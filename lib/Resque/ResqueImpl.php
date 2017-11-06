@@ -3,9 +3,9 @@
 namespace Resque;
 
 
+use Resque\Api\Job;
 use Resque\Api\JobDescriptor;
 use Resque\Api\ResqueApi;
-use Resque\Job\Job;
 use Resque\Queue\Queue;
 use Resque\Scheduler\PlannedScheduler;
 use Resque\Scheduler\SchedulerProcess;

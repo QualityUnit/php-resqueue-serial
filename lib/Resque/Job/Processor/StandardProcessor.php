@@ -4,12 +4,12 @@
 namespace Resque\Job\Processor;
 
 
+use Resque\Api\Job;
 use Resque\Api\RescheduleException;
 use Resque\Api\RetryException;
 use Resque\Config\GlobalConfig;
 use Resque\Exception;
 use Resque\Job\FailException;
-use Resque\Job\Job;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
@@ -93,7 +93,7 @@ class StandardProcessor implements IProcessor {
         } catch (RescheduleException $e) {
             Log::debug("Rescheduling task {$job->getClass()} in {$e->getDelay()}s");
 
-            $this->rescheduleJob($runningJob, $e->getDelay());
+            $this->rescheduleJob($runningJob, $e);
         } catch (RetryException $e) {
             UniqueList::removeAll($job->getUniqueId());
             $runningJob->retry($e);
@@ -136,16 +136,18 @@ class StandardProcessor implements IProcessor {
 
     /**
      * @param RunningJob $runningJob
-     * @param $delay
+     * @param RescheduleException $e
+     *
+     * @internal param $delay
      */
-    private function rescheduleJob(RunningJob $runningJob, $delay) {
+    private function rescheduleJob(RunningJob $runningJob, RescheduleException $e) {
         try {
             UniqueList::editState($runningJob->getJob()->getUniqueId(), UniqueList::STATE_QUEUED);
             UniqueList::removeDeferred($runningJob->getJob()->getUniqueId());
-            if ($delay > 0) {
-                $runningJob->rescheduleDelayed($delay);
+            if ($e->getDelay() > 0) {
+                $runningJob->rescheduleDelayed($e->getJobDescriptor(), $e->getDelay());
             } else {
-                $runningJob->reschedule();
+                $runningJob->reschedule($e->getJobDescriptor());
             }
         } catch (\Exception $e) {
             UniqueList::removeAll($runningJob->getJob()->getUniqueId());

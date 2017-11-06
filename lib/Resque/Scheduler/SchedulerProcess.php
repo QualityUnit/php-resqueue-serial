@@ -3,9 +3,8 @@
 namespace Resque\Scheduler;
 
 use Resque;
-use Resque\Api\UniqueException;
+use Resque\Api\Job;
 use Resque\Config\GlobalConfig;
-use Resque\Job\Job;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;

@@ -4,8 +4,8 @@
 namespace Resque\Worker;
 
 
+use Resque\Api\Job;
 use Resque\Job\IJobSource;
-use Resque\Job\Job;
 use Resque\Job\Processor\IProcessor;
 use Resque\Job\QueuedJob;
 use Resque\Job\Reservations\IStrategy;

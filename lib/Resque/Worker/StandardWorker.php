@@ -4,8 +4,8 @@
 namespace Resque\Worker;
 
 
+use Resque\Api\Job;
 use Resque\Config\GlobalConfig;
-use Resque\Job\Job;
 use Resque\Job\Processor\StandardProcessor;
 use Resque\Job\Reservations\BlockingStrategy;
 use Resque\Job\Reservations\IStrategy;

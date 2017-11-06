@@ -1,7 +1,7 @@
 <?php
 
+use Resque\Api\ITask;
 use Resque\Api\JobDescriptor;
-use Resque\Task\ITask;
 
 class __TestJob implements ITask {
 

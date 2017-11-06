@@ -1,8 +1,7 @@
 <?php
 
 
-namespace Resque\Task;
-use Resque\Job\Job;
+namespace Resque\Api;
 
 
 /**

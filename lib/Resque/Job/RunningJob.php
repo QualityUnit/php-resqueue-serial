@@ -3,9 +3,10 @@
 namespace Resque\Job;
 
 use Resque;
+use Resque\Api\Job;
+use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
 use Resque\ResqueImpl;
-use Resque\UniqueList;
 use Resque\Worker\WorkerBase;
 
 class RunningJob {
@@ -67,14 +68,15 @@ class RunningJob {
         return $this->worker;
     }
 
-    public function reschedule() {
-        ResqueImpl::getInstance()->jobEnqueue($this->job, false);
+    public function reschedule(JobDescriptor $descriptor = null) {
+        ResqueImpl::getInstance()->jobEnqueue($this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
 
-    public function rescheduleDelayed($in) {
-        ResqueImpl::getInstance()->jobEnqueueDelayed($in, $this->job, false);
+    public function rescheduleDelayed(JobDescriptor $descriptor = null, $in) {
+        ResqueImpl::getInstance()->jobEnqueueDelayed($in,
+                $this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
@@ -116,6 +118,21 @@ class RunningJob {
         $data->processed_by = gethostname();
 
         return json_encode($data);
+    }
+
+    /**
+     * @param JobDescriptor $descriptor
+     *
+     * @return Job
+     */
+    private function getJobToReschedule(JobDescriptor $descriptor) {
+        $jobToReschedule = $this->job;
+        if ($descriptor !== null) {
+            $jobToReschedule = Job::fromJobDescriptor($descriptor);
+            $jobToReschedule->setQueue($this->job->getQueue());
+        }
+
+        return $jobToReschedule;
     }
 
     /**

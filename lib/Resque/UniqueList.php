@@ -4,8 +4,8 @@ namespace Resque;
 
 use Resque;
 use Resque\Api\DeferredException;
+use Resque\Api\Job;
 use Resque\Api\UniqueException;
-use Resque\Job\Job;
 
 class UniqueList {
 

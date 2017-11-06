@@ -4,7 +4,7 @@
 namespace Resque\Scheduler;
 
 use Resque;
-use Resque\Job\Job;
+use Resque\Api\Job;
 use Resque\Job\PlannedJob;
 use Resque\Key;
 use Resque\Log;

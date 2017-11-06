@@ -5,9 +5,9 @@ namespace Resque\Queue;
 
 
 use Resque;
+use Resque\Api\Job;
 use Resque\Api\UniqueException;
 use Resque\Job\IJobSource;
-use Resque\Job\Job;
 use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;

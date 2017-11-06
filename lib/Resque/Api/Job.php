@@ -1,11 +1,8 @@
 <?php
 
 
-namespace Resque\Job;
+namespace Resque\Api;
 
-
-use Resque\Api\JobDescriptor;
-use Resque\Api\JobUid;
 
 class Job {
 

@@ -4,6 +4,8 @@
 namespace Resque\Job;
 
 
+use Resque\Api\Job;
+
 class PlannedJob {
 
     const DATE_INTERVAL_FORMAT = 'P%yY%mM%dDT%hH%iM%sS';
