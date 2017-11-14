@@ -162,7 +162,7 @@ class Job {
                 'class' => $this->class,
                 'args' => $this->args,
                 'queue' => $this->queue,
-                'unique' => $this->uid->toArray(),
+                'unique' => $this->uid == null ? null : $this->uid->toArray(),
                 'isMonitored' => $this->isMonitored,
                 'includePath' => $this->includePath,
                 'pathVariables' => $this->pathVariables,
