@@ -67,7 +67,7 @@ LUA;
 
     public static function addDeferred(Job $job) {
         $uid = $job->getUid();
-        if ($uid == null || $uid->isDeferred()) {
+        if ($uid == null || !$uid->isDeferred()) {
             throw new Exception("Only deferrable jobs can be deferred.");
         }
 
