@@ -82,4 +82,7 @@ class Descriptor extends JobDescriptor {
         return $this->class;
     }
 
+    function getSourceId() {
+        return 'test';
+    }
 }

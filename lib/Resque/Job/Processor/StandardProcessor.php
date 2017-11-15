@@ -114,13 +114,7 @@ class StandardProcessor implements IProcessor {
         }
 
         $fullPath = GlobalConfig::getInstance()->getTaskIncludePath();
-        $pathVariables = $job->getPathVariables();
-        if (is_array($pathVariables)) {
-            foreach ($pathVariables as $key => $value) {
-                $fullPath = str_replace('{' . $key . '}', $value, $fullPath);
-            }
-        }
-
+        $fullPath = str_replace('{sourceId}', $job->getSourceId(), $fullPath);
         $fullPath .= $jobPath;
 
         include_once $fullPath;

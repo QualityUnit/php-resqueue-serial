@@ -9,6 +9,7 @@ redis:
     # default = 6379
     port: 6379
 
+# {sourceId} will be replaced with source ID provided by job
 task_include_path: "/opt/qu/qu/apps/versions/la/"
 
 # default = 3
