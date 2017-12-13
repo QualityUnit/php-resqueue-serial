@@ -42,6 +42,13 @@ class __Fail__Perf {
     }
 }
 
+class __RescheduleJob implements ITask {
+
+    public function perform() {
+        throw new \Resque\Api\RescheduleException(1, new UidDescriptor(self::class, []));
+    }
+}
+
 class __Pass__Perf {
 
     public function isValid() {
@@ -82,7 +89,15 @@ class Descriptor extends JobDescriptor {
         return $this->class;
     }
 
-    function getSourceId() {
+    public function getSourceId() {
         return 'test';
     }
+}
+
+class UidDescriptor extends Descriptor {
+
+    public function getUid() {
+        return new \Resque\Api\JobUid('test', 1);
+    }
+
 }

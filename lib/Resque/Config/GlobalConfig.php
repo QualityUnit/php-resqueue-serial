@@ -42,6 +42,11 @@ class GlobalConfig {
         $this->path = $path;
     }
 
+    /**
+     * @param $path
+     * @return GlobalConfig
+     * @throws Exception
+     */
     public static function initialize($path) {
         self::$instance = new self($path);
         self::reload();
@@ -60,6 +65,9 @@ class GlobalConfig {
         return self::$instance;
     }
 
+    /**
+     * @throws Exception
+     */
     public static function reload() {
         $self = self::$instance;
         $data = Yaml::parse(file_get_contents($self->path));

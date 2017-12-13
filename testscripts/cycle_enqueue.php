@@ -8,11 +8,11 @@ Resque::setBackend("localhost:6379");
 
 unlink('/tmp/serialjob.txt');
 
-$i = 0;
-while ($i < 50) {
-    $i++;
-    Resque::enqueue('example_queue', new Descriptor(__TestJob::class, []));
-}
+//$i = 0;
+//while ($i < 50) {
+//    $i++;
+    Resque::enqueue('example_queue', new UidDescriptor(__RescheduleJob::class, []));
+//}
 
 
 //Resque::enqueue('example_queue', new Descriptor(__FailJob::class, [
