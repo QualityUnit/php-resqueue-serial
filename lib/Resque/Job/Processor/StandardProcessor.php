@@ -22,7 +22,17 @@ class StandardProcessor implements IProcessor {
     public function process(RunningJob $runningJob) {
         $pid = Process::fork();
         if ($pid === 0) {
-            $this->handleChild($runningJob);
+            try {
+                $this->handleChild($runningJob);
+            } catch (\Throwable $t) {
+                Log::critical(
+                    "Unexpected error occurred in {$runningJob->getJob()->toString()}",
+                    ['exception' => $t]
+                );
+                UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                $runningJob->fail($t);
+            }
+            exit(0);
         } else {
             $exitCode = $this->waitForChild($pid);
             if ($exitCode !== 0) {
@@ -51,7 +61,7 @@ class StandardProcessor implements IProcessor {
 
             return $task;
         } catch (\Exception $e) {
-            $message = "Failed to create a task instance";
+            $message = 'Failed to create a task instance';
             Log::error("$message from job {$job->toString()}", ['exception' => $e]);
             throw new FailException($message, 0, $e);
         }
@@ -72,10 +82,13 @@ class StandardProcessor implements IProcessor {
         }
     }
 
+    private function exitWithCode($code) {
+        ResqueImpl::getInstance()->resetRedis();
+        exit($code);
+    }
+
     /**
      * @param RunningJob $runningJob
-     *
-     * @throws RescheduleException
      */
     private function handleChild(RunningJob $runningJob) {
         $job = $runningJob->getJob();
@@ -101,9 +114,6 @@ class StandardProcessor implements IProcessor {
             Log::error("Failed to perform job {$job->toString()}");
             UniqueList::removeAll($job->getUniqueId());
             $runningJob->fail($e);
-        } finally {
-            ResqueImpl::getInstance()->resetRedis();
-            exit(0);
         }
     }
 

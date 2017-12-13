@@ -45,7 +45,7 @@ class __Fail__Perf {
 class __RescheduleJob implements ITask {
 
     public function perform() {
-        throw new \Resque\Api\RescheduleException(1, new UidDescriptor(self::class, []));
+        throw new \Resque\Api\RescheduleException(new UidDescriptor(self::class, []), 1);
     }
 }
 

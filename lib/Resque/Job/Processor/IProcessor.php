@@ -13,6 +13,6 @@ interface IProcessor {
      *
      * @param RunningJob $runningJob
      */
-    function process(RunningJob $runningJob);
+    public function process(RunningJob $runningJob);
 
 }

@@ -35,8 +35,8 @@ class RunningJob {
         $this->status->setRunning();
     }
 
-    public function fail(\Exception $e = null) {
-        $this->reportFail($e);
+    public function fail(\Throwable $t) {
+        $this->reportFail($t);
         $this->status->setFailed();
     }
 
@@ -68,13 +68,13 @@ class RunningJob {
         return $this->worker;
     }
 
-    public function reschedule(JobDescriptor $descriptor = null) {
+    public function reschedule(JobDescriptor $descriptor) {
         ResqueImpl::getInstance()->jobEnqueue($this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
 
-    public function rescheduleDelayed(JobDescriptor $descriptor = null, $in) {
+    public function rescheduleDelayed(JobDescriptor $descriptor, $in) {
         ResqueImpl::getInstance()->jobEnqueueDelayed($in,
                 $this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
@@ -101,18 +101,18 @@ class RunningJob {
     }
 
     /**
-     * @param \Exception $e
+     * @param \Throwable $t
      * @param string $retryText
      *
      * @return string
      */
-    private function createFailReport(\Exception $e, $retryText = 'no retry') {
+    private function createFailReport(\Throwable $t, $retryText = 'no retry') {
         $data = new \stdClass;
         $data->failed_at = strftime('%a %b %d %H:%M:%S %Z %Y');
         $data->payload = $this->job->toArray();
-        $data->exception = get_class($e);
-        $data->error = $e->getMessage();
-        $data->backtrace = explode("\n", $e->getTraceAsString());
+        $data->exception = get_class($t);
+        $data->error = $t->getMessage();
+        $data->backtrace = explode("\n", $t->getTraceAsString());
         $data->queue = $this->job->getQueue();
         $data->retried_by = $retryText;
         $data->processed_by = gethostname();
@@ -136,11 +136,11 @@ class RunningJob {
     }
 
     /**
-     * @param \Exception $e
+     * @param \Throwable $t
      */
-    private function reportFail(\Exception $e) {
+    private function reportFail(\Throwable $t) {
         $this->worker->getStats()->incFailed();
-        Resque::redis()->rpush('failed', $this->createFailReport($e));
+        Resque::redis()->rPush('failed', $this->createFailReport($t));
     }
 
     /**
@@ -149,7 +149,7 @@ class RunningJob {
      */
     private function reportRetry(\Exception $e, $retryJobId) {
         $this->worker->getStats()->incRetried();
-        Resque::redis()->rpush('retries', $this->createFailReport($e, $retryJobId));
+        Resque::redis()->rPush('retries', $this->createFailReport($e, $retryJobId));
     }
 
     private function reportSuccess() {

@@ -61,7 +61,7 @@ class Log {
 
     public static function initialize(GlobalConfig $config) {
         $formatter = new LineFormatter(self::LINE_FORMAT);
-        $formatter->includeStacktraces(true);
+        $formatter->includeStacktraces();
 
         $handler = new StreamHandler($config->getLogPath(), $config->getLogLevel());
         $handler->setFormatter($formatter);
