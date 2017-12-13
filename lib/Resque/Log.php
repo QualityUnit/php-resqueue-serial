@@ -20,15 +20,14 @@ class Log {
     const EMERGENCY = 'emergency';
     const ERROR = 'error';
     const INFO = 'info';
+    const LINE_FORMAT = "[%datetime%] %channel%.%level_name%: %message% %context.exception%\n";
     const NOTICE = 'notice';
     const WARNING = 'warning';
-
-    const LINE_FORMAT = "[%datetime%] %channel%.%level_name%: %message% %context.exception%\n";
 
     /** @var Log */
     private static $instance;
 
-    /** @var \Monolog\Logger */
+    /** @var PrefixLogger */
     private $logger;
 
     private function __construct() {
@@ -70,19 +69,15 @@ class Log {
         $logger->pushProcessor(new PsrLogMessageProcessor());
         $logger->pushHandler($handler);
 
-        self::getInstance()->logger = $logger;
+        self::getInstance()->logger = new PrefixLogger($logger);
     }
 
     public static function notice($message, array $context = []) {
         self::getInstance()->logger->log(self::NOTICE, $message, $context);
     }
 
-    public static function prefix($prefix) {
-        return new PrefixLogger($prefix, self::getInstance()->logger);
-    }
-
-    public static function setLogger(LoggerInterface $logger) {
-        self::getInstance()->logger = $logger;
+    public static function setPrefix($prefix) {
+        self::getInstance()->logger->setPrefix($prefix);
     }
 
     public static function warning($message, array $context = []) {
@@ -93,6 +88,7 @@ class Log {
         if (self::$instance === null) {
             self::$instance = new self();
         }
+
         return self::$instance;
     }
 }
@@ -100,22 +96,22 @@ class Log {
 class PrefixLogger extends AbstractLogger {
 
     /** @var string */
-    private $prefix;
+    private $prefix = '';
     /** @var LoggerInterface */
     private $logger;
 
     /**
      * PrefixLogger constructor.
-     * @param string $prefix
+     *
      * @param LoggerInterface $logger
      */
-    public function __construct($prefix, LoggerInterface $logger) {
-        $this->prefix = $prefix;
+    public function __construct(LoggerInterface $logger) {
         $this->logger = $logger;
     }
 
     /**
      * Logs with an arbitrary level.
+     *
      * @param mixed $level
      * @param string $message
      * @param array $context
@@ -123,6 +119,14 @@ class PrefixLogger extends AbstractLogger {
      * @return void
      */
     public function log($level, $message, array $context = []) {
-        $this->logger->log($level, '[' . $this->prefix . '] ' . $message, $context);
+        $this->logger->log($level, "$this->prefix$message", $context);
+    }
+
+    public function setPrefix($prefix) {
+        if ($prefix == null) {
+            $this->prefix = '';
+        } else {
+            $this->prefix = "[$prefix] ";
+        }
     }
 }

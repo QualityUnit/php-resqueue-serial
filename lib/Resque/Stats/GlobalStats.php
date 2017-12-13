@@ -45,6 +45,6 @@ class GlobalStats implements Stats {
     }
 
     private function incStat($stat) {
-        return (bool)Resque::redis()->incrby(Key::statsGlobal($stat), 1);
+        return (bool)Resque::redis()->incrBy(Key::statsGlobal($stat), 1);
     }
 }

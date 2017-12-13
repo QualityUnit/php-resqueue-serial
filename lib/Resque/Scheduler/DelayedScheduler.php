@@ -52,9 +52,9 @@ class DelayedScheduler implements IScheduler {
     private function cleanupTimestamp($key, $timestamp) {
         $redis = Resque::redis();
 
-        if ($redis->llen($key) == 0) {
+        if ($redis->lLen($key) == 0) {
             $redis->del($key);
-            $redis->zrem(Key::delayedQueueSchedule(), $timestamp);
+            $redis->zRem(Key::delayedQueueSchedule(), $timestamp);
         }
     }
 
@@ -75,7 +75,7 @@ class DelayedScheduler implements IScheduler {
         }
 
         $items = Resque::redis()
-            ->zrangebyscore(Key::delayedQueueSchedule(), '-inf', $at, ['limit' => [0, 1]]);
+            ->zRangeByScore(Key::delayedQueueSchedule(), '-inf', $at, ['limit' => [0, 1]]);
         if (!empty($items)) {
             return $items[0];
         }
@@ -91,11 +91,11 @@ class DelayedScheduler implements IScheduler {
      * @return null|Job Job at timestamp.
      */
     private function nextJobForTimestamp($timestamp) {
-        $item = Resque::redis()->lpop(Key::delayed($timestamp));
+        $item = Resque::redis()->lPop(Key::delayed($timestamp));
 
         if (!$item) {
             // apparently broken timestamp
-            Resque::redis()->zrem(Key::delayedQueueSchedule(), $timestamp);
+            Resque::redis()->zRem(Key::delayedQueueSchedule(), $timestamp);
             return null;
         }
 

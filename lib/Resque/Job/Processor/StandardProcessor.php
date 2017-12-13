@@ -23,6 +23,10 @@ class StandardProcessor implements IProcessor {
         $pid = Process::fork();
         if ($pid === 0) {
             try {
+                $workerPid = $runningJob->getWorker()->getImage()->getPid();
+                Log::setPrefix("$workerPid-std-proc-" . posix_getpid());
+                Process::setTitlePrefix("$workerPid-std-proc");
+                Process::setTitle("Processing job {$runningJob->getJob()->getClass()}");
                 $this->handleChild($runningJob);
             } catch (\Throwable $t) {
                 Log::critical(
@@ -80,11 +84,6 @@ class StandardProcessor implements IProcessor {
         } else {
             ResqueImpl::getInstance()->jobEnqueue($deferredJob, true);
         }
-    }
-
-    private function exitWithCode($code) {
-        ResqueImpl::getInstance()->resetRedis();
-        exit($code);
     }
 
     /**

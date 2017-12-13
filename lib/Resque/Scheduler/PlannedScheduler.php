@@ -32,8 +32,8 @@ LUA;
 
         $nextRun = $plannedJob->getNextRunTimestamp();
 
-        Resque::redis()->zadd(Key::planSchedule(), $nextRun, $nextRun);
-        Resque::redis()->rpush(Key::planTimestamp($nextRun), $plannedJob->getId());
+        Resque::redis()->zAdd(Key::planSchedule(), $nextRun, $nextRun);
+        Resque::redis()->rPush(Key::planTimestamp($nextRun), $plannedJob->getId());
 
         return $id;
     }
@@ -64,10 +64,10 @@ LUA;
     private static function cleanupTimestamp($timestamp) {
         $redis = Resque::redis();
 
-        if ($redis->llen(Key::planTimestamp($timestamp)) == 0) {
+        if ($redis->lLen(Key::planTimestamp($timestamp)) == 0) {
             Log::info("[planner] Cleaning timestamp $timestamp");
             $redis->del(Key::planTimestamp($timestamp));
-            $redis->zrem(Key::planSchedule(), $timestamp);
+            $redis->zRem(Key::planSchedule(), $timestamp);
         }
     }
 
@@ -160,7 +160,7 @@ LUA;
      * @return null|PlannedJob Job at timestamp.
      */
     private function nextJobForTimestamp($timestamp) {
-        $planId = Resque::redis()->lpop(Key::planTimestamp($timestamp));
+        $planId = Resque::redis()->lPop(Key::planTimestamp($timestamp));
 
         self::cleanupTimestamp($timestamp);
 
@@ -191,7 +191,7 @@ LUA;
             $at = time();
         }
 
-        $items = Resque::redis()->zrangebyscore(Key::planSchedule(), '-inf', $at, [
+        $items = Resque::redis()->zRangeByScore(Key::planSchedule(), '-inf', $at, [
                 'limit' => [0, 1]
         ]);
         if (!empty($items)) {

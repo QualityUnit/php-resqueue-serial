@@ -41,8 +41,8 @@ class Queue implements IJobSource {
         UniqueList::add($job, !$checkUnique);
 
         // Push a job to the end of a specific queue. If the queue does not exist, then create it as well.
-        Resque::redis()->sadd(Key::queues(), $job->getQueue());
-        Resque::redis()->rpush(Key::queue($job->getQueue()), json_encode($queuedJob->toArray()));
+        Resque::redis()->sAdd(Key::queues(), $job->getQueue());
+        Resque::redis()->rPush(Key::queue($job->getQueue()), json_encode($queuedJob->toArray()));
 
         $queuedJob->reportQueued();
 
@@ -60,7 +60,7 @@ class Queue implements IJobSource {
      * @inheritdoc
      */
     function popBlocking($timeout) {
-        $payload = Resque::redis()->blpop(Key::queue($this->name), $timeout);
+        $payload = Resque::redis()->blPop(Key::queue($this->name), $timeout);
         if (!is_array($payload) || !isset($payload[1])) {
             return null;
         }
@@ -83,7 +83,7 @@ class Queue implements IJobSource {
      * @inheritdoc
      */
     function popNonBlocking() {
-        $data = json_decode(Resque::redis()->lpop(Key::queue($this->name)), true);
+        $data = json_decode(Resque::redis()->lPop(Key::queue($this->name)), true);
         if (!is_array($data)) {
             return null;
         }

@@ -98,7 +98,7 @@ class InitProcess {
         Log::debug("Reloading configuration");
         GlobalConfig::reload();
         Log::initialize(GlobalConfig::getInstance());
-        Log::setLogger(Log::prefix('init-process'));
+        Log::setPrefix('init-process');
         $this->reloaded = true;
 
         $this->signalWorkers(SIGHUP, "HUP");
@@ -167,7 +167,7 @@ class InitProcess {
         Resque::setBackend(GlobalConfig::getInstance()->getBackend());
 
         Log::initialize(GlobalConfig::getInstance());
-        Log::setLogger(Log::prefix('init-process'));
+        Log::setPrefix('init-process');
 
         $this->registerSigHandlers();
     }

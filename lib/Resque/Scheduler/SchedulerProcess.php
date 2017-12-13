@@ -27,8 +27,8 @@ class SchedulerProcess {
     public static function schedule($at, Job $job, $checkUnique = true) {
         UniqueList::add($job, !$checkUnique);
 
-        Resque::redis()->rpush(Key::delayed($at), json_encode($job->toArray()));
-        Resque::redis()->zadd(Key::delayedQueueSchedule(), $at, $at);
+        Resque::redis()->rPush(Key::delayed($at), json_encode($job->toArray()));
+        Resque::redis()->zAdd(Key::delayedQueueSchedule(), $at, $at);
     }
 
     public function __construct() {
@@ -99,7 +99,7 @@ class SchedulerProcess {
 
     private function initLogger() {
         Log::initialize(GlobalConfig::getInstance());
-        Log::setLogger(Log::prefix(getmypid() . "-scheduler"));
+        Log::setPrefix(getmypid() . "-scheduler");
     }
 
     private function initialize() {

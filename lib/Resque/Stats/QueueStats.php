@@ -55,6 +55,6 @@ class QueueStats implements Stats {
      * @param int $by
      */
     private function incStat($stat, $by = 1) {
-        Resque::redis()->incrby(Key::statsQueue($this->queueName, $stat), $by);
+        Resque::redis()->incrBy(Key::statsQueue($this->queueName, $stat), $by);
     }
 }

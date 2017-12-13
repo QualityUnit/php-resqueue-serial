@@ -13,14 +13,14 @@ class WorkerImage extends WorkerImageBase {
      * @return string[] worker ids
      */
     public static function all() {
-        return Resque::redis()->smembers(Key::workers());
+        return Resque::redis()->sMembers(Key::workers());
     }
 
     /**
      * @return $this
      */
     public function addToPool() {
-        Resque::redis()->sadd(Key::workers(), $this->id);
+        Resque::redis()->sAdd(Key::workers(), $this->id);
         return $this;
     }
 
@@ -44,14 +44,14 @@ class WorkerImage extends WorkerImageBase {
      * @return bool
      */
     public function exists() {
-        return (bool)Resque::redis()->sismember(Key::workers(), $this->id);
+        return (bool)Resque::redis()->sIsMember(Key::workers(), $this->id);
     }
 
     /**
      * @return $this
      */
     public function removeFromPool() {
-        Resque::redis()->srem(Key::workers(), $this->id);
+        Resque::redis()->sRem(Key::workers(), $this->id);
         return $this;
     }
 
