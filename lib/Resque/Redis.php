@@ -25,9 +25,8 @@ use Resque\Api\RedisError;
  * @method bool|array|Credis_Client    config(string $setGet, string $key, string $value = null)
  * @method array|Credis_Client         role()
  * @method array|Credis_Client         time()
- *
  * Keys:
- * @method int|Credis_Client           del(string|string[] $key)
+ * @method int|Credis_Client           del(string | string [] $key)
  * @method int|Credis_Client           exists(string $key)
  * @method int|Credis_Client           expire(string $key, int $seconds)
  * @method int|Credis_Client           expireAt(string $key, int $timestamp)
@@ -38,7 +37,6 @@ use Resque\Api\RedisError;
  * @method array|Credis_Client         sort(string $key, string $arg1, string $valueN = null)
  * @method int|Credis_Client           ttl(string $key)
  * @method string|Credis_Client        type(string $key)
- *
  * Scalars:
  * @method int|Credis_Client           append(string $key, string $value)
  * @method int|Credis_Client           decr(string $key)
@@ -58,7 +56,6 @@ use Resque\Api\RedisError;
  * @method int|Credis_Client           setNx(string $key, string $value)
  * @method int |Credis_Client          setRange(string $key, int $offset, int $value)
  * @method int|Credis_Client           strLen(string $key)
- *
  * Sets:
  * @method int|Credis_Client           sAdd(string $key, mixed $value, string $valueN = null)
  * @method int|Credis_Client           sRem(string $key, mixed $value, string $valueN = null)
@@ -74,7 +71,6 @@ use Resque\Api\RedisError;
  * @method int|Credis_Client           sUnionStore(string $dest, string $key1, string $key2 = null)
  * @method int|Credis_Client           sInterStore(string $dest, string $key1, string $key2 = null)
  * @method int|Credis_Client           sDiffStore(string $dest, string $key1, string $key2 = null)
- *
  * Hashes:
  * @method bool|int|Credis_Client      hSet(string $key, string $field, string $value)
  * @method bool|Credis_Client          hSetNx(string $key, string $field, string $value)
@@ -88,7 +84,6 @@ use Resque\Api\RedisError;
  * @method int|Credis_Client           hIncrBy(string $key, string $field, int $value)
  * @method bool|Credis_Client          hMSet(string $key, array $keysValues)
  * @method array|Credis_Client         hMGet(string $key, array $fields)
- *
  * Lists:
  * @method array|null|Credis_Client    blPop(string $keyN, int $timeout)
  * @method array|null|Credis_Client    brPop(string $keyN, int $timeout)
@@ -107,7 +102,6 @@ use Resque\Api\RedisError;
  * @method string|null|Credis_Client   rPoplPush(string $source, string $destination)
  * @method int|Credis_Client           rPush(string $key, mixed $value, mixed $valueN = null)
  * @method int |Credis_Client          rPushX(string $key, mixed $value)
- *
  * Sorted Sets:
  * @method int|Credis_Client           zAdd(string $key, double $score, string $value)
  * @method int|Credis_Client           zCard(string $key)
@@ -123,11 +117,9 @@ use Resque\Api\RedisError;
  * @method int|Credis_Client           zRevRank(string $key, string $member)
  * @method int|Credis_Client           zRem(string $key, string $member)
  * @method int|Credis_Client           zDelete(string $key, string $member)
- *
  * Pub/Sub
  * @method int |Credis_Client          publish(string $channel, string $message)
  * @method int|array|Credis_Client     pubsub(string $subCommand, $arg = null)
- *
  * Scripting:
  * @method string|int|Credis_Client    script(string $command, string $arg1 = null)
  * @method string|int|array|bool|Credis_Client eval(string $script, array $keys = null, array $args = null)
@@ -139,6 +131,7 @@ class Redis {
     const MAX_CALL_RETRY_SECONDS = 20;
     /**
      * Redis namespace
+     *
      * @var string
      */
     private static $defaultNamespace = 'resque:';
@@ -167,65 +160,65 @@ class Redis {
      * @var array List of all commands in Redis that supply a key as their
      *    first argument. Used to prefix keys with the Resque namespace.
      */
-    private $keyCommands = array(
-            'exists',
-            'del',
-            'type',
-            'keys',
-            'expire',
-            'ttl',
-            'move',
-            'set',
-            'setex',
-            'get',
-            'getset',
-            'hset',
-            'hsetnx',
-            'hget',
-            'hlen',
-            'hdel',
-            'hkeys',
-            'hvals',
-            'hgetall',
-            'hexists',
-            'hincrby',
-            'hmset',
-            'hmget',
-            'setnx',
-            'incr',
-            'incrby',
-            'decr',
-            'decrby',
-            'rpush',
-            'lpush',
-            'llen',
-            'lrange',
-            'ltrim',
-            'lindex',
-            'lset',
-            'lrem',
-            'lpop',
-            'blpop',
-            'rpop',
-            'sadd',
-            'srem',
-            'spop',
-            'scard',
-            'sismember',
-            'smembers',
-            'srandmember',
-            'zadd',
-            'zrem',
-            'zrange',
-            'zrevrange',
-            'zrangebyscore',
-            'zcard',
-            'zscore',
-            'zremrangebyscore',
-            'sort',
-            'rename',
-            'rpoplpush'
-    );
+    private $keyCommands = [
+        'exists',
+        'del',
+        'type',
+        'keys',
+        'expire',
+        'ttl',
+        'move',
+        'set',
+        'setex',
+        'get',
+        'getset',
+        'hset',
+        'hsetnx',
+        'hget',
+        'hlen',
+        'hdel',
+        'hkeys',
+        'hvals',
+        'hgetall',
+        'hexists',
+        'hincrby',
+        'hmset',
+        'hmget',
+        'setnx',
+        'incr',
+        'incrby',
+        'decr',
+        'decrby',
+        'rpush',
+        'lpush',
+        'llen',
+        'lrange',
+        'ltrim',
+        'lindex',
+        'lset',
+        'lrem',
+        'lpop',
+        'blpop',
+        'rpop',
+        'sadd',
+        'srem',
+        'spop',
+        'scard',
+        'sismember',
+        'smembers',
+        'srandmember',
+        'zadd',
+        'zrem',
+        'zrange',
+        'zrevrange',
+        'zrangebyscore',
+        'zcard',
+        'zscore',
+        'zremrangebyscore',
+        'sort',
+        'rename',
+        'rpoplpush'
+    ];
     /**
      * Initial time of current call.
      *
@@ -237,6 +230,7 @@ class Redis {
 
     /**
      * Set Redis namespace (prefix) default: resque
+     *
      * @param string $namespace
      */
     public static function prefix($namespace) {
@@ -270,7 +264,9 @@ class Redis {
      * - tcp://user:pass@host:port/db?option1=val1&option2=val2
      * - unix:///path/to/redis.sock
      * Note: the 'user' part of the DSN is not used.
+     *
      * @param string $dsn A DSN string
+     *
      * @return array An array of DSN compotnents, with 'false' values for any unknown components. e.g.
      *               [host, port, db, user, pass, options]
      */
@@ -280,22 +276,22 @@ class Redis {
             $dsn = 'redis://' . self::DEFAULT_HOST;
         }
         if (substr($dsn, 0, 7) === 'unix://') {
-            return array(
-                    $dsn,
-                    null,
-                    false,
-                    null,
-                    null,
-                    null,
-            );
+            return [
+                $dsn,
+                null,
+                false,
+                null,
+                null,
+                null,
+            ];
         }
         $parts = parse_url($dsn);
 
         // Check the URI scheme
-        $validSchemes = array('redis', 'tcp');
+        $validSchemes = ['redis', 'tcp'];
         if (isset($parts['scheme']) && !in_array($parts['scheme'], $validSchemes)) {
             throw new \InvalidArgumentException("Invalid DSN. Supported schemes are "
-                    . implode(', ', $validSchemes));
+                . implode(', ', $validSchemes));
         }
 
         // Allow simple 'hostname' format, which `parse_url` treats as a path, not host.
@@ -319,20 +315,20 @@ class Redis {
         $pass = isset($parts['pass']) ? $parts['pass'] : false;
 
         // Convert the query string into an associative array
-        $options = array();
+        $options = [];
         if (isset($parts['query'])) {
             // Parse the query string into an array
             parse_str($parts['query'], $options);
         }
 
-        return array(
-                $parts['host'],
-                $port,
-                $database,
-                $user,
-                $pass,
-                $options,
-        );
+        return [
+            $parts['host'],
+            $port,
+            $database,
+            $user,
+            $pass,
+            $options,
+        ];
     }
 
     /**
@@ -415,17 +411,18 @@ class Redis {
      * @param CredisException $e
      * @param $name
      * @param $args
+     * @param float $wait time to wait in seconds
      *
      * @return mixed
      * @throws RedisError
      */
-    private function attemptCallRetry(CredisException $e, $name, $args) {
+    private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5) {
         $currentCallTime = time() - $this->callTime;
         $ee = new Exception();
         if (
             $currentCallTime >= self::MAX_CALL_RETRY_SECONDS
             || ($e->getCode() !== CredisException::CODE_DISCONNECTED
-            && $e->getCode() !== CredisException::CODE_TIMED_OUT)
+                && $e->getCode() !== CredisException::CODE_TIMED_OUT)
         ) {
             $prettyArgs = json_encode($args);
             Log::critical("Redis call failed with {$e->getMessage()}."
@@ -434,13 +431,14 @@ class Redis {
             throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
         $this->close();
-        sleep(2);
+        usleep($wait * 1000000);
 
         try {
             $this->connect();
+
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
-            return $this->attemptCallRetry($e, $name, $args);
+            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 5));
         }
     }
 }
