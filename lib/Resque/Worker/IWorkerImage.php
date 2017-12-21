@@ -9,42 +9,42 @@ interface IWorkerImage {
     /**
      * @return string
      */
-    function getId();
+    public function getId();
 
     /**
      * @return string
      */
-    function getPid();
+    public function getPid();
 
     /**
      * @return string
      */
-    function getHostname();
+    public function getHostname();
 
     /**
      * @return string
      */
-    function getQueue();
+    public function getQueue();
 
     /**
      * @param string $state
      *
      * @return $this
      */
-    function updateState($state);
+    public function updateState($state);
 
     /**
      * @return $this
      */
-    function clearState();
+    public function clearState();
 
     /**
      * @return boolean
      */
-    function isAlive();
+    public function isAlive();
 
     /**
      * @return boolean
      */
-    function isLocal();
+    public function isLocal();
 }

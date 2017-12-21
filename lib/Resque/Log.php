@@ -59,17 +59,11 @@ class Log {
     }
 
     public static function initialize(GlobalConfig $config) {
-        $formatter = new LineFormatter(self::LINE_FORMAT);
-        $formatter->includeStacktraces();
+        self::getInstance()->logger = self::createLogger($config->getLogPath(), $config->getLogLevel());
+    }
 
-        $handler = new StreamHandler($config->getLogPath(), $config->getLogLevel());
-        $handler->setFormatter($formatter);
-
-        $logger = new Logger('main');
-        $logger->pushProcessor(new PsrLogMessageProcessor());
-        $logger->pushHandler($handler);
-
-        self::getInstance()->logger = new PrefixLogger($logger);
+    public static function initializeConsoleLogger($level = Logger::DEBUG) {
+        self::getInstance()->logger = self::createLogger('php://stdout', $level);
     }
 
     public static function notice($message, array $context = []) {
@@ -82,6 +76,20 @@ class Log {
 
     public static function warning($message, array $context = []) {
         self::getInstance()->logger->log(self::WARNING, $message, $context);
+    }
+
+    private static function createLogger($logPath, $logLevel) {
+        $formatter = new LineFormatter(self::LINE_FORMAT);
+        $formatter->includeStacktraces();
+
+        $handler = new StreamHandler($logPath, $logLevel);
+        $handler->setFormatter($formatter);
+
+        $logger = new Logger('main');
+        $logger->pushProcessor(new PsrLogMessageProcessor());
+        $logger->pushHandler($handler);
+
+        return new PrefixLogger($logger);
     }
 
     private static function getInstance() {

@@ -21,6 +21,7 @@ class WorkerImage extends WorkerImageBase {
      */
     public function addToPool() {
         Resque::redis()->sAdd(Key::workers(), $this->id);
+
         return $this;
     }
 
@@ -29,6 +30,7 @@ class WorkerImage extends WorkerImageBase {
      */
     public function clearStarted() {
         Resque::redis()->del(Key::workerStart($this->id));
+
         return $this;
     }
 
@@ -37,6 +39,7 @@ class WorkerImage extends WorkerImageBase {
      */
     public function clearState() {
         Resque::redis()->del(Key::worker($this->id));
+
         return $this;
     }
 
@@ -48,10 +51,25 @@ class WorkerImage extends WorkerImageBase {
     }
 
     /**
+     * @return string
+     */
+    public function getStarted() {
+        return Resque::redis()->get(Key::workerStart($this->id));
+    }
+
+    /**
+     * @return string
+     */
+    public function getState() {
+        return Resque::redis()->get(Key::worker($this->id));
+    }
+
+    /**
      * @return $this
      */
     public function removeFromPool() {
         Resque::redis()->sRem(Key::workers(), $this->id);
+
         return $this;
     }
 
@@ -60,6 +78,7 @@ class WorkerImage extends WorkerImageBase {
      */
     public function setStartedNow() {
         Resque::redis()->set(Key::workerStart($this->id), strftime('%a %b %d %H:%M:%S %Z %Y'));
+
         return $this;
     }
 
@@ -70,6 +89,7 @@ class WorkerImage extends WorkerImageBase {
      */
     public function updateState($data) {
         Resque::redis()->set(Key::worker($this->id), $data);
+
         return $this;
     }
 }

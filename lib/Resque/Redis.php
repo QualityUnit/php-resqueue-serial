@@ -4,7 +4,7 @@ namespace Resque;
 
 use Credis_Client;
 use CredisException;
-use Resque\Api\RedisException;
+use Resque\Api\RedisError;
 
 /**
  * Wrap Credis to add namespace support and various helper methods.
@@ -136,6 +136,7 @@ use Resque\Api\RedisException;
  * @method string        quit()
  */
 class Redis {
+    const MAX_CALL_RETRY_SECONDS = 20;
     /**
      * Redis namespace
      * @var string
@@ -160,7 +161,7 @@ class Redis {
     /**
      * @var Credis_Client
      */
-    private $driver = null;
+    protected $driver;
 
     /**
      * @var array List of all commands in Redis that supply a key as their
@@ -225,6 +226,14 @@ class Redis {
             'rename',
             'rpoplpush'
     );
+    /**
+     * Initial time of current call.
+     *
+     * @var int
+     */
+    private $callTime;
+    private $redisServer;
+    private $redisDatabase;
 
     /**
      * Set Redis namespace (prefix) default: resque
@@ -241,37 +250,16 @@ class Redis {
      * @param string|array $server A DSN or array
      * @param int $database A database number to select. However, if we find a valid database number
      * in the DSN the DSN-supplied value will be used instead and this parameter is ignored.
-     * @throws RedisException
+     *
+     * @throws RedisError
      */
     public function __construct($server, $database = null) {
         try {
-            /** @noinspection PhpUnusedLocalVariableInspection */
-            list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($server);
-            // $user is not used, only $password
-
-            // Look for known Credis_Client options
-            $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-            $persistent = isset($options['persistent']) ? $options['persistent'] : '';
-            $maxRetries = isset($options['max_connect_retries'])
-                    ? $options['max_connect_retries'] : 0;
-
-            $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
-            $this->driver->setMaxConnectRetries($maxRetries);
-            if ($password) {
-                $this->driver->auth($password);
-            }
-
-            // If we have found a database in our DSN, use it instead of the `$database`
-            // value passed into the constructor.
-            if ($dsnDatabase !== false) {
-                $database = $dsnDatabase;
-            }
-
-            if ($database !== null) {
-                $this->driver->select($database);
-            }
+            $this->redisServer = $server;
+            $this->redisDatabase = $database;
+            $this->connect();
         } catch (CredisException $e) {
-            throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+            throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
     }
 
@@ -350,10 +338,12 @@ class Redis {
     /**
      * Magic method to handle all function requests and prefix key based
      * operations with the {self::$defaultNamespace} key prefix.
+     *
      * @param string $name The name of the method called.
      * @param array $args Array of supplied arguments to the method.
+     *
      * @return mixed Return value from Resident::call() based on the command.
-     * @throws RedisException
+     * @throws RedisError
      */
     public function __call($name, $args) {
         if (in_array(strtolower($name), $this->keyCommands)) {
@@ -365,10 +355,13 @@ class Redis {
                 $args[0] = self::$defaultNamespace . $args[0];
             }
         }
+        $this->callTime = time();
         try {
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
-            throw new RedisException('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+            return $this->attemptCallRetry($e, $name, $args);
+        } finally {
+            $this->callTime = null;
         }
     }
 
@@ -388,5 +381,66 @@ class Redis {
 
     public function close() {
         $this->driver->close();
+    }
+
+    protected function connect() {
+        /** @noinspection PhpUnusedLocalVariableInspection */
+        list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($this->redisServer);
+        // $user is not used, only $password
+
+        // Look for known Credis_Client options
+        $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
+        $persistent = isset($options['persistent']) ? $options['persistent'] : '';
+        $maxRetries = isset($options['max_connect_retries'])
+            ? $options['max_connect_retries'] : 0;
+
+        $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
+        $this->driver->setMaxConnectRetries($maxRetries);
+        if ($password) {
+            $this->driver->auth($password);
+        }
+
+        // If we have found a database in our DSN, use it instead of the `$database`
+        // value passed into the constructor.
+        if ($dsnDatabase !== false) {
+            $this->redisDatabase = $dsnDatabase;
+        }
+
+        if ($this->redisDatabase !== null) {
+            $this->driver->select($this->redisDatabase);
+        }
+    }
+
+    /**
+     * @param CredisException $e
+     * @param $name
+     * @param $args
+     *
+     * @return mixed
+     * @throws RedisError
+     */
+    private function attemptCallRetry(CredisException $e, $name, $args) {
+        $currentCallTime = time() - $this->callTime;
+        $ee = new Exception();
+        if (
+            $currentCallTime >= self::MAX_CALL_RETRY_SECONDS
+            || ($e->getCode() !== CredisException::CODE_DISCONNECTED
+            && $e->getCode() !== CredisException::CODE_TIMED_OUT)
+        ) {
+            $prettyArgs = json_encode($args);
+            Log::critical("Redis call failed with {$e->getMessage()}."
+                . " Call time: $currentCallTime ($name:$prettyArgs)", ['exception' => $e]);
+
+            throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+        }
+        $this->close();
+        sleep(2);
+
+        try {
+            $this->connect();
+            return $this->driver->__call($name, $args);
+        } catch (CredisException $e) {
+            return $this->attemptCallRetry($e, $name, $args);
+        }
     }
 }

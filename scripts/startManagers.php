@@ -16,4 +16,9 @@ Resque::setBackend($config->getBackend());
 
 $process = new InitProcess();
 $process->start();
-$process->maintain();
+try {
+    $process->maintain();
+} catch (Throwable $t) {
+    \Resque\Log::critical("Maintain process failed with: {$t->getMessage()}", ['exception' => $t]);
+    throw $t;
+}

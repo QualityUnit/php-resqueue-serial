@@ -20,7 +20,7 @@ class InitProcess {
     private $reloaded = false;
 
     public function maintain() {
-        Process::setTitle("maintaining");
+        Process::setTitle('maintaining');
         while (true) {
             sleep(5);
             SignalHandler::dispatch();
@@ -33,7 +33,7 @@ class InitProcess {
 
     public function recover() {
         $this->reloaded = false; // refresh reload state
-        Log::debug("========= Starting maintenance");
+        Log::debug('========= Starting maintenance');
 
         $this->maintainScheduler();
 
@@ -73,9 +73,9 @@ class InitProcess {
                         Log::notice("Starting worker {$worker->getImage()->getId()}");
                         $worker->work();
                         exit();
-                    } catch (Exception $e) {
-                        Log::error("Worker " . posix_getpid()
-                                . " failed unexpectedly.", ['exception' => $e]);
+                    } catch (\Throwable $t) {
+                        Log::error('Worker ' . posix_getpid()
+                            . ' failed unexpectedly.', ['exception' => $t]);
                     }
                     exit(1);
                 }
@@ -86,23 +86,23 @@ class InitProcess {
             // check interruption
             SignalHandler::dispatch();
             if ($this->stopping || $this->reloaded) {
-                Log::debug("========= Received stop or reload signal, halting maintenance...");
+                Log::debug('========= Received stop or reload signal, halting maintenance...');
 
                 return;
             }
         }
-        Log::debug("========= Maintenance ended");
+        Log::debug('========= Maintenance ended');
     }
 
     public function reload() {
-        Log::debug("Reloading configuration");
+        Log::debug('Reloading configuration');
         GlobalConfig::reload();
         Log::initialize(GlobalConfig::getInstance());
         Log::setPrefix('init-process');
         $this->reloaded = true;
 
-        $this->signalWorkers(SIGHUP, "HUP");
-        $this->signalScheduler(SIGHUP, "HUP");
+        $this->signalWorkers(SIGHUP, 'HUP');
+        $this->signalScheduler(SIGHUP, 'HUP');
     }
 
     /**
@@ -111,13 +111,13 @@ class InitProcess {
     public function shutdown() {
         $this->stopping = true;
 
-        $this->signalWorkers(SIGTERM, "TERM");
-        $this->signalScheduler(SIGTERM, "TERM");
+        $this->signalWorkers(SIGTERM, 'TERM');
+        $this->signalScheduler(SIGTERM, 'TERM');
     }
 
     public function start() {
-        Process::setTitlePrefix("init");
-        Process::setTitle("starting");
+        Process::setTitlePrefix('init');
+        Process::setTitle('starting');
         $this->initialize();
         $this->recover();
     }
@@ -130,7 +130,7 @@ class InitProcess {
      * @return int number of living workers on specified queue
      */
     private function cleanupWorkers($queue) {
-        Log::debug("Worker cleanup started");
+        Log::debug('Worker cleanup started');
 
         $totalWorkers = 0;
         $livingWorkers = 0;
@@ -146,12 +146,13 @@ class InitProcess {
             }
 
             if (!$image->isAlive()) {
-                Log::debug("Cleaning up dead worker $workerId");
+                Log::warning("Cleaning up dead worker $workerId."
+                    . " Started: {$image->getStarted()} State: {$image->getState()}");
                 // cleanup
-                WorkerImage::fromId($workerId)
-                        ->removeFromPool()
-                        ->clearState()
-                        ->clearStarted();
+                $image
+                    ->removeFromPool()
+                    ->clearState()
+                    ->clearStarted();
             } else {
                 $livingWorkers++;
             }
@@ -192,11 +193,11 @@ class InitProcess {
 
     private function registerSigHandlers() {
         SignalHandler::instance()->unregisterAll()
-                ->register(SIGTERM, [$this, 'shutdown'])
-                ->register(SIGINT, [$this, 'shutdown'])
-                ->register(SIGQUIT, [$this, 'shutdown'])
-                ->register(SIGHUP, [$this, 'reload'])
-                ->register(SIGCHLD, SIG_IGN); // prevent zombie children by ignoring them
+            ->register(SIGTERM, [$this, 'shutdown'])
+            ->register(SIGINT, [$this, 'shutdown'])
+            ->register(SIGQUIT, [$this, 'shutdown'])
+            ->register(SIGHUP, [$this, 'reload'])
+            ->register(SIGCHLD, SIG_IGN); // prevent zombie children by ignoring them
         Log::debug('Registered signals');
     }
 
@@ -211,7 +212,7 @@ class InitProcess {
         foreach ($workers as $worker) {
             $image = WorkerImage::fromId($worker);
             Log::debug("Signalling $signalName " . $image->getId()
-                    . " " . $image->getPid());
+                . ' ' . $image->getPid());
             posix_kill($image->getPid(), $signal);
         }
 
