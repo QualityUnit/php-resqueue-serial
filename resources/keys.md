@@ -40,3 +40,21 @@ resque-v3:
     workers: set(worker_id)                                     # standard workers
     worker:<worker_id>: <job_run_data>
         started: <time_started>
+        
+resqu-v4:
+    
+    // === static
+    unassigned: set(<source_id>:<job_name>)
+    unassigned:<source_id>:<job_name>: list(job_data)
+    q:<queue_id>: list(job_data)
+    
+    // === mass actions (managed)
+    uncommited:<source_id>:<job_name>:<generated_suffix>: list(job_data)
+    commited: set(<source_id>:<job_name>:<generated_suffix>)
+    commited:<source_id>:<job_name>:<generated_suffix>: list(job_data)
+    // <mass_queue_id> == <source_id>:<job_name>:<generated_suffix>
+    mass:<pool_name>:<unit_id>:queues: set(<mass_queue_id>)
+    mass:<pool_name>: hash(<source_id>, <worker_id>)
+    
+    
+    src:<source_id>:cfg:<job_name>: <pool_name>
