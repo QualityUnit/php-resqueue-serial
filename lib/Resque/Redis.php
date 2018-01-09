@@ -152,11 +152,6 @@ class Redis {
     const DEFAULT_DATABASE = 0;
 
     /**
-     * For how long the coomand will be retried until exception will be thrown (in seconds)
-     */
-    const RETRY_COMMAND_TIMEOUT = 20;
-
-    /**
      * @var Credis_Client
      */
     protected $driver;
@@ -225,12 +220,6 @@ class Redis {
         'rpoplpush'
     ];
 
-    /**
-     * Remaining time to retry the command until exception is thrown
-     *
-     * @var float
-     */
-    private $commandTimeOutIn = self::RETRY_COMMAND_TIMEOUT;
     private $redisServer;
     private $redisDatabase;
 
@@ -361,8 +350,6 @@ class Redis {
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
             return $this->attemptCallRetry($e, $name, $args);
-        } finally {
-            $this->commandTimeOutIn = self::RETRY_COMMAND_TIMEOUT;
         }
     }
 
@@ -417,13 +404,14 @@ class Redis {
      * @param $name
      * @param $args
      * @param float $wait time to wait in seconds
+     * @param float $remaining time in seconds
      *
      * @return mixed
      * @throws RedisError
      */
-    private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5) {
+    private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5, $remaining = 20.0) {
         if (
-            $this->commandTimeOutIn <= 0
+            $remaining <= 0
             || ($e->getCode() !== CredisException::CODE_DISCONNECTED
                 && $e->getCode() !== CredisException::CODE_TIMED_OUT)
         ) {
@@ -435,7 +423,7 @@ class Redis {
         }
         $this->close();
 
-        $this->commandTimeOutIn -= $wait;
+        $remaining -= $wait;
         usleep($wait * 1000000);
 
         try {
@@ -443,7 +431,7 @@ class Redis {
 
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
-            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 5));
+            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 5), $remaining);
         }
     }
 }
