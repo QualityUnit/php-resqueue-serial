@@ -219,12 +219,7 @@ class Redis {
         'rename',
         'rpoplpush'
     ];
-    /**
-     * Initial time of current call.
-     *
-     * @var int
-     */
-    private $callTime;
+
     private $redisServer;
     private $redisDatabase;
 
@@ -290,7 +285,7 @@ class Redis {
         // Check the URI scheme
         $validSchemes = ['redis', 'tcp'];
         if (isset($parts['scheme']) && !in_array($parts['scheme'], $validSchemes)) {
-            throw new \InvalidArgumentException("Invalid DSN. Supported schemes are "
+            throw new \InvalidArgumentException('Invalid DSN. Supported schemes are '
                 . implode(', ', $validSchemes));
         }
 
@@ -351,13 +346,10 @@ class Redis {
                 $args[0] = self::$defaultNamespace . $args[0];
             }
         }
-        $this->callTime = time();
         try {
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
             return $this->attemptCallRetry($e, $name, $args);
-        } finally {
-            $this->callTime = null;
         }
     }
 
@@ -417,20 +409,18 @@ class Redis {
      * @throws RedisError
      */
     private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5) {
-        $currentCallTime = time() - $this->callTime;
-        $ee = new Exception();
         if (
-            $currentCallTime >= self::MAX_CALL_RETRY_SECONDS
-            || ($e->getCode() !== CredisException::CODE_DISCONNECTED
-                && $e->getCode() !== CredisException::CODE_TIMED_OUT)
+            $e->getCode() !== CredisException::CODE_DISCONNECTED
+            && $e->getCode() !== CredisException::CODE_TIMED_OUT
         ) {
             $prettyArgs = json_encode($args);
             Log::critical("Redis call failed with {$e->getMessage()}."
-                . " Call time: $currentCallTime ($name:$prettyArgs)", ['exception' => $e]);
+                . ' Call time: ' . time() . " ($name:$prettyArgs)", ['exception' => $e]);
 
             throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
         $this->close();
+
         usleep($wait * 1000000);
 
         try {
@@ -438,7 +428,7 @@ class Redis {
 
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
-            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 5));
+            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 60));
         }
     }
 }
