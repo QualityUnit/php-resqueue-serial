@@ -152,6 +152,11 @@ class Redis {
     const DEFAULT_DATABASE = 0;
 
     /**
+     * For how long the coomand will be retried until exception will be thrown (in seconds)
+     */
+    const RETRY_COMMAND_TIMEOUT = 20;
+
+    /**
      * @var Credis_Client
      */
     protected $driver;
@@ -219,12 +224,13 @@ class Redis {
         'rename',
         'rpoplpush'
     ];
+
     /**
-     * Initial time of current call.
+     * Remaining time to retry the command until exception is thrown
      *
-     * @var int
+     * @var float
      */
-    private $callTime;
+    private $commandTimeOutIn = self::RETRY_COMMAND_TIMEOUT;
     private $redisServer;
     private $redisDatabase;
 
@@ -351,13 +357,12 @@ class Redis {
                 $args[0] = self::$defaultNamespace . $args[0];
             }
         }
-        $this->callTime = time();
         try {
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
             return $this->attemptCallRetry($e, $name, $args);
         } finally {
-            $this->callTime = null;
+            $this->commandTimeOutIn = self::RETRY_COMMAND_TIMEOUT;
         }
     }
 
@@ -417,20 +422,20 @@ class Redis {
      * @throws RedisError
      */
     private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5) {
-        $currentCallTime = time() - $this->callTime;
-        $ee = new Exception();
         if (
-            $currentCallTime >= self::MAX_CALL_RETRY_SECONDS
+            $this->commandTimeOutIn <= 0
             || ($e->getCode() !== CredisException::CODE_DISCONNECTED
                 && $e->getCode() !== CredisException::CODE_TIMED_OUT)
         ) {
             $prettyArgs = json_encode($args);
             Log::critical("Redis call failed with {$e->getMessage()}."
-                . " Call time: $currentCallTime ($name:$prettyArgs)", ['exception' => $e]);
+                . " Call time: " . time() . " ($name:$prettyArgs)", ['exception' => $e]);
 
             throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
         $this->close();
+
+        $this->commandTimeOutIn -= $wait;
         usleep($wait * 1000000);
 
         try {
