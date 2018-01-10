@@ -12,23 +12,11 @@ use Symfony\Component\Yaml\Yaml;
 
 class GlobalConfig {
 
-    const LOG_LEVELS = [
-            'ALERT' => Log::ALERT,
-            'CRITICAL' => Log::CRITICAL,
-            'DEBUG' => Log::DEBUG,
-            'EMERGENCY' => Log::EMERGENCY,
-            'ERROR' => Log::ERROR,
-            'INFO' => Log::INFO,
-            'NOTICE' => Log::NOTICE,
-            'WARNING' => Log::WARNING
-    ];
-
     /** @var GlobalConfig */
     private static $instance;
 
     private $queues = [];
-    private $logLevel = LogLevel::NOTICE;
-    private $logPath = '/var/log/resque-serial.log';
+    private $logConfig;
     private $redisHost = Redis::DEFAULT_HOST;
     private $redisPort = Redis::DEFAULT_PORT;
 
@@ -83,14 +71,8 @@ class GlobalConfig {
             $self->redisPort = $redis['port'];
         }
 
-        $level = self::LOG_LEVELS[strtoupper($data['log_level'])];
-        if ($level != null) {
-            $self->logLevel = $level;
-        }
-        $logPath = $data['log_path'];
-        if ($logPath != null) {
-            $self->logPath = $logPath;
-        }
+        $self->logConfig = new LogConfig($data['log']);
+
         $taskIncludePath = $data['task_include_path'];
         if ($taskIncludePath != null) {
             $self->taskIncludePath = $taskIncludePath;
@@ -106,6 +88,10 @@ class GlobalConfig {
      */
     public function getBackend() {
         return $this->redisHost . ':' . $this->redisPort;
+    }
+
+    public function getLogConfig() {
+        return $this->logConfig;
     }
 
     /**

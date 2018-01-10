@@ -4,13 +4,13 @@
 namespace Resque;
 
 
-use Monolog\Formatter\LineFormatter;
+use Monolog\Formatter\LogstashFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
-use Resque\Config\GlobalConfig;
+use Resque\Config\LogConfig;
 
 class Log {
 
@@ -58,12 +58,12 @@ class Log {
         self::getInstance()->logger->log(self::INFO, $message, $context);
     }
 
-    public static function initialize(GlobalConfig $config) {
-        self::getInstance()->logger = self::createLogger($config->getLogPath(), $config->getLogLevel());
+    public static function initialize(LogConfig $config) {
+        self::getInstance()->logger = self::createLogger($config);
     }
 
     public static function initializeConsoleLogger($level = Logger::DEBUG) {
-        self::getInstance()->logger = self::createLogger('php://stdout', $level);
+        self::getInstance()->logger = self::createLogger(LogConfig::forPath('php://stdout', $level));
     }
 
     public static function notice($message, array $context = []) {
@@ -78,11 +78,16 @@ class Log {
         self::getInstance()->logger->log(self::WARNING, $message, $context);
     }
 
-    private static function createLogger($logPath, $logLevel) {
-        $formatter = new LineFormatter(self::LINE_FORMAT);
-        $formatter->includeStacktraces();
+    private static function createLogger(LogConfig $config) {
+        $formatter = new LogstashFormatter(
+            $config->getApplicationName(),
+            $config->getSystemName(),
+            $config->getExtraPrefix(),
+            $config->getContextPrefix(),
+            $config->getVersion()
+        );
 
-        $handler = new StreamHandler($logPath, $logLevel);
+        $handler = new StreamHandler($config->getPath(), $config->getLevel());
         $handler->setFormatter($formatter);
 
         $logger = new Logger('main');
