@@ -40,6 +40,7 @@ class StandardProcessor implements IProcessor {
         } else {
             $exitCode = $this->waitForChild($pid);
             if ($exitCode !== 0) {
+                UniqueList::removeAll($runningJob->getJob()->getUniqueId());
                 $runningJob->fail(new FailException("Job execution failed with exit code: $exitCode"));
             }
         }
