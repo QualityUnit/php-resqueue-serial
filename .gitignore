@@ -99,3 +99,7 @@ composer.phar
 ### Project
 
 /dist/
+/testscripts/fix_clear_unique.php
+/testscripts/fix_restart_failed.php
+/testscripts/redis.php
+/testscripts/fix_enqueued.php
