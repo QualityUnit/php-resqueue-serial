@@ -86,7 +86,10 @@ LUA;
 
         $decoded = json_decode($data, true);
         if (!is_array($decoded)) {
-            Log::critical("[planner] Unknown format for planned job '$planId':\n $data");
+            Log::critical('[planner] Unknown format for planned job.', [
+                'plan_id' => $planId,
+                'payload' => $data
+            ]);
 
             return null;
         }

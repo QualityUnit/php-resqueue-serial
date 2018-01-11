@@ -19,6 +19,6 @@ $process->start();
 try {
     $process->maintain();
 } catch (Throwable $t) {
-    \Resque\Log::critical("Maintain process failed with: {$t->getMessage()}", ['exception' => $t]);
+    \Resque\Log::critical('Maintain process failed.', ['exception' => $t]);
     throw $t;
 }

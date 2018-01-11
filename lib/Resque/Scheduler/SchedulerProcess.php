@@ -41,15 +41,15 @@ class SchedulerProcess {
     }
 
     public function reload() {
-        Log::notice("Reloading");
+        Log::notice('Reloading');
         GlobalConfig::reload();
         $this->initLogger();
-        Log::notice("Reloaded");
+        Log::notice('Reloaded');
     }
 
     public function shutDown() {
         $this->isShutDown = true;
-        Log::info("Shutting down");
+        Log::info('Shutting down');
     }
 
     /**
@@ -94,12 +94,12 @@ class SchedulerProcess {
     private function deinitialize() {
         Resque::redis()->del(Key::localSchedulerPid());
         SignalHandler::instance()->unregisterAll();
-        Log::notice("Ended");
+        Log::notice('Ended');
     }
 
     private function initLogger() {
-        Log::initialize(GlobalConfig::getInstance());
-        Log::setPrefix(getmypid() . "-scheduler");
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
+        Log::setPrefix(getmypid() . '-scheduler');
     }
 
     private function initialize() {

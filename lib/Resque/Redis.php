@@ -413,9 +413,11 @@ class Redis {
             $e->getCode() !== CredisException::CODE_DISCONNECTED
             && $e->getCode() !== CredisException::CODE_TIMED_OUT
         ) {
-            $prettyArgs = json_encode($args);
-            Log::critical("Redis call failed with {$e->getMessage()}."
-                . ' Call time: ' . time() . " ($name:$prettyArgs)", ['exception' => $e]);
+            Log::critical('Redis call failed.', [
+                'exception' => $e,
+                'name' => $name,
+                'args' => $args
+            ]);
 
             throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }

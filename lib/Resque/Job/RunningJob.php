@@ -6,6 +6,7 @@ use Resque;
 use Resque\Api\Job;
 use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
+use Resque\Log;
 use Resque\ResqueImpl;
 use Resque\Worker\WorkerBase;
 
@@ -104,20 +105,15 @@ class RunningJob {
      * @param \Throwable $t
      * @param string $retryText
      *
-     * @return string
+     * @return mixed[]
      */
-    private function createFailReport(\Throwable $t, $retryText = 'no retry') {
-        $data = new \stdClass;
-        $data->failed_at = strftime('%a %b %d %H:%M:%S %Z %Y');
-        $data->payload = $this->job->toArray();
-        $data->exception = get_class($t);
-        $data->error = $t->getMessage();
-        $data->backtrace = explode("\n", $t->getTraceAsString());
-        $data->queue = $this->job->getQueue();
-        $data->retried_by = $retryText;
-        $data->processed_by = gethostname();
-
-        return json_encode($data);
+    private function createFailContext(\Throwable $t, $retryText = 'no retry') {
+        return [
+            'start_time' => date('Y-m-d\TH:i:s.uP', $this->startTime),
+            'payload' => $this->job->toArray(),
+            'exception' => $t,
+            'retried_by' => $retryText
+        ];
     }
 
     /**
@@ -139,8 +135,8 @@ class RunningJob {
      * @param \Throwable $t
      */
     private function reportFail(\Throwable $t) {
+        Log::error('Job failed.', $this->createFailContext($t));
         $this->worker->getStats()->incFailed();
-        Resque::redis()->rPush('failed', $this->createFailReport($t));
     }
 
     /**
@@ -148,8 +144,8 @@ class RunningJob {
      * @param string $retryJobId
      */
     private function reportRetry(\Exception $e, $retryJobId) {
+        Log::error('Job was retried.', $this->createFailContext($e, $retryJobId));
         $this->worker->getStats()->incRetried();
-        Resque::redis()->rPush('retries', $this->createFailReport($e, $retryJobId));
     }
 
     private function reportSuccess() {

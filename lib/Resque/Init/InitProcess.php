@@ -74,8 +74,10 @@ class InitProcess {
                         $worker->work();
                         exit();
                     } catch (\Throwable $t) {
-                        Log::error('Worker ' . posix_getpid()
-                            . ' failed unexpectedly.', ['exception' => $t]);
+                        Log::critical('Worker failed unexpectedly.', [
+                            'exception' => $t,
+                            'pid' => posix_getpid()
+                        ]);
                     }
                     exit(1);
                 }
@@ -97,7 +99,7 @@ class InitProcess {
     public function reload() {
         Log::debug('Reloading configuration');
         GlobalConfig::reload();
-        Log::initialize(GlobalConfig::getInstance());
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix('init-process');
         $this->reloaded = true;
 
@@ -146,8 +148,11 @@ class InitProcess {
             }
 
             if (!$image->isAlive()) {
-                Log::warning("Cleaning up dead worker $workerId."
-                    . " Started: {$image->getStarted()} State: {$image->getState()}");
+                Log::warning('Cleaning up dead worker.', [
+                    'started' => $image->getStarted(),
+                    'state' => $image->getState(),
+                    'worker_id' => $workerId
+                ]);
                 // cleanup
                 $image
                     ->removeFromPool()
@@ -167,7 +172,7 @@ class InitProcess {
     private function initialize() {
         Resque::setBackend(GlobalConfig::getInstance()->getBackend());
 
-        Log::initialize(GlobalConfig::getInstance());
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix('init-process');
 
         $this->registerSigHandlers();
@@ -211,8 +216,7 @@ class InitProcess {
         $workers = WorkerImage::all();
         foreach ($workers as $worker) {
             $image = WorkerImage::fromId($worker);
-            Log::debug("Signalling $signalName " . $image->getId()
-                . ' ' . $image->getPid());
+            Log::debug("Signalling $signalName to {$image->getId()}");
             posix_kill($image->getPid(), $signal);
         }
 

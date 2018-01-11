@@ -4,9 +4,7 @@
 namespace Resque\Config;
 
 
-use Psr\Log\LogLevel;
 use Resque\Exception;
-use Resque\Log;
 use Resque\Redis;
 use Symfony\Component\Yaml\Yaml;
 

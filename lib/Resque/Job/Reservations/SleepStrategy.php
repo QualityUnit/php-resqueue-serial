@@ -23,7 +23,7 @@ class SleepStrategy implements IStrategy {
     /**
      * @inheritdoc
      */
-    function reserve(IJobSource $source) {
+    public function reserve(IJobSource $source) {
         Log::debug("Looking for job in {$source->toString()}");
         Process::setTitle("Waiting for {$source->toString()} with interval {$this->interval}");
         $job = $source->popNonBlocking();

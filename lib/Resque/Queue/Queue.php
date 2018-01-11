@@ -59,7 +59,7 @@ class Queue implements IJobSource {
     /**
      * @inheritdoc
      */
-    function popBlocking($timeout) {
+    public function popBlocking($timeout) {
         $payload = Resque::redis()->blPop(Key::queue($this->name), $timeout);
         if (!is_array($payload) || !isset($payload[1])) {
             return null;
@@ -67,11 +67,11 @@ class Queue implements IJobSource {
 
         $data = json_decode($payload[1], true);
         if (!is_array($data)) {
-            Log::error('Payload data corrupted: ' . $payload[1]);
+            Log::error('Payload data corrupted on dequeue.', ['payload' => $payload[1]]);
             return null;
         }
 
-        Log::debug('Job retrieved from queue: ' . $payload[1]);
+        Log::debug('Job retrieved from queue.', ['payload' => $payload[1]]);
 
         $queuedJob = QueuedJob::fromArray($data);
         $this->writeStats($queuedJob);
@@ -82,7 +82,7 @@ class Queue implements IJobSource {
     /**
      * @inheritdoc
      */
-    function popNonBlocking() {
+    public function popNonBlocking() {
         $data = json_decode(Resque::redis()->lPop(Key::queue($this->name)), true);
         if (!is_array($data)) {
             return null;

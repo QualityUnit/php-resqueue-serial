@@ -42,6 +42,24 @@ class __Fail__Perf {
     }
 }
 
+class __ErrorJob implements ITask {
+
+    public function perform() {
+        throw new Error(@$this->job->getArgs()['arg']);
+    }
+}
+
+class __Error__Perf {
+
+    public function isValid() {
+        return true;
+    }
+
+    public function perform() {
+        throw new Error();
+    }
+}
+
 class __RescheduleJob implements ITask {
 
     public function perform() {

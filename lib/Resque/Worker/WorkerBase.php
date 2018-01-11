@@ -69,7 +69,10 @@ abstract class WorkerBase {
                 $this->resolveProcessor($runningJob->getJob())->process($runningJob);
                 Log::info("Processing of job {$runningJob->getId()} has finished");
             } catch (\Exception $e) {
-                Log::critical("Unexpected error occurred during execution of a job. \nError: {$e->getMessage()} \nTrace: {$e->getTraceAsString()}");
+                Log::critical('Unexpected error occurred during execution of a job.', [
+                    'exception' => $e,
+                    'payload' => $runningJob->getJob()->toArray()
+                ]);
             }
 
             $this->workDone($runningJob);

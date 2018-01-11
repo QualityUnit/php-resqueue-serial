@@ -86,7 +86,7 @@ class StandardWorker extends WorkerBase {
     }
 
     private function initLogger($queue) {
-        Log::initialize(GlobalConfig::getInstance());
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix(posix_getpid() . "-worker-$queue");
     }
 

@@ -11,7 +11,8 @@ unlink('/tmp/serialjob.txt');
 //$i = 0;
 //while ($i < 50) {
 //    $i++;
-    Resque::enqueue('example_queue', new UidDescriptor(__RescheduleJob::class, []));
+    Resque::enqueue('example_queue', new Descriptor(__FailJob::class, ['arg' => 'failarg']));
+    Resque::enqueue('example_queue', new Descriptor(__ErrorJob::class, ['arg' => 'errorarg']));
 //}
 
 

@@ -22,6 +22,7 @@ class StandardProcessor implements IProcessor {
     public function process(RunningJob $runningJob) {
         $pid = Process::fork();
         if ($pid === 0) {
+            // CHILD PROCESS START
             try {
                 $workerPid = $runningJob->getWorker()->getImage()->getPid();
                 Log::setPrefix("$workerPid-std-proc-" . posix_getpid());
@@ -29,19 +30,23 @@ class StandardProcessor implements IProcessor {
                 Process::setTitle("Processing job {$runningJob->getJob()->getClass()}");
                 $this->handleChild($runningJob);
             } catch (\Throwable $t) {
-                Log::critical(
-                    "Unexpected error occurred in {$runningJob->getJob()->toString()}",
-                    ['exception' => $t]
-                );
-                UniqueList::removeAll($runningJob->getJob()->getUniqueId());
-                $runningJob->fail($t);
+                try {
+                    $runningJob->fail($t);
+                    UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                } catch (\Throwable $r) {
+                    Log::critical('Failed to properly handle job failure.', [
+                        'exception' => $r,
+                        'payload' => $runningJob->getJob()->toArray()
+                    ]);
+                }
             }
             exit(0);
+            // CHILD PROCESS END
         } else {
             $exitCode = $this->waitForChild($pid);
             if ($exitCode !== 0) {
-                UniqueList::removeAll($runningJob->getJob()->getUniqueId());
                 $runningJob->fail(new FailException("Job execution failed with exit code: $exitCode"));
+                UniqueList::removeAll($runningJob->getJob()->getUniqueId());
             }
         }
     }
@@ -67,7 +72,10 @@ class StandardProcessor implements IProcessor {
             return $task;
         } catch (\Exception $e) {
             $message = 'Failed to create a task instance';
-            Log::error("$message from job {$job->toString()}", ['exception' => $e]);
+            Log::error("$message from payload.", [
+                'exception' => $e,
+                'payload' => $job->toArray()
+            ]);
             throw new FailException($message, 0, $e);
         }
     }
@@ -111,7 +119,6 @@ class StandardProcessor implements IProcessor {
             UniqueList::removeAll($job->getUniqueId());
             $runningJob->retry($e);
         } catch (\Exception $e) {
-            Log::error("Failed to perform job {$job->toString()}");
             UniqueList::removeAll($job->getUniqueId());
             $runningJob->fail($e);
         }
@@ -134,7 +141,10 @@ class StandardProcessor implements IProcessor {
         try {
             $runningJob->success();
         } catch (Exception $e) {
-            Log::error("Failed to report success of a job {$runningJob->getJob()->toString()}: {$e->getMessage()}");
+            Log::error('Failed to report success of a job.', [
+                'exception' => $e,
+                'payload' => $runningJob->getJob()->toArray()
+            ]);
         }
     }
 
@@ -154,8 +164,11 @@ class StandardProcessor implements IProcessor {
                 $runningJob->reschedule($e->getJobDescriptor());
             }
         } catch (\Exception $e) {
+            Log::critical('Failed to reschedule a job.', [
+                'exception' => $e,
+                'payload' => $runningJob->getJob()->toArray()
+            ]);
             UniqueList::removeAll($runningJob->getJob()->getUniqueId());
-            Log::critical("Failed to reschedule job {$runningJob->getJob()->toString()}");
         }
     }
 
