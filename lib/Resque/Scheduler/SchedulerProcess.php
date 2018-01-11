@@ -20,6 +20,15 @@ class SchedulerProcess {
     /** @var IScheduler[] */
     private $schedulers = [];
 
+    public function __construct() {
+        Process::setTitlePrefix('scheduler');
+
+        $this->schedulers = [
+            new DelayedScheduler(),
+            new PlannedScheduler()
+        ];
+    }
+
     public static function getLocalPid() {
         return Resque::redis()->get(Key::localSchedulerPid());
     }
@@ -31,20 +40,15 @@ class SchedulerProcess {
         Resque::redis()->zAdd(Key::delayedQueueSchedule(), $at, $at);
     }
 
-    public function __construct() {
-        Process::setTitlePrefix('scheduler');
-
-        $this->schedulers = [
-            new DelayedScheduler(),
-            new PlannedScheduler()
-        ];
-    }
-
     public function reload() {
         Log::notice('Reloading');
         GlobalConfig::reload();
         $this->initLogger();
         Log::notice('Reloaded');
+    }
+
+    public function reloadLogger() {
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
     }
 
     public function shutDown() {
@@ -98,7 +102,7 @@ class SchedulerProcess {
     }
 
     private function initLogger() {
-        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
+        $this->reloadLogger();
         Log::setPrefix(getmypid() . '-scheduler');
     }
 
@@ -112,7 +116,8 @@ class SchedulerProcess {
             ->register(SIGTERM, [$this, 'shutDown'])
             ->register(SIGINT, [$this, 'shutDown'])
             ->register(SIGQUIT, [$this, 'shutDown'])
-            ->register(SIGHUP, [$this, 'reload']);
+            ->register(SIGHUP, [$this, 'reload'])
+            ->register(SIGUSR1, [$this, 'reloadLogger']);
 
         Log::notice("Started scheduler at $pid");
     }

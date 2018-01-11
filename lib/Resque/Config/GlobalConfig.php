@@ -42,24 +42,23 @@ class GlobalConfig {
 
     /**
      * @return GlobalConfig
-     * @throws Exception
      */
     public static function getInstance() {
         if (!self::$instance) {
-            throw new Exception('No instance of GlobalConfig exist');
+            throw new \RuntimeException('No instance of GlobalConfig exist');
         }
         return self::$instance;
     }
 
     /**
-     * @throws Exception
+     * @throws \Symfony\Component\Yaml\Exception\ParseException
      */
     public static function reload() {
         $self = self::$instance;
         $data = Yaml::parse(file_get_contents($self->path));
 
         if (!isset($data['queues'])) {
-            throw new Exception('Global config contains no queues.');
+            throw new \RuntimeException('Global config contains no queues.');
         }
         $self->queues = $data['queues'];
 

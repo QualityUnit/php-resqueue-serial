@@ -56,6 +56,10 @@ class StandardWorker extends WorkerBase {
         Log::notice('Reloaded');
     }
 
+    public function reloadLogger() {
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
+    }
+
     /**
      * Schedule a worker for shutdown. Will finish processing the current job
      * and when the timeout interval is reached, the worker will shut down.
@@ -86,7 +90,7 @@ class StandardWorker extends WorkerBase {
     }
 
     private function initLogger($queue) {
-        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
+        $this->reloadLogger();
         Log::setPrefix(posix_getpid() . "-worker-$queue");
     }
 
@@ -95,7 +99,8 @@ class StandardWorker extends WorkerBase {
                 ->register(SIGTERM, [$this, 'shutdown'])
                 ->register(SIGINT, [$this, 'shutdown'])
                 ->register(SIGQUIT, [$this, 'shutdown'])
-                ->register(SIGHUP, [$this, 'reload']);
+                ->register(SIGHUP, [$this, 'reload'])
+                ->register(SIGUSR1, [$this, 'reloadLogger']);
         Log::debug('Registered signals');
     }
 

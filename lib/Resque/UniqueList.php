@@ -59,7 +59,7 @@ LUA;
         }
 
         if ($job->getUid()->isDeferred() && self::addDeferred($job) !== false) {
-            throw new DeferredException();
+            throw new DeferredException('Job was deferred.');
         }
 
         throw new UniqueException($job->getUniqueId());
@@ -68,7 +68,7 @@ LUA;
     public static function addDeferred(Job $job) {
         $uid = $job->getUid();
         if ($uid == null || !$uid->isDeferred()) {
-            throw new Exception("Only deferrable jobs can be deferred.");
+            throw new \RuntimeException('Only deferrable jobs can be deferred.');
         }
 
         return Resque::redis()->eval(

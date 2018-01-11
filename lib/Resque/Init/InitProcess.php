@@ -196,12 +196,21 @@ class InitProcess {
         }
     }
 
+    public function reloadLogger() {
+        Log::debug('Reloading logger');
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
+
+        $this->signalWorkers(SIGUSR1, 'USR1');
+        $this->signalScheduler(SIGUSR1, 'USR1');
+    }
+
     private function registerSigHandlers() {
         SignalHandler::instance()->unregisterAll()
             ->register(SIGTERM, [$this, 'shutdown'])
             ->register(SIGINT, [$this, 'shutdown'])
             ->register(SIGQUIT, [$this, 'shutdown'])
             ->register(SIGHUP, [$this, 'reload'])
+            ->register(SIGUSR1, [$this, 'reloadLogger'])
             ->register(SIGCHLD, SIG_IGN); // prevent zombie children by ignoring them
         Log::debug('Registered signals');
     }
