@@ -5,12 +5,12 @@ namespace Resque\Stats;
 
 
 use Resque;
-use Resque\Key;
 use Resque\Stats;
+use Resque\StatsD;
 
 class GlobalStats implements Stats {
 
-    private static $instance = null;
+    private static $instance;
 
     public static function instance() {
         if (self::$instance === null) {
@@ -25,11 +25,11 @@ class GlobalStats implements Stats {
     }
 
     public function incFailed() {
-        return $this->incStat('failed');
+        $this->incStat('failed');
     }
 
     public function incProcessed() {
-        return $this->incStat('processed');
+        $this->incStat('processed');
     }
 
     public function incProcessingTime($byMilliseconds) {
@@ -41,10 +41,10 @@ class GlobalStats implements Stats {
     }
 
     public function incRetried() {
-        return $this->incStat('retries');
+        $this->incStat('retries');
     }
 
     private function incStat($stat) {
-        return (bool)Resque::redis()->incrBy(Key::statsGlobal($stat), 1);
+        StatsD::increment('global.' . $stat);
     }
 }

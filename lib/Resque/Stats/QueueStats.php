@@ -5,8 +5,8 @@ namespace Resque\Stats;
 
 
 use Resque;
-use Resque\Key;
 use Resque\Stats;
+use Resque\StatsD;
 
 class QueueStats implements Stats {
 
@@ -37,12 +37,12 @@ class QueueStats implements Stats {
 
     public function incProcessingTime($byMilliseconds) {
         GlobalStats::instance()->incProcessingTime($byMilliseconds);
-        $this->incStat('processing_time', $byMilliseconds);
+        $this->timing('processing_time', $byMilliseconds);
     }
 
     public function incQueueTime($byMilliseconds) {
         GlobalStats::instance()->incQueueTime($byMilliseconds);
-        $this->incStat('queue_time', $byMilliseconds);
+        $this->timing('queue_time', $byMilliseconds);
     }
 
     public function incRetried() {
@@ -52,9 +52,25 @@ class QueueStats implements Stats {
 
     /**
      * @param string $stat
-     * @param int $by
      */
-    private function incStat($stat, $by = 1) {
-        Resque::redis()->incrBy(Key::statsQueue($this->queueName, $stat), $by);
+    private function incStat($stat) {
+        StatsD::increment($this->key($stat));
+    }
+
+    /**
+     * @param string $stat
+     *
+     * @return string
+     */
+    private function key($stat) {
+        return gethostname() . ".{$this->queueName}.$stat";
+    }
+
+    /**
+     * @param string $stat
+     * @param int $value
+     */
+    private function timing($stat, $value) {
+        StatsD::timing($this->key($stat), $value);
     }
 }
