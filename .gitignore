@@ -103,3 +103,4 @@ composer.phar
 /testscripts/fix_restart_failed.php
 /testscripts/redis.php
 /testscripts/fix_enqueued.php
+/testscripts/fix_clear_unique-v2.php
