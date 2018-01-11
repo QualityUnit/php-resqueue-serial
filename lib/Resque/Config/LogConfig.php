@@ -20,14 +20,14 @@ class LogConfig {
 
     private $level = LogLevel::NOTICE;
     private $path = '/var/log/resque-serial.log';
-    private $applicationName = 'resque-v3';
+    private $applicationName = \Resque::VERSION_PREFIX;
     private $systemName;
     private $extraPrefix = '';
     private $contextPrefix = 'ctxt_';
     private $version = 0;
 
     /**
-     * @param mixed $configSection
+     * @param mixed[] $configSection
      */
     public function __construct($configSection) {
 
@@ -40,25 +40,25 @@ class LogConfig {
             $this->path = $logPath;
         }
         $applicationName = $configSection['application_name'];
-        if ($logPath != null) {
+        if ($applicationName != null) {
             $this->applicationName = $applicationName;
         }
         $systemName = $configSection['system_name'];
-        if ($logPath != null) {
+        if ($systemName != null) {
             $this->systemName = $systemName;
         } else {
             $this->systemName = gethostname();
         }
         $extraPrefix = $configSection['extra_prefix'];
-        if ($logPath != null) {
+        if ($extraPrefix != null) {
             $this->extraPrefix = $extraPrefix;
         }
         $contextPrefix = $configSection['context_prefix'];
-        if ($logPath != null) {
+        if ($contextPrefix != null) {
             $this->contextPrefix = $contextPrefix;
         }
         $version = $configSection['logstash_version'];
-        if ($logPath != null) {
+        if ($version != null) {
             $this->version = $version;
         }
     }

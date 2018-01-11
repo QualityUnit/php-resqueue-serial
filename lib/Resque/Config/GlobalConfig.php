@@ -14,7 +14,10 @@ class GlobalConfig {
     private static $instance;
 
     private $queues = [];
+    /** @var LogConfig */
     private $logConfig;
+    /** @var StatsConfig */
+    private $statsConfig;
     private $redisHost = Redis::DEFAULT_HOST;
     private $redisPort = Redis::DEFAULT_PORT;
 
@@ -69,6 +72,7 @@ class GlobalConfig {
         }
 
         $self->logConfig = new LogConfig($data['log']);
+        $self->statsConfig = new StatsConfig($data['statsd']);
 
         $taskIncludePath = $data['task_include_path'];
         if ($taskIncludePath != null) {
@@ -87,22 +91,18 @@ class GlobalConfig {
         return $this->redisHost . ':' . $this->redisPort;
     }
 
+    /**
+     * @return LogConfig
+     */
     public function getLogConfig() {
         return $this->logConfig;
     }
 
     /**
-     * @return string
+     * @return StatsConfig
      */
-    public function getLogLevel() {
-        return $this->logLevel;
-    }
-
-    /**
-     * @return string
-     */
-    public function getLogPath() {
-        return $this->logPath;
+    public function getStatsConfig() {
+        return $this->statsConfig;
     }
 
     /**

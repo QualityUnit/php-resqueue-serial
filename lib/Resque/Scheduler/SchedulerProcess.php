@@ -9,6 +9,7 @@ use Resque\Key;
 use Resque\Log;
 use Resque\Process;
 use Resque\SignalHandler;
+use Resque\StatsD;
 use Resque\UniqueList;
 
 class SchedulerProcess {
@@ -43,6 +44,7 @@ class SchedulerProcess {
     public function reload() {
         Log::notice('Reloading');
         GlobalConfig::reload();
+        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
         $this->initLogger();
         Log::notice('Reloaded');
     }

@@ -11,6 +11,7 @@ use Resque\Log;
 use Resque\Process;
 use Resque\Scheduler\SchedulerProcess;
 use Resque\SignalHandler;
+use Resque\StatsD;
 use Resque\Worker\StandardWorker;
 use Resque\Worker\WorkerImage;
 
@@ -99,6 +100,7 @@ class InitProcess {
     public function reload() {
         Log::debug('Reloading configuration');
         GlobalConfig::reload();
+        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
         Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix('init-process');
         $this->reloaded = true;
@@ -172,6 +174,7 @@ class InitProcess {
     private function initialize() {
         Resque::setBackend(GlobalConfig::getInstance()->getBackend());
 
+        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
         Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix('init-process');
 

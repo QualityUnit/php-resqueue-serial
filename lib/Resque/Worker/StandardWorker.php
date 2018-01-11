@@ -14,6 +14,7 @@ use Resque\Log;
 use Resque\Process;
 use Resque\Queue\Queue;
 use Resque\SignalHandler;
+use Resque\StatsD;
 
 class StandardWorker extends WorkerBase {
 
@@ -51,6 +52,7 @@ class StandardWorker extends WorkerBase {
     public function reload() {
         Log::notice('Reloading');
         GlobalConfig::reload();
+        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
         $this->initLogger($this->getImage()->getQueue());
         $this->setStrategy($this->resolveStrategy($this->getImage()->getQueue()));
         Log::notice('Reloaded');
