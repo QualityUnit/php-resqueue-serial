@@ -60,7 +60,6 @@ class StatsD {
         $connection = new UdpSocket(
             $config->getHost(),
             $config->getPort(),
-            $config->getRetryPeriod(),
             $config->getConnectTimeout()
         );
 

@@ -48,7 +48,7 @@ class UdpSocket extends Socket {
 
         $this->socket = fsockopen($url, $port, $errorNumber, $errorMessage, $timeout);
 
-        $this->isConnected = (bool)$this->socket;
+        $this->isConnected = true;
     }
 
     /**
@@ -67,6 +67,6 @@ class UdpSocket extends Socket {
      * @param string $message
      */
     protected function writeToSocket($message) {
-        fwrite($this->socket, $message);
+        @fwrite($this->socket, $message);
     }
 }

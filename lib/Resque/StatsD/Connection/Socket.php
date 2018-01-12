@@ -11,12 +11,6 @@ abstract class Socket implements Connection {
     /** @var int */
     private $port;
 
-    /** @var int */
-    private $retryPeriod;
-
-    /** @var int */
-    private $lastRetry = 0;
-
     /** @var int|null */
     private $timeout;
 
@@ -33,17 +27,15 @@ abstract class Socket implements Connection {
      *
      * @param string $host Statsd hostname
      * @param int $port Statsd port
-     * @param int $retryPeriod
      * @param int $timeout Connection timeout
      * @param int $mtu Maximum Transmission Unit (default: 1500)
      */
-    public function __construct($host = 'localhost', $port = 8125, $retryPeriod = 600, $timeout = 3, $mtu = 1500) {
+    public function __construct($host = 'localhost', $port = 8125, $timeout = 3, $mtu = 1500) {
         $this->host = (string)$host;
         $this->port = (int)$port;
         $this->mtu = (int)$mtu;
 
         $this->timeout = ($timeout === null) ? null : (int)$timeout;
-        $this->retryPeriod = $retryPeriod;
     }
 
     /**
@@ -82,11 +74,6 @@ abstract class Socket implements Connection {
         }
 
         if (!$this->isConnected()) {
-            $time = time();
-            if ($this->lastRetry + $this->retryPeriod > $time) {
-                return;
-            }
-            $this->lastRetry = $time;
             $this->connect($this->host, $this->port, $this->timeout);
         }
 

@@ -21,8 +21,6 @@ statsd:
     port: 8125
     # socket connection timeout in seconds, default = 3
     connect_timeout: 3
-    # time in seconds to wait before retrying failed socket connect, default = 600
-    retry_period: 600
 
 redis:
     # default = localhost
