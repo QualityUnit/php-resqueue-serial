@@ -12,14 +12,14 @@ interface ResqueApi {
      * @return string Job ID when the job was created
      * @throws UniqueException
      */
-    function enqueue($queue, JobDescriptor $job);
+    public function enqueue($queue, JobDescriptor $job);
 
     /**
      * @param int $delay Number of seconds from now when the job should be executed.
      * @param string $queue The name of the queue to place the job in.
      * @param JobDescriptor $job
      */
-    function enqueueDelayed($delay, $queue, JobDescriptor $job);
+    public function enqueueDelayed($delay, $queue, JobDescriptor $job);
 
     /**
      * @param \DateTime $startDate
@@ -28,18 +28,18 @@ interface ResqueApi {
      * @param JobDescriptor $job
      * @return string Plan identifier
      */
-    function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job);
+    public function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job);
 
     /**
      * @param string $id Plan identifier
      * @return boolean
      */
-    function planRemove($id);
+    public function planRemove($id);
 
     /**
      * @return Redis
      */
-    function redis();
+    public function redis();
 
     /**
      * Given a host/port combination separated by a colon, set it as
@@ -51,5 +51,5 @@ interface ResqueApi {
      *                      a nested array of servers with host/port pairs.
      * @param int $database
      */
-    function setBackend($server, $database = 0);
+    public function setBackend($server, $database = 0);
 }

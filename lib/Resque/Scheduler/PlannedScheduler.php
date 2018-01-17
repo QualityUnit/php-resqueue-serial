@@ -14,7 +14,7 @@ use Resque\ResqueImpl;
 
 class PlannedScheduler implements IScheduler {
 
-    const ENQUEUE_SCRIPT = <<<LUA
+    const ENQUEUE_SCRIPT = /** @lang Lua */ <<<LUA
 redis.call('zadd', KEYS[1], ARGV[1], ARGV[1])
 redis.call('lrem', KEYS[2], 0, ARGV[2])
 redis.call('rpush', KEYS[3], ARGV[2])

@@ -26,7 +26,7 @@ use Resque\Api\RedisError;
  * @method array|Credis_Client         role()
  * @method array|Credis_Client         time()
  * Keys:
- * @method int|Credis_Client           del(string | string[] $key)
+ * @method int|Credis_Client           del(string | string [] $key)
  * @method int|Credis_Client           exists(string $key)
  * @method int|Credis_Client           expire(string $key, int $seconds)
  * @method int|Credis_Client           expireAt(string $key, int $timestamp)
@@ -128,13 +128,11 @@ use Resque\Api\RedisError;
  * @method string        quit()
  */
 class Redis {
-    const MAX_CALL_RETRY_SECONDS = 20;
+    
     /**
-     * Redis namespace
-     *
-     * @var string
+     * The default Redis Database number
      */
-    private static $defaultNamespace = 'resque:';
+    const DEFAULT_DATABASE = 0;
 
     /**
      * A default host to connect to
@@ -145,11 +143,14 @@ class Redis {
      * The default Redis port
      */
     const DEFAULT_PORT = 6379;
+    const MAX_CALL_RETRY_SECONDS = 20;
 
     /**
-     * The default Redis Database number
+     * Redis namespace
+     *
+     * @var string
      */
-    const DEFAULT_DATABASE = 0;
+    private static $defaultNamespace = 'resque:';
 
     /**
      * @var Credis_Client
@@ -224,18 +225,6 @@ class Redis {
     private $redisDatabase;
 
     /**
-     * Set Redis namespace (prefix) default: resque
-     *
-     * @param string $namespace
-     */
-    public static function prefix($namespace) {
-        if (substr($namespace, -1) !== ':' && $namespace != '') {
-            $namespace .= ':';
-        }
-        self::$defaultNamespace = $namespace;
-    }
-
-    /**
      * @param string|array $server A DSN or array
      * @param int $database A database number to select. However, if we find a valid database number
      * in the DSN the DSN-supplied value will be used instead and this parameter is ignored.
@@ -250,6 +239,10 @@ class Redis {
         } catch (CredisException $e) {
             throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
         }
+    }
+
+    public static function getPrefix() {
+        return self::$defaultNamespace;
     }
 
     /**
@@ -327,6 +320,28 @@ class Redis {
     }
 
     /**
+     * Set Redis namespace (prefix) default: resque
+     *
+     * @param string $namespace
+     */
+    public static function prefix($namespace) {
+        if (substr($namespace, -1) !== ':' && $namespace != '') {
+            $namespace .= ':';
+        }
+        self::$defaultNamespace = $namespace;
+    }
+
+    public static function removePrefix($string) {
+        $prefix = self::getPrefix();
+
+        if (substr($string, 0, strlen($prefix)) == $prefix) {
+            $string = substr($string, strlen($prefix), strlen($string));
+        }
+
+        return $string;
+    }
+
+    /**
      * Magic method to handle all function requests and prefix key based
      * operations with the {self::$defaultNamespace} key prefix.
      *
@@ -351,20 +366,6 @@ class Redis {
         } catch (CredisException $e) {
             return $this->attemptCallRetry($e, $name, $args);
         }
-    }
-
-    public static function getPrefix() {
-        return self::$defaultNamespace;
-    }
-
-    public static function removePrefix($string) {
-        $prefix = self::getPrefix();
-
-        if (substr($string, 0, strlen($prefix)) == $prefix) {
-            $string = substr($string, strlen($prefix), strlen($string));
-        }
-
-        return $string;
     }
 
     public function close() {
@@ -409,17 +410,14 @@ class Redis {
      * @throws RedisError
      */
     private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5) {
-        if (
-            $e->getCode() !== CredisException::CODE_DISCONNECTED
-            && $e->getCode() !== CredisException::CODE_TIMED_OUT
-        ) {
+        if (!$this->isAbleToRetry($e)) {
             Log::critical('Redis call failed.', [
                 'exception' => $e,
                 'name' => $name,
                 'args' => $args
             ]);
 
-            throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+            throw new RedisError("Error communicating with Redis: {$e->getMessage()}", 0, $e);
         }
         $this->close();
 
@@ -430,7 +428,32 @@ class Redis {
 
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
+            if ($wait < 60 && $wait * 2 >= 60) {
+                Log::error('Waiting for redis.', [
+                    'exception' => $e,
+                    'name' => $name,
+                    'args' => $args
+                ]);
+            }
+
             return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 60));
         }
+    }
+
+    /**
+     * @param CredisException $e
+     *
+     * @return bool
+     */
+    private function isAbleToRetry(CredisException $e) {
+        $isInReadOnlyMode = 0 === stripos($e->getMessage(), 'READONLY');
+
+        return
+            $isInReadOnlyMode
+            || in_array($e->getCode(),
+                [
+                    CredisException::CODE_DISCONNECTED,
+                    CredisException::CODE_TIMED_OUT
+                ], true);
     }
 }
