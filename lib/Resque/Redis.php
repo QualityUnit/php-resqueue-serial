@@ -128,30 +128,22 @@ use Resque\Api\RedisError;
  * @method string        quit()
  */
 class Redis {
-    
-    /**
-     * The default Redis Database number
-     */
-    const DEFAULT_DATABASE = 0;
 
     /**
      * A default host to connect to
      */
     const DEFAULT_HOST = 'localhost';
-
     /**
      * The default Redis port
      */
     const DEFAULT_PORT = 6379;
     const MAX_CALL_RETRY_SECONDS = 20;
-
     /**
      * Redis namespace
      *
      * @var string
      */
     private static $defaultNamespace = 'resque:';
-
     /**
      * @var Credis_Client
      */
@@ -222,22 +214,19 @@ class Redis {
     ];
 
     private $redisServer;
-    private $redisDatabase;
 
     /**
      * @param string|array $server A DSN or array
-     * @param int $database A database number to select. However, if we find a valid database number
      * in the DSN the DSN-supplied value will be used instead and this parameter is ignored.
      *
      * @throws RedisError
      */
-    public function __construct($server, $database = null) {
+    public function __construct($server) {
         try {
             $this->redisServer = $server;
-            $this->redisDatabase = $database;
-            $this->connect();
-        } catch (CredisException $e) {
-            throw new RedisError('Error communicating with Redis: ' . $e->getMessage(), 0, $e);
+            $this->createDriver();
+        } catch (Exception $e) {
+            throw new RedisError('Redis driver creation failed: ' . $e->getMessage(), 0, $e);
         }
     }
 
@@ -372,7 +361,7 @@ class Redis {
         $this->driver->close();
     }
 
-    protected function connect() {
+    protected function createDriver() {
         /** @noinspection PhpUnusedLocalVariableInspection */
         list($host, $port, $dsnDatabase, $user, $password, $options) = self::parseDsn($this->redisServer);
         // $user is not used, only $password
@@ -385,19 +374,6 @@ class Redis {
 
         $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
         $this->driver->setMaxConnectRetries($maxRetries);
-        if ($password) {
-            $this->driver->auth($password);
-        }
-
-        // If we have found a database in our DSN, use it instead of the `$database`
-        // value passed into the constructor.
-        if ($dsnDatabase !== false) {
-            $this->redisDatabase = $dsnDatabase;
-        }
-
-        if ($this->redisDatabase !== null) {
-            $this->driver->select($this->redisDatabase);
-        }
     }
 
     /**
@@ -424,12 +400,6 @@ class Redis {
         usleep($wait * 1000000);
 
         try {
-            $this->connect();
-        } catch(CredisException $ignore) {
-            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 60));
-        }
-
-        try {
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
             if ($wait < 60 && $wait * 2 >= 60) {
@@ -452,8 +422,11 @@ class Redis {
     private function isAbleToRetry(CredisException $e) {
         $isInReadOnlyMode = 0 === stripos($e->getMessage(), 'READONLY');
 
+        $connectFailed = 0 === strpos($e->getMessage(), 'Connection to Redis');
+
         return
             $isInReadOnlyMode
+            || $connectFailed
             || in_array($e->getCode(),
                 [
                     CredisException::CODE_DISCONNECTED,

@@ -13,14 +13,12 @@ use Resque\Scheduler\SchedulerProcess;
 class ResqueImpl implements ResqueApi {
 
     /** @var Redis Instance of Resque_Redis that talks to redis. */
-    private $redis = null;
+    private $redis;
     /**
      * @var mixed Host/port combination separated by a colon, or a nested array of server switch
      *         host/port pairs
      */
-    private $redisServer = null;
-    /** @var int ID of Redis database to select. */
-    private $redisDatabase = 0;
+    private $redisServer;
 
     /**
      * Internal.
@@ -76,7 +74,7 @@ class ResqueImpl implements ResqueApi {
             return $this->redis;
         }
 
-        $this->redis = new Redis($this->redisServer, $this->redisDatabase);
+        $this->redis = new Redis($this->redisServer);
 
         Redis::prefix(\Resque::VERSION_PREFIX);
 
@@ -96,7 +94,6 @@ class ResqueImpl implements ResqueApi {
 
     public function setBackend($server, $database = 0) {
         $this->redisServer = $server;
-        $this->redisDatabase = $database;
         $this->redis = null;
     }
 }
