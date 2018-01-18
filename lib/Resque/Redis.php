@@ -154,63 +154,74 @@ class Redis {
      *    first argument. Used to prefix keys with the Resque namespace.
      */
     private $keyCommands = [
-        'exists',
-        'del',
-        'type',
-        'keys',
-        'expire',
-        'ttl',
-        'move',
-        'set',
-        'setex',
-        'get',
-        'getset',
-        'hset',
-        'hsetnx',
-        'hget',
-        'hlen',
-        'hdel',
-        'hkeys',
-        'hvals',
-        'hgetall',
-        'hexists',
-        'hincrby',
-        'hmset',
-        'hmget',
-        'setnx',
-        'incr',
-        'incrby',
-        'decr',
-        'decrby',
-        'rpush',
-        'lpush',
-        'llen',
-        'lrange',
-        'ltrim',
-        'lindex',
-        'lset',
-        'lrem',
-        'lpop',
-        'blpop',
-        'rpop',
-        'sadd',
-        'srem',
-        'spop',
-        'scard',
-        'sismember',
-        'smembers',
-        'srandmember',
-        'zadd',
-        'zrem',
-        'zrange',
-        'zrevrange',
-        'zrangebyscore',
-        'zcard',
-        'zscore',
-        'zremrangebyscore',
-        'sort',
-        'rename',
-        'rpoplpush'
+        'exists' => [0, 1, 2, 3, 4],
+        'del' => [0, 1, 2, 3, 4],
+        'type' => [0],
+        'keys' => [0],
+        'expire' => [0],
+        'ttl' => [0],
+        'move' => [0],
+        'set' => [0],
+        'setex' => [0],
+        'get' => [0],
+        'mget' => [0],
+        'getset' => [0],
+        'hset' => [0],
+        'hsetnx' => [0],
+        'hget' => [0],
+        'hlen' => [0],
+        'hdel' => [0],
+        'hkeys' => [0],
+        'hvals' => [0],
+        'hgetall' => [0],
+        'hexists' => [0],
+        'hincrby' => [0],
+        'hmset' => [0],
+        'hmget' => [0],
+        'setnx' => [0],
+        'incr' => [0],
+        'incrby' => [0],
+        'decr' => [0],
+        'decrby' => [0],
+        'rpush' => [0],
+        'lpush' => [0],
+        'llen' => [0],
+        'lrange' => [0],
+        'ltrim' => [0],
+        'lindex' => [0],
+        'lset' => [0],
+        'lrem' => [0],
+        'lpop' => [0],
+        'blpop' => [0],
+        'rpop' => [0],
+        'sadd' => [0],
+        'srem' => [0],
+        'spop' => [0],
+        'scard' => [0],
+        'sismember' => [0],
+        'smembers' => [0],
+        'srandmember' => [0],
+        'sunion' => [0, 1, 2, 3, 4],
+        'sinter' => [0, 1, 2, 3, 4],
+        'sdiff' => [0, 1, 2, 3, 4],
+        'sunionstore' => [0, 1, 2, 3, 4],
+        'sinterstore' => [0, 1, 2, 3, 4],
+        'sdiffstore' => [0, 1, 2, 3, 4],
+        'zadd' => [0],
+        'zrem' => [0],
+        'zrange' => [0],
+        'zrevrange' => [0],
+        'zrangebyscore' => [0],
+        'zcard' => [0],
+        'zscore' => [0],
+        'zremrangebyscore' => [0],
+        'sort' => [0],
+        'rename' => [0, 1],
+        'renamenx' => [0, 1],
+        'rpoplpush' => [0, 1],
+        'brpoplpush' => [0, 1],
+        'eval' => [1],
+        'evalsha' => [1]
     ];
 
     private $redisServer;
@@ -341,13 +352,18 @@ class Redis {
      * @throws RedisError
      */
     public function __call($name, $args) {
-        if (in_array(strtolower($name), $this->keyCommands)) {
-            if (is_array($args[0])) {
-                foreach ($args[0] AS $i => $v) {
-                    $args[0][$i] = self::$defaultNamespace . $v;
+        $lowerName = strtolower($name);
+        if (array_key_exists($lowerName, $this->keyCommands)) {
+            $indexes = $this->keyCommands[$lowerName];
+            foreach ($args as $index => $value) {
+                if (!in_array($index, $indexes, true)) {
+                    continue;
                 }
-            } else {
-                $args[0] = self::$defaultNamespace . $args[0];
+                if (is_array($value)) {
+                    $args[$index] = $this->prefixKeys($value);
+                } else {
+                    $args[$index] = $this->prefixKey($value);
+                }
             }
         }
         try {
@@ -432,5 +448,28 @@ class Redis {
                     CredisException::CODE_DISCONNECTED,
                     CredisException::CODE_TIMED_OUT
                 ], true);
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return string
+     */
+    private function prefixKey($key) {
+        return self::$defaultNamespace . $key;
+    }
+
+    /**
+     * @param string[] $keyArray
+     *
+     * @return string[]
+     */
+    private function prefixKeys(array $keyArray) {
+        $prefixedKeys = [];
+        foreach ($keyArray as $key) {
+            $prefixedKeys[] = $this->prefixKey($key);
+        }
+
+        return $prefixedKeys;
     }
 }
