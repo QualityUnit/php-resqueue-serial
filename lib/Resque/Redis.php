@@ -425,7 +425,11 @@ class Redis {
 
         try {
             $this->connect();
+        } catch(CredisException $ignore) {
+            return $this->attemptCallRetry($e, $name, $args, max(2 * $wait, 60));
+        }
 
+        try {
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
             if ($wait < 60 && $wait * 2 >= 60) {
