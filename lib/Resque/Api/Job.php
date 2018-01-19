@@ -11,8 +11,6 @@ class Job {
     /** @var array */
     protected $args = [];
     /** @var string */
-    protected $queue = null;
-    /** @var string */
     protected $sourceId = null;
     /** @var JobUid|null */
     protected $uid = null;
@@ -32,18 +30,22 @@ class Job {
      * @param array $array
      *
      * @return Job
+     * @throws \InvalidArgumentException
      */
     public static function fromArray(array $array) {
+        if(!isset($array['class'], $array['sourceId'])) {
+            throw new \InvalidArgumentException('Mandatory Job parameters missing');
+        }
+
         $job = new Job();
-        $job->class = isset($array['class']) ? $array['class'] : $job->class;
-        $job->args = isset($array['args']) ? $array['args'] : $job->args;
-        $job->queue = isset($array['queue']) ? $array['queue'] : $job->queue;
-        $job->sourceId = isset($array['sourceId']) ? $array['sourceId'] : $job->sourceId;
-        $job->isMonitored = isset($array['isMonitored']) ? $array['isMonitored'] : $job->isMonitored;
-        $job->includePath = isset($array['includePath']) ? $array['includePath'] : $job->includePath;
-        $job->environment = isset($array['environment']) ? $array['environment'] : $job->environment;
-        $job->failCount = isset($array['failCount']) ? $array['failCount'] : $job->failCount;
-        $uidValid = isset($array['unique']) && is_array($array['unique']);
+        $job->class = $array['class'] ?? $job->class;
+        $job->args = $array['args'] ?? $job->args;
+        $job->sourceId = $array['sourceId'] ?? $job->sourceId;
+        $job->isMonitored = $array['isMonitored'] ?? $job->isMonitored;
+        $job->includePath = $array['includePath'] ?? $job->includePath;
+        $job->environment = $array['environment'] ?? $job->environment;
+        $job->failCount = $array['failCount'] ?? $job->failCount;
+        $uidValid = isset($array['unique']) && \is_array($array['unique']);
         $job->uid = JobUid::fromArray($uidValid ? $array['unique'] : []);
 
         return $job;
@@ -106,7 +108,6 @@ class Job {
      * @return string
      */
     public function getQueue() {
-        return $this->queue;
     }
 
     /**
@@ -152,18 +153,14 @@ class Job {
      * @return Job
      */
     public function setQueue($queue) {
-        $this->queue = $queue;
-
-        return $this;
     }
 
     public function toArray() {
         return array_filter([
                 'class' => $this->class,
                 'args' => $this->args,
-                'queue' => $this->queue,
                 'sourceId' => $this->sourceId,
-                'unique' => $this->uid == null ? null : $this->uid->toArray(),
+                'unique' => $this->uid === null ? null : $this->uid->toArray(),
                 'isMonitored' => $this->isMonitored,
                 'includePath' => $this->includePath,
                 'environment' => $this->environment,

@@ -32,10 +32,49 @@ class Key {
     }
 
     /**
+     * @param string $allocatorNumber
+     *
+     * @return string
+     */
+    public static function localJobAllocatorBuffer($allocatorNumber) {
+        return Key::of('allocator', gethostname(), 'job', $allocatorNumber);
+    }
+
+    /**
+     * @param string $allocatorNumber
+     *
+     * @return string
+     */
+    public static function localBatchAllocatorBuffer($allocatorNumber) {
+        return Key::of('allocator', gethostname(), 'batch', $allocatorNumber);
+    }
+
+    /**
+     * @return string
+     */
+    public static function localJobAllocatorProcesses() {
+        return Key::of('process', gethostname(), 'allocator', 'job');
+    }
+
+    /**
+     * @return string
+     */
+    public static function localBatchAllocatorProcesses() {
+        return Key::of('process', gethostname(), 'allocator', 'batch');
+    }
+
+    /**
      * @return string
      */
     public static function localSchedulerPid() {
         return Key::of('scheduler_pid', gethostname());
+    }
+
+    /**
+     * @return string
+     */
+    public static function localSchedulerProcesses() {
+        return Key::of('workers', gethostname(), 'scheduler');
     }
 
     /**
@@ -102,6 +141,14 @@ class Key {
      */
     public static function statsQueue($queue, $stat) {
         return self::of('queuestat', gethostname(), $stat, $queue);
+    }
+
+    public static function unassigned() {
+        return self::of('unassigned');
+    }
+
+    public static function committedBatchList() {
+        return self::of('committed');
     }
 
     public static function uniqueDeferred($uniqueId) {

@@ -45,7 +45,8 @@ resqu-v4:
     
     // === static
     unassigned: set(<source_id>:<job_name>)
-    unassigned:<source_id>:<job_name>: list(job_data)
+    assigned: set(<source_id>:<job_name>)
+    queue:<source_id>:<job_name>: list(job_data)
     q:<queue_id>: list(job_data)
     
     // === mass actions (managed)

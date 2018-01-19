@@ -19,7 +19,7 @@ use Resque\StatsD;
 class StandardWorker extends WorkerBase {
 
     private $isShutDown = false;
-    private $standardProc = null;
+    private $standardProc;
 
     /**
      * @param string $queue

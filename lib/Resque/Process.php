@@ -28,7 +28,7 @@ class Process {
         }
 
         if ($pid === 0) {
-            // Close the connection to Redis before forking. This is a workaround for issues phpredis has.
+            // Close the connection to Redis after forking. This is a workaround for issues phpredis has.
             ResqueImpl::getInstance()->resetRedis();
         }
 

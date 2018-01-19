@@ -5,7 +5,10 @@ namespace Resque\Config;
 
 
 use Resque\Exception;
+use Resque\Log;
+use Resque\Process;
 use Resque\Redis;
+use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
 class GlobalConfig {
@@ -53,12 +56,15 @@ class GlobalConfig {
         return self::$instance;
     }
 
-    /**
-     * @throws \Symfony\Component\Yaml\Exception\ParseException
-     */
     public static function reload() {
         $self = self::$instance;
-        $data = Yaml::parse(file_get_contents($self->path));
+        try {
+            $data = Yaml::parse(file_get_contents($self->path));
+        } catch (ParseException $e) {
+            Log::critical('Failed to reload configuration.', [
+                'exception' => $e
+            ]);
+        }
 
         if (!isset($data['queues'])) {
             throw new \RuntimeException('Global config contains no queues.');

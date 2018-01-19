@@ -24,7 +24,17 @@ class QueuedJob {
         $this->queuedTime = microtime(true);
     }
 
+    /**
+     * @param array $array
+     *
+     * @return QueuedJob
+     * @throws \InvalidArgumentException
+     */
     public static function fromArray(array $array) {
+        if(!isset($array['id'], $array['queue_time'])) {
+            throw new \InvalidArgumentException('Mandatory QueuedJob parameters missing');
+        }
+
         $job = Job::fromArray($array);
         $queuedJob = new QueuedJob($job, $array['id']);
         $queuedJob->queuedTime = $array['queue_time'];
