@@ -400,6 +400,7 @@ class Redis {
         usleep($wait * 1000000);
 
         try {
+            $this->createDriver();
             return $this->driver->__call($name, $args);
         } catch (CredisException $e) {
             if ($wait < 60 && $wait * 2 >= 60) {
