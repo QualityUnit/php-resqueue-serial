@@ -43,3 +43,13 @@ queues:
         blocking: true
         # MANDATORY <INT> (seconds)
         interval: 3
+
+map:
+  job name:
+
+
+batch:
+    reindexing:
+        unit_count: X
+
+        job_names:

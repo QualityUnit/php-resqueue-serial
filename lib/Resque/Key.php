@@ -6,6 +6,14 @@ namespace Resque;
 
 class Key {
 
+    public static function committedBatch($id) {
+        return self::of('committed', $id);
+    }
+
+    public static function committedBatchList() {
+        return self::of('committed');
+    }
+
     /**
      * @param int $at
      *
@@ -36,15 +44,6 @@ class Key {
      *
      * @return string
      */
-    public static function localJobAllocatorBuffer($allocatorNumber) {
-        return Key::of('allocator', gethostname(), 'job', $allocatorNumber);
-    }
-
-    /**
-     * @param string $allocatorNumber
-     *
-     * @return string
-     */
     public static function localBatchAllocatorBuffer($allocatorNumber) {
         return Key::of('allocator', gethostname(), 'batch', $allocatorNumber);
     }
@@ -52,15 +51,24 @@ class Key {
     /**
      * @return string
      */
-    public static function localJobAllocatorProcesses() {
-        return Key::of('process', gethostname(), 'allocator', 'job');
+    public static function localBatchAllocatorProcesses() {
+        return Key::of('process', gethostname(), 'allocator', 'batch');
+    }
+
+    /**
+     * @param string $allocatorNumber
+     *
+     * @return string
+     */
+    public static function localJobAllocatorBuffer($allocatorNumber) {
+        return Key::of('allocator', gethostname(), 'job', $allocatorNumber);
     }
 
     /**
      * @return string
      */
-    public static function localBatchAllocatorProcesses() {
-        return Key::of('process', gethostname(), 'allocator', 'batch');
+    public static function localJobAllocatorProcesses() {
+        return Key::of('process', gethostname(), 'allocator', 'job');
     }
 
     /**
@@ -145,10 +153,6 @@ class Key {
 
     public static function unassigned() {
         return self::of('unassigned');
-    }
-
-    public static function committedBatchList() {
-        return self::of('committed');
     }
 
     public static function uniqueDeferred($uniqueId) {

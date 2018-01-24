@@ -72,5 +72,6 @@ class BatchAllocatorProcess extends AbstractProcess {
          * Ask working unit pool set key
          * If none given push to backlog
          */
+        $batch = BatchImage::fromId($batchId);
     }
 }
