@@ -24,6 +24,9 @@ class StandardProcessor implements IProcessor {
         if ($pid === 0) {
             // CHILD PROCESS START
             try {
+                require_once __DIR__ . '/../../../Gpf/Gpf_Log.php';
+                \Gpf_Log::init();
+
                 $workerPid = $runningJob->getWorker()->getImage()->getPid();
                 Log::setPrefix("$workerPid-std-proc-" . posix_getpid());
                 Process::setTitlePrefix("$workerPid-std-proc");
@@ -39,6 +42,8 @@ class StandardProcessor implements IProcessor {
                         'payload' => $runningJob->getJob()->toArray()
                     ]);
                 }
+            } finally {
+                \Gpf_Log::dump();
             }
             exit(0);
             // CHILD PROCESS END
