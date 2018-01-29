@@ -8,7 +8,7 @@ use Resque;
 use Resque\Stats;
 use Resque\StatsD;
 
-class GlobalStats implements Stats {
+class NodeStats implements Stats {
 
     private static $instance;
 
@@ -45,6 +45,6 @@ class GlobalStats implements Stats {
     }
 
     private function incStat($stat) {
-        StatsD::increment('global.' . $stat);
+        StatsD::increment(gethostname() . ".global.$stat");
     }
 }

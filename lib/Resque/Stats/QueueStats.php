@@ -21,32 +21,32 @@ class QueueStats implements Stats {
     }
 
     public function incDequeued() {
-        GlobalStats::instance()->incDequeued();
+        NodeStats::instance()->incDequeued();
         $this->incStat('dequeued');
     }
 
     public function incFailed() {
-        GlobalStats::instance()->incFailed();
+        NodeStats::instance()->incFailed();
         $this->incStat('failed');
     }
 
     public function incProcessed() {
-        GlobalStats::instance()->incProcessed();
+        NodeStats::instance()->incProcessed();
         $this->incStat('processed');
     }
 
     public function incProcessingTime($byMilliseconds) {
-        GlobalStats::instance()->incProcessingTime($byMilliseconds);
+        NodeStats::instance()->incProcessingTime($byMilliseconds);
         $this->timing('processing_time', $byMilliseconds);
     }
 
     public function incQueueTime($byMilliseconds) {
-        GlobalStats::instance()->incQueueTime($byMilliseconds);
+        NodeStats::instance()->incQueueTime($byMilliseconds);
         $this->timing('queue_time', $byMilliseconds);
     }
 
     public function incRetried() {
-        GlobalStats::instance()->incRetried();
+        NodeStats::instance()->incRetried();
         $this->incStat('retries');
     }
 
