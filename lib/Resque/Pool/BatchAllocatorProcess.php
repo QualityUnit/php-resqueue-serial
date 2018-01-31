@@ -67,11 +67,17 @@ class BatchAllocatorProcess extends AbstractProcess {
      * @throws Resque\Api\RedisError if processing failed
      */
     private function assignBatch($batchId) {
-        /*
-         * Resolve pool
-         * Ask working unit pool set key
-         * If none given push to backlog
-         */
         $batch = BatchImage::fromId($batchId);
+
+        $this->resolvePool($batch)->assignBatch($batch);
+    }
+
+    /**
+     * @param BatchImage $batch
+     *
+     * @return BatchPool
+     */
+    private function resolvePool(BatchImage $batch) {
+
     }
 }

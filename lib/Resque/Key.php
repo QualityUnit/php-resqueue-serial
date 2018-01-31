@@ -14,6 +14,22 @@ class Key {
         return self::of('committed');
     }
 
+    public static function batchPoolSourceWorker($poolName) {
+        return self::of('pool', $poolName);
+    }
+
+    public static function batchPoolBacklogList($poolName, $sourceId) {
+        return self::of('pool', $poolName, 'backlog', $sourceId);
+    }
+
+    public static function batchPoolUnitQueueSet($poolName, $unitId) {
+        return self::of('pool', $poolName, $unitId, 'queues');
+    }
+
+    public static function batchPoolQueuesSortedSet($poolName) {
+        return self::of('pool', $poolName, 'unit_queues');
+    }
+
     /**
      * @param int $at
      *
