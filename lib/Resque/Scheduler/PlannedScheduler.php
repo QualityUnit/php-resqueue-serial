@@ -110,13 +110,12 @@ LUA;
             Log::info("[planner] queueing {$job->getClass()} in {$job->getQueue()}");
 
             $futurePlannedJob = $this->moveTimestamp($plannedJob, $timestamp);
-            $prefix = Redis::getPrefix();
             Resque::redis()->eval(
                     self::ENQUEUE_SCRIPT,
                     [
-                            $prefix . Key::planSchedule(),
-                            $prefix . Key::planTimestamp($plannedJob->getNextRunTimestamp()),
-                            $prefix . Key::planTimestamp($futurePlannedJob->getNextRunTimestamp())
+                            Key::planSchedule(),
+                            Key::planTimestamp($plannedJob->getNextRunTimestamp()),
+                            Key::planTimestamp($futurePlannedJob->getNextRunTimestamp())
                     ],
                     [
                             $futurePlannedJob->getNextRunTimestamp(),

@@ -54,7 +54,7 @@ LUA;
         }
         $response = Resque::redis()->eval(
                 self::ACQUIRE_SCRIPT,
-                [Redis::getPrefix() . $this->lockKey],
+                [$this->lockKey],
                 [$this->lockValue, $time]
         );
         if (!$response) {
@@ -67,7 +67,7 @@ LUA;
     public function release() {
         $response = Resque::redis()->eval(
                 self::RELEASE_SCRIPT,
-                [Redis::getPrefix() . $this->lockKey],
+                [$this->lockKey],
                 [$this->lockValue]
         );
         if (!$response) {

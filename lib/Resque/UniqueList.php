@@ -74,8 +74,8 @@ LUA;
         return Resque::redis()->eval(
                 self::SCRIPT_ADD_DEFERRED,
                 [
-                        Redis::getPrefix() . Key::uniqueState($uid->getId()),
-                        Redis::getPrefix() . Key::uniqueDeferred($uid->getId())
+                        Key::uniqueState($uid->getId()),
+                        Key::uniqueDeferred($uid->getId())
                 ],
                 [self::STATE_RUNNING, $job->toString()]
         );
@@ -100,8 +100,8 @@ LUA;
                 || Resque::redis()->eval(
                         self::SCRIPT_FINALIZE,
                         [
-                                Redis::getPrefix() . Key::uniqueState($uniqueId),
-                                Redis::getPrefix() . Key::uniqueDeferred($uniqueId)
+                                Key::uniqueState($uniqueId),
+                                Key::uniqueDeferred($uniqueId)
                         ],
                         [self::STATE_RUNNING]
                 );
