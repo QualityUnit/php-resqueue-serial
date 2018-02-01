@@ -6,7 +6,6 @@ namespace Resque\Config;
 
 use Resque\Exception;
 use Resque\Log;
-use Resque\Process;
 use Resque\Redis;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
@@ -16,26 +15,52 @@ class GlobalConfig {
     /** @var GlobalConfig */
     private static $instance;
 
-    private $queues = [];
     /** @var LogConfig */
     private $logConfig;
     /** @var StatsConfig */
     private $statsConfig;
+    /** @var MappingConfig */
+    private $staticPoolMapping;
+    /** @var MappingConfig */
+    private $batchPoolMapping;
+    /** @var BatchPoolConfig */
+    private $batchPools;
+    /** @var StaticPoolConfig */
+    private $staticPools;
+
+    /** @var string */
     private $redisHost = Redis::DEFAULT_HOST;
+    /** @var int */
     private $redisPort = Redis::DEFAULT_PORT;
-
+    /** @var string */
     private $taskIncludePath = '/opt';
-    private $path;
-
     /** @var int */
     private $maxTaskFails = 3;
 
-    private function __construct($path) {
-        $this->path = $path;
+    /** @var string */
+    private $configPath;
+
+    /**
+     * @param string $configPath
+     */
+    private function __construct($configPath) {
+        $this->configPath = $configPath;
+    }
+
+    /**
+     * @return GlobalConfig
+     */
+    public static function getInstance() {
+        if (!self::$instance) {
+            throw new \RuntimeException('No instance of GlobalConfig exist');
+        }
+
+        return self::$instance;
     }
 
     /**
      * @param $path
+     *
      * @return GlobalConfig
      * @throws Exception
      */
@@ -46,30 +71,24 @@ class GlobalConfig {
         return self::$instance;
     }
 
-    /**
-     * @return GlobalConfig
-     */
-    public static function getInstance() {
-        if (!self::$instance) {
-            throw new \RuntimeException('No instance of GlobalConfig exist');
-        }
-        return self::$instance;
-    }
-
     public static function reload() {
         $self = self::$instance;
         try {
-            $data = Yaml::parse(file_get_contents($self->path));
+            $data = Yaml::parse(file_get_contents($self->configPath));
         } catch (ParseException $e) {
-            Log::critical('Failed to reload configuration.', [
+            Log::critical('Failed to load configuration.', [
                 'exception' => $e
             ]);
+            throw new \RuntimeException('Config file failed to parse.');
         }
 
-        if (!isset($data['queues'])) {
-            throw new \RuntimeException('Global config contains no queues.');
+        if (!isset($data['pools'])) {
+            throw new \RuntimeException('Pools config section missing.');
         }
-        $self->queues = $data['queues'];
+
+        if (!isset($data['mapping'])) {
+            throw new \RuntimeException('Mapping config section missing.');
+        }
 
         $redis = $data['redis'];
         if (is_array($redis)) {
@@ -88,6 +107,10 @@ class GlobalConfig {
         if ($failRetries != null) {
             $self->maxTaskFails = (int)$failRetries;
         }
+        $self->staticPoolMapping = new MappingConfig($data['mapping']['static']);
+        $self->batchPoolMapping = new MappingConfig($data['mapping']['batch']);
+        $self->staticPools = new StaticPoolConfig($data['pools']['static']);
+        $self->batchPools = new BatchPoolConfig($data['pools']['batch']);
     }
 
     /**
@@ -98,17 +121,24 @@ class GlobalConfig {
     }
 
     /**
+     * @return MappingConfig
+     */
+    public function getBatchPoolMapping() {
+        return $this->batchPoolMapping;
+    }
+
+    /**
+     * @return BatchPoolConfig
+     */
+    public function getBatchPoolConfig() {
+        return $this->batchPools;
+    }
+
+    /**
      * @return LogConfig
      */
     public function getLogConfig() {
         return $this->logConfig;
-    }
-
-    /**
-     * @return StatsConfig
-     */
-    public function getStatsConfig() {
-        return $this->statsConfig;
     }
 
     /**
@@ -119,10 +149,31 @@ class GlobalConfig {
     }
 
     /**
+     * @deprecated
      * @return string[]
      */
     public function getQueueList() {
-        return array_keys($this->queues);
+    }
+
+    /**
+     * @return MappingConfig
+     */
+    public function getStaticPoolMapping() {
+        return $this->staticPoolMapping;
+    }
+
+    /**
+     * @return StaticPoolConfig
+     */
+    public function getStaticPoolConfig() {
+        return $this->staticPools;
+    }
+
+    /**
+     * @return StatsConfig
+     */
+    public function getStatsConfig() {
+        return $this->statsConfig;
     }
 
     /**

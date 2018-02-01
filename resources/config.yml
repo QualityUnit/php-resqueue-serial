@@ -34,22 +34,38 @@ task_include_path: "/opt/qu/qu/apps/versions/la/"
 # default = 3
 fail_retries: 3
 
-# MANDATORY
-queues:
-    example_queue:
-        # MANDATORY <INT>
-        worker_count: 2
-        # MANDATORY <BOOL>
-        blocking: true
-        # MANDATORY <INT> (seconds)
-        interval: 3
+pools:
+    static:
+        <pool name>:
+            # MANDATORY <INT>
+            worker_count: 2
+    batch:
+        <pool name>:
+            # MANDATORY <INT>
+            unit_count: 2
+            # MANDATORY <INT>
+            workers_per_unit: 2
 
-map:
-  job name:
 
 
-batch:
-    reindexing:
-        unit_count: X
-
-        job_names:
+mapping:
+    static:
+        default:
+            # MANDATORY <STRING>
+            default: <pool name>
+            <job name>: <pool name>
+            <job name>: <pool name>
+            <job name>: <pool name>
+        <source id>:
+            <job name>: <pool name>
+            <job name>: <pool name>
+            <job name>: <pool name>
+    batch:
+        default:
+            # MANDATORY <STRING>
+            default: <pool name>
+            <job name1>: <pool name>
+            <job name2>: <pool name>
+            <job name3>: <pool name>
+        <source id>:
+            <job name3>: <pool name>
