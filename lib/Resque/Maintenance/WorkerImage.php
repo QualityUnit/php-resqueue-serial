@@ -9,7 +9,7 @@ class WorkerImage extends BaseProcessImage {
     /** @var string */
     private $poolName;
     /** @var string */
-    private $number;
+    private $code;
 
     /**
      * @param $pool
@@ -21,16 +21,16 @@ class WorkerImage extends BaseProcessImage {
     }
 
     public static function load($workerId) {
-        list($hostname, $poolName, $number, $pid) = explode('~', $workerId, 4);
+        list($hostname, $poolName, $code, $pid) = explode('~', $workerId, 4);
 
-        return new self($workerId, $hostname, $poolName, $number, $pid);
+        return new self($workerId, $hostname, $poolName, $code, $pid);
     }
 
-    public function __construct($workerId, $hostname, $poolName, $number, $pid) {
+    public function __construct($workerId, $hostname, $poolName, $code, $pid) {
         parent::__construct($workerId, $hostname, $pid);
 
         $this->poolName = $poolName;
-        $this->number = $number;
+        $this->code = $code;
     }
 
 

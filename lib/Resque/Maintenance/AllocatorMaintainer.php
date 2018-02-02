@@ -13,14 +13,17 @@ use Resque\SignalHandler;
 
 class AllocatorMaintainer implements ProcessMaintainer {
 
+    const PREFIX_BATCH = 'batch-';
+    const PREFIX_JOB = 'job-';
+
     /**
      * @return AllocatorImage[]
      */
     public function getLocalProcesses() {
-        $scheduleIds = \Resque::redis()->sMembers(Key::localAllocatorProcesses());
+        $allocatorIds = \Resque::redis()->sMembers(Key::localAllocatorProcesses());
         $images = [];
 
-        foreach ($scheduleIds as $processId) {
+        foreach ($allocatorIds as $processId) {
             $images[] = AllocatorImage::fromId($processId);
         }
 
@@ -38,8 +41,12 @@ class AllocatorMaintainer implements ProcessMaintainer {
 
         list($jobAlive, $batchAlive) = $this->cleanupAllocators($jobLimit, $batchLimit);
 
-        for ($i = $jobAlive; $i <= $jobLimit; $i++) {
-            $this->forkAllocator('job-');
+        for ($i = $jobAlive; $i < $jobLimit; $i++) {
+            $this->forkAllocator(self::PREFIX_JOB);
+        }
+
+        for ($i = $batchAlive; $i < $batchLimit; $i++) {
+            $this->forkAllocator(self::PREFIX_BATCH);
         }
     }
 
@@ -143,11 +150,11 @@ class AllocatorMaintainer implements ProcessMaintainer {
     }
 
     private function isBatchAllocator(AllocatorImage $image) {
-        return strpos($image->getCode(), 'batch-') === 0;
+        return strpos($image->getCode(), self::PREFIX_BATCH) === 0;
     }
 
     private function isJobAllocator(AllocatorImage $image) {
-        return strpos($image->getCode(), 'job-') === 0;
+        return strpos($image->getCode(), self::PREFIX_JOB) === 0;
     }
 
     /**
