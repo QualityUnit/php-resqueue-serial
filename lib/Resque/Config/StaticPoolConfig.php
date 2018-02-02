@@ -20,12 +20,13 @@ class StaticPoolConfig {
      * @param string $poolName
      *
      * @return StaticPool
+     * @throws ConfigException
      */
     public function getPool($poolName) {
         $config = $this->pools[$poolName] ?? null;
         $workerCount = $config[self::WORKER_COUNT] ?? null;
         if (!isset($config, $workerCount)) {
-            throw new \RuntimeException("Invalid $poolName static pool configuration.");
+            throw new ConfigException("Invalid $poolName static pool configuration.");
         }
 
         return new StaticPool($poolName, $workerCount);

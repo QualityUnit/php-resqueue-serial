@@ -4,7 +4,6 @@
 namespace Resque\Config;
 
 
-use Resque\Exception;
 use Resque\Log;
 use Resque\Redis;
 use Symfony\Component\Yaml\Exception\ParseException;
@@ -62,7 +61,6 @@ class GlobalConfig {
      * @param $path
      *
      * @return GlobalConfig
-     * @throws Exception
      */
     public static function initialize($path) {
         self::$instance = new self($path);
@@ -91,7 +89,7 @@ class GlobalConfig {
         }
 
         $redis = $data['redis'];
-        if (is_array($redis)) {
+        if (\is_array($redis)) {
             $self->redisHost = $redis['hostname'];
             $self->redisPort = $redis['port'];
         }
@@ -100,11 +98,11 @@ class GlobalConfig {
         $self->statsConfig = new StatsConfig($data['statsd']);
 
         $taskIncludePath = $data['task_include_path'];
-        if ($taskIncludePath != null) {
+        if ($taskIncludePath) {
             $self->taskIncludePath = $taskIncludePath;
         }
         $failRetries = $data['fail_retries'];
-        if ($failRetries != null) {
+        if ($failRetries >= 0) {
             $self->maxTaskFails = (int)$failRetries;
         }
         $self->staticPoolMapping = new MappingConfig($data['mapping']['static']);

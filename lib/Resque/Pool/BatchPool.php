@@ -2,6 +2,7 @@
 
 namespace Resque\Pool;
 
+use Resque;
 use Resque\Key;
 
 class BatchPool {
@@ -33,38 +34,31 @@ LUA;
 
     /** @var string */
     private $poolName;
+    /** @var int */
+    private $unitCount;
+    /** @var int */
+    private $workersPerUnit;
 
     /**
      * @param string $poolName
-     * @param $unitCount
-     * @param $workersPerUnit
+     * @param int $unitCount
+     * @param int $workersPerUnit
      */
     public function __construct($poolName, $unitCount, $workersPerUnit) {
         $this->poolName = $poolName;
-    }
-
-    public function assignBatch(BatchImage $batch) {
-        try {
-            $this->execAssignBatchScript($batch, $unitId);
-        } catch (\Exception $e) {
-
-        }
+        $this->unitCount = (int)$unitCount;
+        $this->workersPerUnit = (int)$workersPerUnit;
     }
 
     /**
      * @param BatchImage $batch
-     * @param string $unitId
+     *
+     * @throws PoolStateException
      */
-    public function removeBatch(BatchImage $batch, $unitId) {
-        try {
-            $this->execRemoveBatchScript($batch, $unitId);
-        } catch (\Exception $e) {
+    public function assignBatch(BatchImage $batch) {
+        $unitId = $this->getNextUnitId();
 
-        }
-    }
-
-    private function execAssignBatchScript(BatchImage $batch, $unitId) {
-        return \Resque::redis()->eval(
+        Resque::redis()->eval(
             self::SCRIPT_ASSIGN_BATCH,
             [
                 Key::batchPoolSourceWorker($this->poolName),
@@ -80,8 +74,26 @@ LUA;
         );
     }
 
-    private function execRemoveBatchScript(BatchImage $batch, $unitId) {
-        return \Resque::redis()->eval(
+    /**
+     * @return int
+     */
+    public function getUnitCount() {
+        return $this->unitCount;
+    }
+
+    /**
+     * @return int
+     */
+    public function getWorkersPerUnit() {
+        return $this->workersPerUnit;
+    }
+
+    /**
+     * @param BatchImage $batch
+     * @param string $unitId
+     */
+    public function removeBatch(BatchImage $batch, $unitId) {
+        Resque::redis()->eval(
             self::SCRIPT_REMOVE_BATCH,
             [
                 Key::batchPoolUnitQueueSet($this->poolName, $unitId),
@@ -95,5 +107,19 @@ LUA;
                 $batch->getSourceId()
             ]
         );
+    }
+
+    /**
+     * @return string
+     * @throws PoolStateException
+     */
+    private function getNextUnitId() {
+        $result = Resque::redis()->zRange(Key::batchPoolQueuesSortedSet($this->poolName), 0, 0);
+
+        if (!\is_array($result) || \count($result) !== 1) {
+            throw new PoolStateException("No units available for pool {$this->poolName}.");
+        }
+
+        return $result[0];
     }
 }

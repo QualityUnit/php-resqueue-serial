@@ -39,6 +39,14 @@ abstract class JobDescriptor {
     }
 
     /**
+     * Used to uniquely identify job type. Jobs with the same name are expected to generally
+     * perform the same type of task.
+     *
+     * @return string
+     */
+    abstract public function getName();
+
+    /**
      * Used to uniquely identify source of the job.
      *
      * @return string

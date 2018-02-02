@@ -8,10 +8,12 @@ class Job {
 
     /** @var string */
     protected $class = null;
-    /** @var array */
-    protected $args = [];
     /** @var string */
     protected $sourceId = null;
+    /** @var string */
+    protected $name = null;
+    /** @var array */
+    protected $args = [];
     /** @var JobUid|null */
     protected $uid = null;
     /** @var boolean */
@@ -33,14 +35,16 @@ class Job {
      * @throws \InvalidArgumentException
      */
     public static function fromArray(array $array) {
-        if(!isset($array['class'], $array['sourceId'])) {
+        if (!isset($array['class'], $array['sourceId'], $array['name'])) {
             throw new \InvalidArgumentException('Mandatory Job parameters missing');
         }
 
         $job = new Job();
         $job->class = $array['class'] ?? $job->class;
-        $job->args = $array['args'] ?? $job->args;
         $job->sourceId = $array['sourceId'] ?? $job->sourceId;
+        $job->name = $array['name'] ?? $job->name;
+
+        $job->args = $array['args'] ?? $job->args;
         $job->isMonitored = $array['isMonitored'] ?? $job->isMonitored;
         $job->includePath = $array['includePath'] ?? $job->includePath;
         $job->environment = $array['environment'] ?? $job->environment;
@@ -59,8 +63,9 @@ class Job {
     public static function fromJobDescriptor(JobDescriptor $jobDescriptor) {
         $job = new Job();
         $job->class = $jobDescriptor->getClass();
-        $job->args = $jobDescriptor->getArgs();
         $job->sourceId = $jobDescriptor->getSourceId();
+        $job->name = $jobDescriptor->getName();
+        $job->args = $jobDescriptor->getArgs();
         $job->uid = $jobDescriptor->getUid();
         $job->isMonitored = $jobDescriptor->isMonitored();
         $job->includePath = $jobDescriptor->getIncludePath();
@@ -113,6 +118,13 @@ class Job {
     /**
      * @return string
      */
+    public function getName() {
+        return $this->name;
+    }
+
+    /**
+     * @return string
+     */
     public function getSourceId() {
         return $this->sourceId;
     }
@@ -157,14 +169,15 @@ class Job {
 
     public function toArray() {
         return array_filter([
-                'class' => $this->class,
-                'args' => $this->args,
-                'sourceId' => $this->sourceId,
-                'unique' => $this->uid === null ? null : $this->uid->toArray(),
-                'isMonitored' => $this->isMonitored,
-                'includePath' => $this->includePath,
-                'environment' => $this->environment,
-                'failCount' => $this->failCount,
+            'class' => $this->class,
+            'sourceId' => $this->sourceId,
+            'name' => $this->name,
+            'args' => $this->args,
+            'unique' => $this->uid === null ? null : $this->uid->toArray(),
+            'isMonitored' => $this->isMonitored,
+            'includePath' => $this->includePath,
+            'environment' => $this->environment,
+            'failCount' => $this->failCount,
         ]);
     }
 

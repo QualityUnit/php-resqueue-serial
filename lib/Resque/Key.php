@@ -6,6 +6,10 @@ namespace Resque;
 
 class Key {
 
+    public static function batchAllocationFailures() {
+        return self::of('batch', 'allocation-failures');
+    }
+
     public static function committedBatch($id) {
         return self::of('committed', $id);
     }
@@ -44,6 +48,10 @@ class Key {
      */
     public static function delayedQueueSchedule() {
         return 'delayed_queue_schedule';
+    }
+
+    public static function jobAllocationFailures() {
+        return self::of('job', 'allocation-failures');
     }
 
     /**
@@ -146,6 +154,10 @@ class Key {
      */
     public static function queues() {
         return 'queues';
+    }
+
+    public static function staticPoolQueue($poolName) {
+        return self::of('static', 'queue', $poolName);
     }
 
     /**
