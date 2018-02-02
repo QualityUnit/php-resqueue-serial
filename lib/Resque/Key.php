@@ -68,45 +68,29 @@ class Key {
      *
      * @return string
      */
-    public static function localBatchAllocatorBuffer($allocatorNumber) {
-        return Key::of('allocator', gethostname(), 'batch', $allocatorNumber);
+    public static function localAllocatorBuffer($allocatorNumber) {
+        return self::of('allocator', gethostname(), $allocatorNumber);
     }
 
     /**
      * @return string
      */
-    public static function localBatchAllocatorProcesses() {
-        return Key::of('process', gethostname(), 'allocator', 'batch');
-    }
-
-    /**
-     * @param string $allocatorNumber
-     *
-     * @return string
-     */
-    public static function localJobAllocatorBuffer($allocatorNumber) {
-        return Key::of('allocator', gethostname(), 'job', $allocatorNumber);
-    }
-
-    /**
-     * @return string
-     */
-    public static function localJobAllocatorProcesses() {
-        return Key::of('process', gethostname(), 'allocator', 'job');
+    public static function localAllocatorProcesses() {
+        return self::of('process', gethostname(), 'allocator');
     }
 
     /**
      * @return string
      */
     public static function localSchedulerPid() {
-        return Key::of('scheduler_pid', gethostname());
+        return self::of('scheduler_pid', gethostname());
     }
 
     /**
      * @return string
      */
     public static function localSchedulerProcesses() {
-        return Key::of('workers', gethostname(), 'scheduler');
+        return self::of('workers', gethostname(), 'scheduler');
     }
 
     /**
@@ -137,7 +121,7 @@ class Key {
      * @return string
      */
     public static function queue($name) {
-        return Key::of('queue', $name);
+        return self::of('queue', $name);
     }
 
     /**
@@ -146,7 +130,7 @@ class Key {
      * @return string
      */
     public static function queueLock($queue) {
-        return Key::of('queuedata', $queue, 'lock');
+        return self::of('queuedata', $queue, 'lock');
     }
 
     /**
@@ -197,7 +181,7 @@ class Key {
      * @return string
      */
     public static function worker($worker) {
-        return Key::of('worker', $worker);
+        return self::of('worker', $worker);
     }
 
     /**
@@ -206,14 +190,14 @@ class Key {
      * @return string
      */
     public static function workerStart($worker) {
-        return Key::of('worker', $worker, 'started');
+        return self::of('worker', $worker, 'started');
     }
 
     /**
      * @return string
      */
     public static function workers() {
-        return Key::of('workers');
+        return self::of('workers');
     }
 
     private static function of(...$parts) {

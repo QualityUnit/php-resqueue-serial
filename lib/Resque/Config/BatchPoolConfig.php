@@ -35,4 +35,11 @@ class BatchPoolConfig {
 
         return new BatchPool($poolName, $unitCount, $workersPerUnit);
     }
+
+    /**
+     * @return string[]
+     */
+    public function getPoolNames() {
+        return array_keys($this->pools);
+    }
 }

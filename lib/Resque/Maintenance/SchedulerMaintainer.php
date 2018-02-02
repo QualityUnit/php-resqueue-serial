@@ -55,7 +55,6 @@ class SchedulerMaintainer implements ProcessMaintainer {
             if ($oneAlive) {
                 Log::notice('Terminating extra scheduler process');
                 posix_kill($localProcess->getPid(), SIGTERM);
-                $this->removeSchedulerRecord($localProcess->getId());
                 continue;
             }
 

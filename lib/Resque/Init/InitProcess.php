@@ -4,18 +4,22 @@
 namespace Resque\Init;
 
 
-use Exception;
 use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
+use Resque\Maintenance\AllocatorMaintainer;
+use Resque\Maintenance\BatchPoolMaintainer;
+use Resque\Maintenance\ProcessMaintainer;
+use Resque\Maintenance\SchedulerMaintainer;
+use Resque\Maintenance\StaticPoolMaintainer;
 use Resque\Process;
-use Resque\Scheduler\SchedulerProcess;
 use Resque\SignalHandler;
 use Resque\StatsD;
-use Resque\Worker\StandardWorker;
-use Resque\Worker\WorkerImage;
 
 class InitProcess {
+
+    /** @var ProcessMaintainer[] */
+    private $maintainers = [];
 
     private $stopping = false;
     private $reloaded = false;
@@ -33,67 +37,12 @@ class InitProcess {
     }
 
     public function recover() {
-        $this->reloaded = false; // refresh reload state
         Log::debug('========= Starting maintenance');
 
-        $this->maintainScheduler();
-
-        foreach (GlobalConfig::getInstance()->getQueueList() as $queue) {
-            $workerConfig = GlobalConfig::getInstance()->getWorkerConfig($queue);
-
-            if ($workerConfig == null) {
-                Log::error("Invalid worker config for queue $queue");
-                continue;
-            }
-
-            Log::debug("====== Starting maintenance of queue $queue");
-
-            $livingWorkerCount = $this->cleanupWorkers($queue);
-            Log::debug("Living worker count: $livingWorkerCount");
-            $toCreate = $workerConfig->getWorkerCount() - $livingWorkerCount;
-            Log::debug("Need to create $toCreate workers");
-
-            // create missing standard workers
-            for ($i = 0; $i < $toCreate; ++$i) {
-                try {
-                    Log::debug("=== Creating worker [$i]");
-
-                    $pid = Process::fork();
-                    if ($pid === false) {
-                        throw new Exception('Fork returned false.');
-                    }
-                } catch (Exception $e) {
-                    Log::emergency("Could not fork worker $i for queue $queue", ['exception' => $e]);
-                    exit(1);
-                }
-
-                if (!$pid) {
-                    $this->unregisterSigHandlers(); // do not keep handlers from main process in child
-                    try {
-                        $worker = new StandardWorker($queue);
-                        Log::notice("Starting worker {$worker->getImage()->getId()}");
-                        $worker->work();
-                        exit();
-                    } catch (\Throwable $t) {
-                        Log::critical('Worker failed unexpectedly.', [
-                            'exception' => $t,
-                            'pid' => posix_getpid()
-                        ]);
-                    }
-                    exit(1);
-                }
-            }
-
-            Log::debug("====== Finished maintenance of queue $queue");
-
-            // check interruption
-            SignalHandler::dispatch();
-            if ($this->stopping || $this->reloaded) {
-                Log::debug('========= Received stop or reload signal, halting maintenance...');
-
-                return;
-            }
+        foreach ($this->maintainers as $maintainer) {
+            $maintainer->maintain();
         }
+
         Log::debug('========= Maintenance ended');
     }
 
@@ -105,8 +54,14 @@ class InitProcess {
         Log::setPrefix('init-process');
         $this->reloaded = true;
 
-        $this->signalWorkers(SIGHUP, 'HUP');
-        $this->signalScheduler(SIGHUP, 'HUP');
+        $this->signalProcesses(SIGHUP, 'HUP');
+    }
+
+    public function reloadLogger() {
+        Log::debug('Reloading logger');
+        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
+
+        $this->signalProcesses(SIGUSR1, 'USR1');
     }
 
     /**
@@ -115,8 +70,7 @@ class InitProcess {
     public function shutdown() {
         $this->stopping = true;
 
-        $this->signalWorkers(SIGTERM, 'TERM');
-        $this->signalScheduler(SIGTERM, 'TERM');
+        $this->signalProcesses(SIGTERM, 'TERM');
     }
 
     public function start() {
@@ -126,85 +80,31 @@ class InitProcess {
         $this->recover();
     }
 
-    /**
-     * Removes dead workers from queue pool and counts the number of living ones.
-     *
-     * @param string $queue
-     *
-     * @return int number of living workers on specified queue
-     */
-    private function cleanupWorkers($queue) {
-        Log::debug('Worker cleanup started');
-
-        $totalWorkers = 0;
-        $livingWorkers = 0;
-
-        foreach (WorkerImage::all() as $workerId) {
-            $image = WorkerImage::fromId($workerId);
-
-            if ($queue != $image->getQueue()) {
-                continue; // not this queue
-            }
-            if (!$image->isLocal()) {
-                continue; // not this machine
-            }
-
-            if (!$image->isAlive()) {
-                Log::warning('Cleaning up dead worker.', [
-                    'started' => $image->getStarted(),
-                    'state' => $image->getState(),
-                    'worker_id' => $workerId
-                ]);
-                // cleanup
-                $image
-                    ->removeFromPool()
-                    ->clearState()
-                    ->clearStarted();
-            } else {
-                $livingWorkers++;
-            }
-            $totalWorkers++;
-        }
-
-        Log::debug("Worker cleanup done, processed $totalWorkers workers");
-
-        return $livingWorkers;
-    }
-
     private function initialize() {
         Resque::setBackend(GlobalConfig::getInstance()->getBackend());
 
         StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
         Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix('init-process');
+        $this->initializeMaintainers();
 
         $this->registerSigHandlers();
     }
 
-    private function maintainScheduler() {
-        $pid = SchedulerProcess::getLocalPid();
-        if ($pid && posix_getpgid($pid) > 0) {
-            return;
+    private function initializeMaintainers() {
+        $this->maintainers = [];
+
+        foreach (GlobalConfig::getInstance()->getStaticPoolConfig()->getPoolNames() as $poolName) {
+            $this->maintainers[] = new StaticPoolMaintainer($poolName);
         }
 
-        $pid = Process::fork();
-        if ($pid === false) {
-            throw new Exception('Fork returned false.');
+        foreach (GlobalConfig::getInstance()->getBatchPoolConfig()->getPoolNames() as $poolName) {
+            $this->maintainers[] = new BatchPoolMaintainer($poolName);
         }
 
-        if ($pid == 0) {
-            $worker = new SchedulerProcess();
-            $worker->work();
-            exit(0);
-        }
-    }
+        $this->maintainers[] = new AllocatorMaintainer();
 
-    public function reloadLogger() {
-        Log::debug('Reloading logger');
-        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
-
-        $this->signalWorkers(SIGUSR1, 'USR1');
-        $this->signalScheduler(SIGUSR1, 'USR1');
+        $this->maintainers[] = new SchedulerMaintainer();
     }
 
     private function registerSigHandlers() {
@@ -218,23 +118,13 @@ class InitProcess {
         Log::debug('Registered signals');
     }
 
-    private function signalScheduler($signal, $signalName) {
-        $pid = SchedulerProcess::getLocalPid();
-        Log::debug("Signalling $signalName to scheduler $pid");
-        posix_kill($pid, $signal);
-    }
-
-    private function signalWorkers($signal, $signalName) {
-        $workers = WorkerImage::all();
-        foreach ($workers as $worker) {
-            $image = WorkerImage::fromId($worker);
-            Log::debug("Signalling $signalName to {$image->getId()}");
-            posix_kill($image->getPid(), $signal);
+    private function signalProcesses($signal, $signalName) {
+        foreach ($this->maintainers as $maintainer) {
+            foreach ($maintainer->getLocalProcesses() as $localProcess) {
+                Log::debug("Signalling $signalName to {$localProcess->getId()}");
+                posix_kill($localProcess->getPid(), $signal);
+            }
         }
 
-    }
-
-    private function unregisterSigHandlers() {
-        SignalHandler::instance()->unregisterAll();
     }
 }

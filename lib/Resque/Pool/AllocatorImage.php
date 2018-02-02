@@ -7,37 +7,37 @@ use Resque\Process\BaseProcessImage;
 class AllocatorImage extends BaseProcessImage {
 
     /** @var string */
-    private $number;
+    private $code;
 
-    protected function __construct($processId, $hostname, $number, $pid) {
+    protected function __construct($processId, $hostname, $code, $pid) {
         parent::__construct($processId, $hostname, $pid);
 
-        $this->number = $number;
+        $this->code = $code;
     }
 
     /**
-     * @param $number
+     * @param string $code
      *
      * @return self
      */
-    public static function create($number) {
+    public static function create($code) {
         $hostname = gethostname();
         $pid = getmypid();
-        $id = "$hostname~$number~$pid";
+        $id = "$hostname~$code~$pid";
 
-        return new self($id, $hostname, $number, $pid);
+        return new self($id, $hostname, $code, $pid);
     }
 
     public static function load($processId) {
-        list($hostname, $number, $pid) = explode('~', $processId, 3);
+        list($hostname, $code, $pid) = explode('~', $processId, 4);
 
-        return new self($processId, $hostname, $number, $pid);
+        return new self($processId, $hostname, $code, $pid);
     }
 
     /**
      * @return string
      */
-    public function getNumber() {
-        return $this->number;
+    public function getCode() {
+        return $this->code;
     }
 }

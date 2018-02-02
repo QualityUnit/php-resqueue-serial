@@ -4,6 +4,10 @@
 namespace Resque\Config;
 
 
+/**
+ * @deprecated REMOVE THIS
+ * Class WorkerConfig
+ */
 class WorkerConfig {
 
     /** @var int */
@@ -13,6 +17,13 @@ class WorkerConfig {
     /** @var int */
     private $interval = 3;
 
+    /**
+     * @deprecated
+     *
+     * @param $data
+     *
+     * @throws \Exception
+     */
     public function __construct($data) {
         if (!$this->hasRequiredFields($data)) {
             throw new \Exception("Worker configuration incomplete.");
@@ -23,6 +34,7 @@ class WorkerConfig {
     }
 
     /**
+     * @deprecated
      * @return bool
      */
     public function getBlocking() {
@@ -30,6 +42,7 @@ class WorkerConfig {
     }
 
     /**
+     * @deprecated
      * @return int
      */
     public function getInterval() {
@@ -37,6 +50,7 @@ class WorkerConfig {
     }
 
     /**
+     * @deprecated
      * @return int
      */
     public function getWorkerCount() {

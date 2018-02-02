@@ -34,6 +34,12 @@ task_include_path: "/opt/qu/qu/apps/versions/la/"
 # default = 3
 fail_retries: 3
 
+allocators:
+    # default = 0
+    job-count: 0
+    # default = 0
+    batch-count: 0
+
 pools:
     static:
         <pool name>:

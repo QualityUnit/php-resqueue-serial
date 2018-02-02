@@ -18,25 +18,16 @@ class BatchAllocatorProcess extends AbstractProcess {
     private $bufferKey;
 
     /**
-     * @param $number
+     * @param $code
      */
-    public function __construct($number) {
-        parent::__construct('batch-allocator', AllocatorImage::create($number));
+    public function __construct($code) {
+        parent::__construct('batch-allocator', AllocatorImage::create($code));
 
-        $this->bufferKey = Key::localBatchAllocatorBuffer($number);
+        $this->bufferKey = Key::localAllocatorBuffer($code);
     }
 
     public function deinit() {
-        Resque::redis()->sRem(Key::localBatchAllocatorProcesses(), $this->getImage()->getId());
-    }
-
-    /**
-     * @throws Resque\Api\RedisError
-     */
-    protected function prepareWork() {
-        while (false !== ($batchId = Resque::redis()->lIndex($this->bufferKey, -1))) {
-            $this->assignBatch($batchId);
-        }
+        Resque::redis()->sRem(Key::localAllocatorProcesses(), $this->getImage()->getId());
     }
 
     /**
@@ -55,11 +46,27 @@ class BatchAllocatorProcess extends AbstractProcess {
     }
 
     public function init() {
-        Resque::redis()->sAdd(Key::localBatchAllocatorProcesses(), $this->getImage()->getId());
+        Resque::redis()->sAdd(Key::localAllocatorProcesses(), $this->getImage()->getId());
     }
 
     public function load() {
         StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
+    }
+
+    public function revertBuffer() {
+        $keyTo = Key::committedBatchList();
+        while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
+            // NOOP
+        }
+    }
+
+    /**
+     * @throws Resque\Api\RedisError
+     */
+    protected function prepareWork() {
+        while (false !== ($batchId = Resque::redis()->lIndex($this->bufferKey, -1))) {
+            $this->assignBatch($batchId);
+        }
     }
 
     /**

@@ -20,16 +20,16 @@ class JobAllocatorProcess extends AbstractProcess {
     private $bufferKey;
 
     /**
-     * @param $number
+     * @param $code
      */
-    public function __construct($number) {
-        parent::__construct('job-allocator', AllocatorImage::create($number));
+    public function __construct($code) {
+        parent::__construct('job-allocator', AllocatorImage::create($code));
 
-        $this->bufferKey = Key::localJobAllocatorBuffer($number);
+        $this->bufferKey = Key::localAllocatorBuffer($code);
     }
 
     public function deinit() {
-        Resque::redis()->sRem(Key::localJobAllocatorProcesses(), $this->getImage()->getId());
+        Resque::redis()->sRem(Key::localAllocatorProcesses(), $this->getImage()->getId());
     }
 
     /**
@@ -48,11 +48,18 @@ class JobAllocatorProcess extends AbstractProcess {
     }
 
     public function init() {
-        Resque::redis()->sAdd(Key::localJobAllocatorProcesses(), $this->getImage()->getId());
+        Resque::redis()->sAdd(Key::localAllocatorProcesses(), $this->getImage()->getId());
     }
 
     public function load() {
         StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
+    }
+
+    public function revertBuffer() {
+        $keyTo = Key::unassigned();
+        while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
+            // NOOP
+        }
     }
 
     /**

@@ -44,4 +44,8 @@ class SchedulerProcess extends AbstractProcess {
     public function load() {
         StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
     }
+
+    protected function prepareWork() {
+        // NOOP
+    }
 }

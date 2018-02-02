@@ -31,4 +31,11 @@ class StaticPoolConfig {
 
         return new StaticPool($poolName, $workerCount);
     }
+
+    /**
+     * @return string[]
+     */
+    public function getPoolNames() {
+        return array_keys($this->pools);
+    }
 }

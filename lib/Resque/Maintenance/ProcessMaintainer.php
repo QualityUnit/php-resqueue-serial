@@ -13,8 +13,6 @@ interface ProcessMaintainer {
 
     /**
      * Cleans up and recovers local processes.
-     *
-     * @return void
      */
     public function maintain();
 }

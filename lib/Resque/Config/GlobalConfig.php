@@ -26,7 +26,8 @@ class GlobalConfig {
     private $batchPools;
     /** @var StaticPoolConfig */
     private $staticPools;
-
+    /** @var AllocatorConfig */
+    private $allocatorConfig;
     /** @var string */
     private $redisHost = Redis::DEFAULT_HOST;
     /** @var int */
@@ -72,6 +73,7 @@ class GlobalConfig {
     public static function reload() {
         $self = self::$instance;
         try {
+            /** @var mixed[] $data */
             $data = Yaml::parse(file_get_contents($self->configPath));
         } catch (ParseException $e) {
             Log::critical('Failed to load configuration.', [
@@ -101,7 +103,7 @@ class GlobalConfig {
         if ($taskIncludePath) {
             $self->taskIncludePath = $taskIncludePath;
         }
-        $failRetries = $data['fail_retries'];
+        $failRetries = $data['fail_retries'] ?? -1;
         if ($failRetries >= 0) {
             $self->maxTaskFails = (int)$failRetries;
         }
@@ -109,6 +111,14 @@ class GlobalConfig {
         $self->batchPoolMapping = new MappingConfig($data['mapping']['batch']);
         $self->staticPools = new StaticPoolConfig($data['pools']['static']);
         $self->batchPools = new BatchPoolConfig($data['pools']['batch']);
+        $self->allocatorConfig = new AllocatorConfig($data['allocators']);
+    }
+
+    /**
+     * @return AllocatorConfig
+     */
+    public function getAllocatorConfig() {
+        return $this->allocatorConfig;
     }
 
     /**
@@ -119,17 +129,17 @@ class GlobalConfig {
     }
 
     /**
-     * @return MappingConfig
-     */
-    public function getBatchPoolMapping() {
-        return $this->batchPoolMapping;
-    }
-
-    /**
      * @return BatchPoolConfig
      */
     public function getBatchPoolConfig() {
         return $this->batchPools;
+    }
+
+    /**
+     * @return MappingConfig
+     */
+    public function getBatchPoolMapping() {
+        return $this->batchPoolMapping;
     }
 
     /**
@@ -154,17 +164,17 @@ class GlobalConfig {
     }
 
     /**
-     * @return MappingConfig
-     */
-    public function getStaticPoolMapping() {
-        return $this->staticPoolMapping;
-    }
-
-    /**
      * @return StaticPoolConfig
      */
     public function getStaticPoolConfig() {
         return $this->staticPools;
+    }
+
+    /**
+     * @return MappingConfig
+     */
+    public function getStaticPoolMapping() {
+        return $this->staticPoolMapping;
     }
 
     /**
