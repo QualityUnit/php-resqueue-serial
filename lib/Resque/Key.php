@@ -97,6 +97,10 @@ class Key {
         return self::of('process', gethostname(), 'static_pool', $poolName);
     }
 
+    public static function localBatchPoolProcesses($poolName) {
+        return self::of('process', gethostname(), 'batch_pool', $poolName);
+    }
+
     /**
      * @param string $id
      *

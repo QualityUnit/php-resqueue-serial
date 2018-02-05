@@ -53,7 +53,6 @@ class StaticPoolMaintainer implements ProcessMaintainer {
         for ($i = $alive; $i < $workerLimit; $i++) {
             $this->forkWorker();
         }
-
     }
 
     /**

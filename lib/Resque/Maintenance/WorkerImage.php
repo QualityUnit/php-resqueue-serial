@@ -12,12 +12,12 @@ class WorkerImage extends BaseProcessImage {
     private $code;
 
     /**
-     * @param $pool
+     * @param string $poolName
+     * @param string $code
      *
      * @return self
      */
-    public static function create($pool) {
-        
+    public static function create($poolName, $code) {
     }
 
     public static function load($workerId) {
@@ -26,7 +26,7 @@ class WorkerImage extends BaseProcessImage {
         return new self($workerId, $hostname, $poolName, $code, $pid);
     }
 
-    public function __construct($workerId, $hostname, $poolName, $code, $pid) {
+    protected function __construct($workerId, $hostname, $poolName, $code, $pid) {
         parent::__construct($workerId, $hostname, $pid);
 
         $this->poolName = $poolName;
