@@ -9,8 +9,8 @@ class AllocatorImage extends BaseProcessImage {
     /** @var string */
     private $code;
 
-    protected function __construct($processId, $hostname, $code, $pid) {
-        parent::__construct($processId, $hostname, $pid);
+    protected function __construct($processId, $nodeId, $code, $pid) {
+        parent::__construct($processId, $nodeId, $pid);
 
         $this->code = $code;
     }
@@ -21,17 +21,17 @@ class AllocatorImage extends BaseProcessImage {
      * @return self
      */
     public static function create($code) {
-        $hostname = gethostname();
+        $nodeId = GlobalConfig::getInstance()->getNodeId();
         $pid = getmypid();
-        $id = "$hostname~$code~$pid";
+        $id = "$nodeId~$code~$pid";
 
-        return new self($id, $hostname, $code, $pid);
+        return new self($id, $nodeId, $code, $pid);
     }
 
     public static function load($processId) {
-        list($hostname, $code, $pid) = explode('~', $processId, 4);
+        list($nodeId, $code, $pid) = explode('~', $processId, 4);
 
-        return new self($processId, $hostname, $code, $pid);
+        return new self($processId, $nodeId, $code, $pid);
     }
 
     /**

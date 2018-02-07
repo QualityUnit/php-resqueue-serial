@@ -47,7 +47,7 @@ class LogConfig {
         if ($systemName != null) {
             $this->systemName = $systemName;
         } else {
-            $this->systemName = gethostname();
+            $this->systemName = GlobalConfig::getInstance()->getNodeId();
         }
         $extraPrefix = $configSection['extra_prefix'];
         if ($extraPrefix != null) {

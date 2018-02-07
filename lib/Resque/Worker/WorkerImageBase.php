@@ -4,12 +4,14 @@
 namespace Resque\Worker;
 
 
+use Resque\Config\GlobalConfig;
+
 abstract class WorkerImageBase implements IWorkerImage {
 
     /** @var string */
     protected $id;
     /** @var string */
-    protected $hostname;
+    protected $nodeId;
     /** @var int */
     protected $pid;
     /** @var string */
@@ -24,10 +26,10 @@ abstract class WorkerImageBase implements IWorkerImage {
      */
     public static function create($queue) {
         $worker = new static();
-        $worker->hostname = gethostname();
+        $worker->nodeId = GlobalConfig::getInstance()->getNodeId();
         $worker->pid = getmypid();
         $worker->queue = $queue;
-        $worker->id = gethostname() . '~' . getmypid() . '~' . $queue;
+        $worker->id = GlobalConfig::getInstance()->getNodeId() . '~' . getmypid() . '~' . $queue;
 
         return $worker;
     }
@@ -44,7 +46,7 @@ abstract class WorkerImageBase implements IWorkerImage {
 
         $worker = new static();
         $worker->id = $workerId;
-        $worker->hostname = @$parts[0];
+        $worker->nodeId = @$parts[0];
         $worker->pid = @$parts[1];
         $worker->queue = @$parts[2];
 
@@ -54,8 +56,8 @@ abstract class WorkerImageBase implements IWorkerImage {
     /**
      * @return string
      */
-    public function getHostname() {
-        return $this->hostname;
+    public function getNodeId() {
+        return $this->nodeId;
     }
 
     /**
@@ -90,6 +92,6 @@ abstract class WorkerImageBase implements IWorkerImage {
      * @return bool true if worker belongs to this machine
      */
     public function isLocal() {
-        return gethostname() == $this->getHostname();
+        return GlobalConfig::getInstance()->getNodeId() === $this->getNodeId();
     }
 }

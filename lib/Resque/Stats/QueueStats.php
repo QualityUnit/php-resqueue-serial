@@ -5,6 +5,7 @@ namespace Resque\Stats;
 
 
 use Resque;
+use Resque\Config\GlobalConfig;
 use Resque\Stats;
 use Resque\StatsD;
 
@@ -63,7 +64,7 @@ class QueueStats implements Stats {
      * @return string
      */
     private function key($stat) {
-        return gethostname() . ".{$this->queueName}.$stat";
+        return GlobalConfig::getInstance()->getNodeId() . ".{$this->queueName}.$stat";
     }
 
     /**

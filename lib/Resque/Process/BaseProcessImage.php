@@ -2,6 +2,8 @@
 
 namespace Resque\Process;
 
+use Resque\Config\GlobalConfig;
+
 class BaseProcessImage implements ProcessImage {
 
     /** @var string */
@@ -9,40 +11,40 @@ class BaseProcessImage implements ProcessImage {
     /** @var string */
     private $pid;
     /** @var string */
-    private $hostname;
+    private $nodeId;
 
     /**
      * @param $id
-     * @param $hostname
+     * @param $nodeId
      * @param $pid
      */
-    protected function __construct($id, $hostname, $pid) {
+    protected function __construct($id, $nodeId, $pid) {
         $this->id = $id;
         $this->pid = $pid;
-        $this->hostname = $hostname;
+        $this->nodeId = $nodeId;
     }
 
     /**
      * @return self
      */
     public static function create() {
-        $hostName = gethostname();
+        $nodeId = GlobalConfig::getInstance()->getNodeId();
         $pid = getmypid();
 
-        return new self("$hostName~$pid", $hostName, $pid);
+        return new self("$nodeId~$pid", $nodeId, $pid);
     }
 
     public static function fromId($processId) {
-        list($hostname, $pid) = explode('~', $processId, 2);
+        list($nodeId, $pid) = explode('~', $processId, 2);
 
-        return new self($processId, $hostname, $pid);
+        return new self($processId, $nodeId, $pid);
     }
 
     /**
      * @return string
      */
-    public function getHostname() {
-        return $this->hostname;
+    public function getNodeId() {
+        return $this->nodeId;
     }
 
     /**
@@ -70,6 +72,6 @@ class BaseProcessImage implements ProcessImage {
      * @return bool true if worker belongs to this machine
      */
     public function isLocal() {
-        return gethostname() === $this->getHostname();
+        return GlobalConfig::getInstance()->getNodeId() === $this->getNodeId();
     }
 }

@@ -21,17 +21,23 @@ class WorkerImage extends BaseProcessImage {
     }
 
     public static function load($workerId) {
-        list($hostname, $poolName, $code, $pid) = explode('~', $workerId, 4);
+        list($nodeId, $poolName, $code, $pid) = explode('~', $workerId, 4);
 
-        return new self($workerId, $hostname, $poolName, $code, $pid);
+        return new self($workerId, $nodeId, $poolName, $code, $pid);
     }
 
-    protected function __construct($workerId, $hostname, $poolName, $code, $pid) {
-        parent::__construct($workerId, $hostname, $pid);
+    protected function __construct($workerId, $nodeId, $poolName, $code, $pid) {
+        parent::__construct($workerId, $nodeId, $pid);
 
         $this->poolName = $poolName;
         $this->code = $code;
     }
 
+    /**
+     * @return string
+     */
+    public function getCode() {
+        return $this->code;
+    }
 
 }

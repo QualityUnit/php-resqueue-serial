@@ -19,7 +19,7 @@ interface IWorkerImage {
     /**
      * @return string
      */
-    public function getHostname();
+    public function getNodeId();
 
     /**
      * @return string

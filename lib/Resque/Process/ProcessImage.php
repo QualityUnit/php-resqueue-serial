@@ -7,7 +7,7 @@ interface ProcessImage {
     /**
      * @return string
      */
-    public function getHostname();
+    public function getNodeId();
 
     /**
      * @return string

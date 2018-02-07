@@ -4,9 +4,8 @@ resqu-v4:
     unassigned: list(<job_data>)
     q:<queue_id>: list(<job_data>)
     // allocator buffer (1 element at most)
-    allocator:<hostname>:
-        job:<allocator_number>: list(<job_data>)
-        batch:<allocator_number>: list(<batch_id>)
+    allocator:<hostname>:<allocator_code>: list(<buffer_data>)
+    job:allocation_failures: list(<job_data>)
 
     // === batches
     // <batch_id> == <source_id>:<job_name>:<generated_suffix>
@@ -21,10 +20,14 @@ resqu-v4:
 
     processes: set(<process_id>)
     process:<hostname>:
-        pool:<pool_name>: set(<worker_id>)
+        // <worker_id> == <hostname>~<pool name>~<code>~<pid>
+        static_pool:<pool_name>: set(<worker_id>)
+        // <worker_id> == <hostname>~<pool name>~<code>~<pid>
+        batch_pool:<pool_name>: set(<worker_id>)
+        // <process_id> == <hostname>~<pid>
         scheduler: set(<process_id>)
-        allocator:job: set(<allocator_id>)
-        allocator:batch: set(<allocator_id>)
+        // <allocator_id> == <hostname>~<code>~<pid>
+        allocator: set(<allocator_id>)
 
     worker:<worker_id>: list(<job_data>)
 

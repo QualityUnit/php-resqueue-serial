@@ -4,6 +4,8 @@
 namespace Resque;
 
 
+use Resque\Config\GlobalConfig;
+
 class Key {
 
     public static function batchAllocationFailures() {
@@ -69,36 +71,36 @@ class Key {
      * @return string
      */
     public static function localAllocatorBuffer($allocatorNumber) {
-        return self::of('allocator', gethostname(), $allocatorNumber);
+        return self::of('allocator', GlobalConfig::getInstance()->getNodeId(), $allocatorNumber);
     }
 
     /**
      * @return string
      */
     public static function localAllocatorProcesses() {
-        return self::of('process', gethostname(), 'allocator');
+        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'allocator');
     }
 
     /**
      * @return string
      */
     public static function localSchedulerPid() {
-        return self::of('scheduler_pid', gethostname());
+        return self::of('scheduler_pid', GlobalConfig::getInstance()->getNodeId());
     }
 
     /**
      * @return string
      */
     public static function localSchedulerProcesses() {
-        return self::of('workers', gethostname(), 'scheduler');
+        return self::of('workers', GlobalConfig::getInstance()->getNodeId(), 'scheduler');
     }
 
     public static function localStaticPoolProcesses($poolName) {
-        return self::of('process', gethostname(), 'static_pool', $poolName);
+        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'static_pool', $poolName);
     }
 
     public static function localBatchPoolProcesses($poolName) {
-        return self::of('process', gethostname(), 'batch_pool', $poolName);
+        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'batch_pool', $poolName);
     }
 
     /**
@@ -168,7 +170,7 @@ class Key {
      * @return string
      */
     public static function statsQueue($queue, $stat) {
-        return self::of('queuestat', gethostname(), $stat, $queue);
+        return self::of('queuestat', GlobalConfig::getInstance()->getNodeId(), $stat, $queue);
     }
 
     public static function unassigned() {

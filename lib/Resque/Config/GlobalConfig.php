@@ -36,6 +36,8 @@ class GlobalConfig {
     private $taskIncludePath = '/opt';
     /** @var int */
     private $maxTaskFails = 3;
+    /** @var string */
+    private $nodeId;
 
     /** @var string */
     private $configPath;
@@ -82,6 +84,10 @@ class GlobalConfig {
             throw new \RuntimeException('Config file failed to parse.');
         }
 
+        if (!isset($data['node_id']) || !self::isNodeIdValid($data['node_id'])) {
+            throw new \RuntimeException('Config key node_id invalid or missing.');
+        }
+
         if (!isset($data['pools'])) {
             throw new \RuntimeException('Pools config section missing.');
         }
@@ -95,10 +101,6 @@ class GlobalConfig {
             $self->redisHost = $redis['hostname'];
             $self->redisPort = $redis['port'];
         }
-
-        $self->logConfig = new LogConfig($data['log']);
-        $self->statsConfig = new StatsConfig($data['statsd']);
-
         $taskIncludePath = $data['task_include_path'];
         if ($taskIncludePath) {
             $self->taskIncludePath = $taskIncludePath;
@@ -107,11 +109,19 @@ class GlobalConfig {
         if ($failRetries >= 0) {
             $self->maxTaskFails = (int)$failRetries;
         }
+        $self->nodeId = $data['node_id'];
+
+        $self->logConfig = new LogConfig($data['log']);
+        $self->statsConfig = new StatsConfig($data['statsd']);
         $self->staticPoolMapping = new MappingConfig($data['mapping']['static']);
         $self->batchPoolMapping = new MappingConfig($data['mapping']['batch']);
         $self->staticPools = new StaticPoolConfig($data['pools']['static']);
         $self->batchPools = new BatchPoolConfig($data['pools']['batch']);
         $self->allocatorConfig = new AllocatorConfig($data['allocators']);
+    }
+
+    private static function isNodeIdValid($nodeId) {
+        return preg_match('/^\w+$/', $nodeId) === 1;
     }
 
     /**
@@ -154,6 +164,13 @@ class GlobalConfig {
      */
     public function getMaxTaskFails() {
         return $this->maxTaskFails;
+    }
+
+    /**
+     * @return string
+     */
+    public function getNodeId() {
+        return $this->nodeId;
     }
 
     /**

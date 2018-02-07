@@ -1,3 +1,6 @@
+# MANDATORY <STRING> instance id /^[a-zA-Z0-9_]+$/ (must be unique for each resque instance)
+node_id: ""
+
 log:
     # default = notice
     level: notice
