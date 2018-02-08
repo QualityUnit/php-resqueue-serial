@@ -69,13 +69,13 @@ class RunningJob {
     }
 
     public function reschedule(JobDescriptor $descriptor) {
-        Resque::jobEnqueue($this->getJobToReschedule($descriptor), false);
+        Resque::enqueue($this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
 
     public function rescheduleDelayed(JobDescriptor $descriptor, $in) {
-        Resque::jobEnqueueDelayed($in,
+        Resque::enqueueDelayed($in,
             $this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
@@ -90,7 +90,7 @@ class RunningJob {
 
         $this->job->incFailCount();
 
-        $newJobId = Resque::jobEnqueue($this->job, false);
+        $newJobId = Resque::enqueue($this->job, false);
         $this->reportRetry($e, $newJobId);
         $this->status->setRetried();
     }

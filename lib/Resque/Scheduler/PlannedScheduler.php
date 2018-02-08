@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Resque\Scheduler;
 
 use Resque;
@@ -121,7 +120,7 @@ LUA;
                     ]
             );
 
-            Resque::jobEnqueue($job, true);
+            Resque::enqueue($job, true);
         }
     }
 

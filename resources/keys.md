@@ -34,12 +34,10 @@ resqu-v4:
     unique:<unique_id>:
         state: {'queued', 'running'}
         deferred: job_data
-
-    // === TODO
-
-    delayed_queue_schedule: sorted_set(timestamp, timestamp)
-    delayed:<timestamp>: list(<json_encoded JobImage>)
-
+        
     plan_schedule: sorted_set(timestamp, timestamp)
     plan_schedule:<timestamp>: list(plan_id)
-    plan:<id>: <json_encoded timestamp, period, queue, JobImage>
+    plan:<id>: <json_encoded timestamp, period, queue, Job>
+    
+    delayed_queue_schedule: sorted_set(timestamp, timestamp)
+    delayed:<timestamp>: list(<json_encoded Job>)

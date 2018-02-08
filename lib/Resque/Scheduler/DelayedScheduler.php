@@ -1,8 +1,6 @@
 <?php
 
-
 namespace Resque\Scheduler;
-
 
 use Resque;
 use Resque\Api\Job;
@@ -11,7 +9,6 @@ use Resque\Log;
 use Resque\Process;
 
 class DelayedScheduler implements IScheduler {
-
 
     /**
      * Schedule all of the delayed jobs for a given timestamp.
@@ -22,9 +19,9 @@ class DelayedScheduler implements IScheduler {
      */
     public function enqueueItemsForTimestamp($timestamp) {
         while (($job = $this->nextJobForTimestamp($timestamp)) !== null) {
-            Log::info("queueing {$job->getClass()} in {$job->getQueue()} [delayed]");
+            Log::info("queueing {$job->getName()} [delayed]");
 
-            Resque::jobEnqueue($job, false);
+            Resque::enqueue($job, false);
         }
     }
 
@@ -73,8 +70,7 @@ class DelayedScheduler implements IScheduler {
             $at = time();
         }
 
-        $items = Resque::redis()
-            ->zRangeByScore(Key::delayedQueueSchedule(), '-inf', $at, ['limit' => [0, 1]]);
+        $items = Resque::redis()->zRangeByScore(Key::delayedQueueSchedule(), '-inf', $at, ['limit' => [0, 1]]);
         if (!empty($items)) {
             return $items[0];
         }

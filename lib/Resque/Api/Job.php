@@ -110,6 +110,7 @@ class Job {
     }
 
     /**
+     * @deprecated
      * @return string
      */
     public function getQueue() {
@@ -160,6 +161,7 @@ class Job {
     }
 
     /**
+     * @deprecated
      * @param string $queue
      *
      * @return Job
