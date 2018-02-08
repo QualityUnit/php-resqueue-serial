@@ -8,7 +8,6 @@ use Resque\Config\GlobalConfig;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
-use Resque\StatsD;
 
 class BatchAllocatorProcess extends AbstractProcess {
 
@@ -26,10 +25,6 @@ class BatchAllocatorProcess extends AbstractProcess {
         $this->bufferKey = Key::localAllocatorBuffer($code);
     }
 
-    public function deinit() {
-        Resque::redis()->sRem(Key::localAllocatorProcesses(), $this->getImage()->getId());
-    }
-
     /**
      * main loop
      *
@@ -43,14 +38,6 @@ class BatchAllocatorProcess extends AbstractProcess {
         }
 
         $this->assignBatch($batchId);
-    }
-
-    public function init() {
-        Resque::redis()->sAdd(Key::localAllocatorProcesses(), $this->getImage()->getId());
-    }
-
-    public function load() {
-        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
     }
 
     public function revertBuffer() {
@@ -75,7 +62,7 @@ class BatchAllocatorProcess extends AbstractProcess {
      * @throws Resque\Api\RedisError if processing failed
      */
     private function assignBatch($batchId) {
-        $batch = BatchImage::fromId($batchId);
+        $batch = BatchImage::load($batchId);
 
         try {
             $this->resolvePool($batch)->assignBatch($batch);

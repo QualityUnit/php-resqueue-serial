@@ -24,7 +24,7 @@ class BatchImage {
         $this->suffix = $suffix;
     }
 
-    public static function fromId($batchId) {
+    public static function load($batchId) {
         list($sourceId, $jobName, $suffix) = explode(':', $batchId, 3);
 
         return new self($batchId, $sourceId, $jobName, $suffix);

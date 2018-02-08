@@ -5,22 +5,22 @@ namespace Resque\Maintenance;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
-use Resque\Process\BaseProcessImage;
-use Resque\Process\ProcessImage;
+use Resque\Process\SchedulerImage;
 use Resque\Scheduler\SchedulerProcess;
 use Resque\SignalHandler;
 
 class SchedulerMaintainer implements ProcessMaintainer {
 
     /**
-     * @return ProcessImage[]
+     * @return SchedulerImage[]
+     * @throws \Resque\Api\RedisError
      */
     public function getLocalProcesses() {
         $scheduleIds = \Resque::redis()->sMembers(Key::localSchedulerProcesses());
         $images = [];
 
         foreach ($scheduleIds as $processId) {
-            $images[] = BaseProcessImage::fromId($processId);
+            $images[] = SchedulerImage::load($processId);
         }
 
         return $images;
@@ -30,6 +30,7 @@ class SchedulerMaintainer implements ProcessMaintainer {
      * Cleans up and recovers local processes.
      *
      * @return void
+     * @throws \Resque\Api\RedisError
      */
     public function maintain() {
         $schedulerIsAlive = $this->cleanupSchedulers();
@@ -42,6 +43,7 @@ class SchedulerMaintainer implements ProcessMaintainer {
      * Checks all scheduler processes and keeps at most one alive.
      *
      * @return bool true if at least one scheduler process is alive after cleanup
+     * @throws \Resque\Api\RedisError
      */
     private function cleanupSchedulers() {
         $oneAlive = false;
@@ -91,6 +93,7 @@ class SchedulerMaintainer implements ProcessMaintainer {
 
     /**
      * @param string $schedulerId
+     * @throws \Resque\Api\RedisError
      */
     private function removeSchedulerRecord($schedulerId) {
         \Resque::redis()->sRem(Key::localSchedulerProcesses(), $schedulerId);

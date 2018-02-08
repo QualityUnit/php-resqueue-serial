@@ -2,7 +2,9 @@
 
 namespace Resque\Pool;
 
+use Resque;
 use Resque\Config\GlobalConfig;
+use Resque\Key;
 use Resque\Process\BaseProcessImage;
 
 class AllocatorImage extends BaseProcessImage {
@@ -40,5 +42,13 @@ class AllocatorImage extends BaseProcessImage {
      */
     public function getCode() {
         return $this->code;
+    }
+
+    public function unregister() {
+        Resque::redis()->sRem(Key::localAllocatorProcesses(), $this->getId());
+    }
+
+    public function register() {
+        Resque::redis()->sAdd(Key::localAllocatorProcesses(), $this->getId());
     }
 }

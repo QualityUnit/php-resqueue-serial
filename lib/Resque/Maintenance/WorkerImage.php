@@ -2,6 +2,8 @@
 
 namespace Resque\Maintenance;
 
+use Resque;
+use Resque\Key;
 use Resque\Process\BaseProcessImage;
 
 class WorkerImage extends BaseProcessImage {
@@ -33,6 +35,10 @@ class WorkerImage extends BaseProcessImage {
         $this->code = $code;
     }
 
+    public function clearState() {
+        Resque::redis()->del(Key::worker($this->getId()));
+    }
+
     /**
      * @return string
      */
@@ -40,4 +46,19 @@ class WorkerImage extends BaseProcessImage {
         return $this->code;
     }
 
+    /**
+     * @param string $stateData
+     * @throws Resque\Api\RedisError
+     */
+    public function updateState($stateData) {
+        Resque::redis()->set(Key::worker($this->getId()), $stateData);
+    }
+
+    public function unregister() {
+        Resque::redis()->sRem(Key::localPoolProcesses($this->poolName), $this->getId());
+    }
+
+    public function register() {
+        Resque::redis()->sAdd(Key::localPoolProcesses($this->poolName), $this->getId());
+    }
 }

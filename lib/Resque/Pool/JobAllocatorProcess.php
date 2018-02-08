@@ -10,7 +10,6 @@ use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
-use Resque\StatsD;
 
 class JobAllocatorProcess extends AbstractProcess {
 
@@ -28,10 +27,6 @@ class JobAllocatorProcess extends AbstractProcess {
         $this->bufferKey = Key::localAllocatorBuffer($code);
     }
 
-    public function deinit() {
-        Resque::redis()->sRem(Key::localAllocatorProcesses(), $this->getImage()->getId());
-    }
-
     /**
      * main loop
      *
@@ -45,14 +40,6 @@ class JobAllocatorProcess extends AbstractProcess {
         }
 
         $this->processPayload($payload);
-    }
-
-    public function init() {
-        Resque::redis()->sAdd(Key::localAllocatorProcesses(), $this->getImage()->getId());
-    }
-
-    public function load() {
-        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
     }
 
     public function revertBuffer() {

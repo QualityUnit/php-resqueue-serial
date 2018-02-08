@@ -28,4 +28,8 @@ interface ProcessImage {
      * @return boolean
      */
     public function isLocal();
+
+    public function unregister();
+
+    public function register();
 }

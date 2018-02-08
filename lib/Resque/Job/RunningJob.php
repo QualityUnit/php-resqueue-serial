@@ -8,6 +8,7 @@ use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
 use Resque\Worker\WorkerBase;
+use Resque\Worker\WorkerProcess;
 
 class RunningJob {
 
@@ -23,10 +24,10 @@ class RunningJob {
     private $status;
 
     /**
-     * @param WorkerBase $worker
+     * @param WorkerProcess $worker
      * @param QueuedJob $queuedJob
      */
-    public function __construct(WorkerBase $worker, QueuedJob $queuedJob) {
+    public function __construct(WorkerProcess $worker, QueuedJob $queuedJob) {
         $this->id = $queuedJob->getId();
         $this->worker = $worker;
         $this->job = $queuedJob->getJob();

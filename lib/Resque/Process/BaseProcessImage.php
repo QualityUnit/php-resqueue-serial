@@ -4,7 +4,7 @@ namespace Resque\Process;
 
 use Resque\Config\GlobalConfig;
 
-class BaseProcessImage implements ProcessImage {
+abstract class BaseProcessImage implements ProcessImage {
 
     /** @var string */
     private $id;
@@ -14,30 +14,14 @@ class BaseProcessImage implements ProcessImage {
     private $nodeId;
 
     /**
-     * @param $id
-     * @param $nodeId
-     * @param $pid
+     * @param string $id
+     * @param string $nodeId
+     * @param string $pid
      */
     protected function __construct($id, $nodeId, $pid) {
         $this->id = $id;
         $this->pid = $pid;
         $this->nodeId = $nodeId;
-    }
-
-    /**
-     * @return self
-     */
-    public static function create() {
-        $nodeId = GlobalConfig::getInstance()->getNodeId();
-        $pid = getmypid();
-
-        return new self("$nodeId~$pid", $nodeId, $pid);
-    }
-
-    public static function fromId($processId) {
-        list($nodeId, $pid) = explode('~', $processId, 2);
-
-        return new self($processId, $nodeId, $pid);
     }
 
     /**
@@ -74,4 +58,8 @@ class BaseProcessImage implements ProcessImage {
     public function isLocal() {
         return GlobalConfig::getInstance()->getNodeId() === $this->getNodeId();
     }
+
+    abstract public function unregister();
+
+    abstract public function register();
 }

@@ -37,19 +37,20 @@ LUA;
      */
     public function __construct($poolName) {
         $this->poolName = $poolName;
-        $this->processSetKey = Key::localBatchPoolProcesses($this->poolName);
+        $this->processSetKey = Key::localPoolProcesses($this->poolName);
     }
 
 
     /**
      * @return WorkerImage[]
+     * @throws Resque\Api\RedisError
      */
     public function getLocalProcesses() {
         $workerIds = Resque::redis()->sMembers($this->processSetKey);
 
         $images = [];
         foreach ($workerIds as $workerId) {
-            $images[] = WorkerImage::fromId($workerId);
+            $images[] = WorkerImage::load($workerId);
         }
 
         return $images;
@@ -59,6 +60,7 @@ LUA;
      * Cleans up and recovers local processes.
      *
      * @throws ConfigException
+     * @throws Resque\Api\RedisError
      */
     public function maintain() {
         $pool = GlobalConfig::getInstance()->getBatchPoolConfig()->getPool($this->poolName);
@@ -76,6 +78,7 @@ LUA;
 
     /**
      * @param int $unitCount
+     * @throws Resque\Api\RedisError
      */
     private function cleanupUnitQueues($unitCount) {
         $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->poolName);
@@ -105,6 +108,7 @@ LUA;
      * @param int $workersPerUnit
      *
      * @return int[]
+     * @throws Resque\Api\RedisError
      */
     private function cleanupUnits($unitCount, $workersPerUnit) {
         $counts = array_fill(0, $unitCount, 0);
@@ -129,6 +133,7 @@ LUA;
 
     /**
      * @param string $unitId
+     * @throws Resque\Api\RedisError
      */
     private function clearQueue($unitId) {
         Resque::redis()->eval(

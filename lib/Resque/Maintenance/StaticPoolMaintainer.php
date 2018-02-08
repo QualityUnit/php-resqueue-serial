@@ -22,19 +22,20 @@ class StaticPoolMaintainer implements ProcessMaintainer {
      */
     public function __construct($poolName) {
         $this->poolName = $poolName;
-        $this->processSetKey = Key::localStaticPoolProcesses($this->poolName);
+        $this->processSetKey = Key::localPoolProcesses($this->poolName);
     }
 
 
     /**
      * @return WorkerImage[]
+     * @throws Resque\Api\RedisError
      */
     public function getLocalProcesses() {
         $workerIds = Resque::redis()->sMembers($this->processSetKey);
 
         $images = [];
         foreach ($workerIds as $workerId) {
-            $images[] = WorkerImage::fromId($workerId);
+            $images[] = WorkerImage::load($workerId);
         }
 
         return $images;
@@ -44,6 +45,7 @@ class StaticPoolMaintainer implements ProcessMaintainer {
      * Cleans up and recovers local processes.
      *
      * @throws ConfigException
+     * @throws Resque\Api\RedisError
      */
     public function maintain() {
         $workerLimit = GlobalConfig::getInstance()->getStaticPoolConfig()->getPool($this->poolName)->getWorkerCount();
@@ -59,6 +61,7 @@ class StaticPoolMaintainer implements ProcessMaintainer {
      * @param int $workerLimit
      *
      * @return int
+     * @throws Resque\Api\RedisError
      */
     private function cleanupWorkers($workerLimit) {
         $alive = 0;

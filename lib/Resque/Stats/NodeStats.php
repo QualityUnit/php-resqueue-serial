@@ -5,6 +5,7 @@ namespace Resque\Stats;
 
 
 use Resque;
+use Resque\Config\GlobalConfig;
 use Resque\Stats;
 use Resque\StatsD;
 
@@ -45,6 +46,6 @@ class NodeStats implements Stats {
     }
 
     private function incStat($stat) {
-        StatsD::increment(gethostname() . ".global.$stat");
+        StatsD::increment(GlobalConfig::getInstance()->getNodeId() . ".global.$stat");
     }
 }

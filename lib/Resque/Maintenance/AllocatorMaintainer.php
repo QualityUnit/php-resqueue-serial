@@ -18,13 +18,14 @@ class AllocatorMaintainer implements ProcessMaintainer {
 
     /**
      * @return AllocatorImage[]
+     * @throws \Resque\Api\RedisError
      */
     public function getLocalProcesses() {
         $allocatorIds = \Resque::redis()->sMembers(Key::localAllocatorProcesses());
         $images = [];
 
         foreach ($allocatorIds as $processId) {
-            $images[] = AllocatorImage::fromId($processId);
+            $images[] = AllocatorImage::load($processId);
         }
 
         return $images;
@@ -33,7 +34,7 @@ class AllocatorMaintainer implements ProcessMaintainer {
     /**
      * Cleans up and recovers local processes.
      *
-     * @return void
+     * @throws \Resque\Api\RedisError
      */
     public function maintain() {
         $jobLimit = GlobalConfig::getInstance()->getAllocatorConfig()->getJobCount();
@@ -57,6 +58,7 @@ class AllocatorMaintainer implements ProcessMaintainer {
      * @param int $batchLimit
      *
      * @return int[]
+     * @throws \Resque\Api\RedisError
      */
     private function cleanupAllocators($jobLimit, $batchLimit) {
         $jobAlive = 0;
@@ -159,6 +161,7 @@ class AllocatorMaintainer implements ProcessMaintainer {
 
     /**
      * @param AllocatorImage $image
+     * @throws \Resque\Api\RedisError
      */
     private function removeAllocatorRecord(AllocatorImage $image) {
         $processObject = $this->createProcessObject($image);

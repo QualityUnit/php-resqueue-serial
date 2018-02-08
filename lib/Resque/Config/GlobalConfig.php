@@ -43,13 +43,6 @@ class GlobalConfig {
     private $configPath;
 
     /**
-     * @param string $configPath
-     */
-    private function __construct($configPath) {
-        $this->configPath = $configPath;
-    }
-
-    /**
      * @return GlobalConfig
      */
     public static function getInstance() {
@@ -118,10 +111,19 @@ class GlobalConfig {
         $self->staticPools = new StaticPoolConfig($data['pools']['static']);
         $self->batchPools = new BatchPoolConfig($data['pools']['batch']);
         $self->allocatorConfig = new AllocatorConfig($data['allocators']);
+
+        $self->validatePoolNames();
     }
 
     private static function isNodeIdValid($nodeId) {
         return preg_match('/^\w+$/', $nodeId) === 1;
+    }
+
+    /**
+     * @param string $configPath
+     */
+    private function __construct($configPath) {
+        $this->configPath = $configPath;
     }
 
     /**
@@ -174,13 +176,6 @@ class GlobalConfig {
     }
 
     /**
-     * @deprecated
-     * @return string[]
-     */
-    public function getQueueList() {
-    }
-
-    /**
      * @return StaticPoolConfig
      */
     public function getStaticPoolConfig() {
@@ -208,20 +203,15 @@ class GlobalConfig {
         return $this->taskIncludePath;
     }
 
-    /**
-     * @param $queue
-     *
-     * @return WorkerConfig|null
-     */
-    public function getWorkerConfig($queue) {
-        try {
-            $queueData = $this->queues[$queue];
+    private function validatePoolNames() {
+        $intersection = array_intersect(
+            $this->staticPools->getPoolNames(),
+            $this->batchPools->getPoolNames()
+        );
 
-            return new WorkerConfig($queueData);
-        } catch (\Exception $ignore) {
+        if (!empty($intersection)) {
+            throw new \RuntimeException('All pool names must be unique.');
         }
-
-        return null;
     }
 
 }

@@ -12,28 +12,28 @@ class Key {
         return self::of('batch', 'allocation_failures');
     }
 
-    public static function committedBatch($id) {
-        return self::of('committed', $id);
+    public static function batchPoolBacklogList($poolName, $sourceId) {
+        return self::of('pool', $poolName, 'backlog', $sourceId);
     }
 
-    public static function committedBatchList() {
-        return self::of('committed');
+    public static function batchPoolQueuesSortedSet($poolName) {
+        return self::of('pool', $poolName, 'unit_queues');
     }
 
     public static function batchPoolSourceWorker($poolName) {
         return self::of('pool', $poolName);
     }
 
-    public static function batchPoolBacklogList($poolName, $sourceId) {
-        return self::of('pool', $poolName, 'backlog', $sourceId);
-    }
-
     public static function batchPoolUnitQueueSet($poolName, $unitId) {
         return self::of('pool', $poolName, $unitId, 'queues');
     }
 
-    public static function batchPoolQueuesSortedSet($poolName) {
-        return self::of('pool', $poolName, 'unit_queues');
+    public static function committedBatch($id) {
+        return self::of('committed', $id);
+    }
+
+    public static function committedBatchList() {
+        return self::of('committed');
     }
 
     /**
@@ -82,6 +82,15 @@ class Key {
     }
 
     /**
+     * @param string $poolName
+     *
+     * @return string
+     */
+    public static function localPoolProcesses($poolName) {
+        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'pool', $poolName);
+    }
+
+    /**
      * @return string
      */
     public static function localSchedulerPid() {
@@ -93,14 +102,6 @@ class Key {
      */
     public static function localSchedulerProcesses() {
         return self::of('workers', GlobalConfig::getInstance()->getNodeId(), 'scheduler');
-    }
-
-    public static function localStaticPoolProcesses($poolName) {
-        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'static_pool', $poolName);
-    }
-
-    public static function localBatchPoolProcesses($poolName) {
-        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'batch_pool', $poolName);
     }
 
     /**

@@ -7,6 +7,7 @@ use Resque\Config\GlobalConfig;
 use Resque\Log;
 use Resque\Process;
 use Resque\SignalHandler;
+use Resque\StatsD;
 
 abstract class AbstractProcess implements StandaloneProcess {
 
@@ -26,11 +27,10 @@ abstract class AbstractProcess implements StandaloneProcess {
         $this->title = $title;
     }
 
-
     /**
      * @return ProcessImage
      */
-    final public function getImage() {
+    public function getImage() {
         return $this->image;
     }
 
@@ -43,12 +43,7 @@ abstract class AbstractProcess implements StandaloneProcess {
         Process::setTitlePrefix($this->title);
         Process::setTitle('Initializing');
         $this->initLogger();
-
-        try {
-            $this->init();
-        } catch (\Exception $e) {
-            throw new \RuntimeException('Failed to initialize ' . getmypid() . "-{$this->title}.", 0, $e);
-        }
+        $this->getImage()->register();
 
         SignalHandler::instance()
             ->unregisterAll()
@@ -66,7 +61,7 @@ abstract class AbstractProcess implements StandaloneProcess {
         GlobalConfig::reload();
         $this->initLogger();
 
-        $this->load();
+        StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
 
         Log::notice('Reloaded');
     }
@@ -79,7 +74,7 @@ abstract class AbstractProcess implements StandaloneProcess {
     final public function unregister() {
         Process::setTitle('Shutting down');
 
-        $this->deinit();
+        $this->getImage()->unregister();
 
         SignalHandler::instance()->unregisterAll();
         Log::notice('Ended');
@@ -101,13 +96,7 @@ abstract class AbstractProcess implements StandaloneProcess {
         }
     }
 
-    abstract protected function deinit();
-
     abstract protected function doWork();
-
-    abstract protected function init();
-
-    abstract protected function load();
 
     abstract protected function prepareWork();
 
