@@ -5,7 +5,7 @@ namespace Resque\StatsD;
 /**
  * An interface for a statsd connection implementation
  */
-interface Connection {
+interface IConnection {
     /**
      * sends a message to statsd
      *

@@ -12,7 +12,6 @@ use Resque\Job\FailException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
-use Resque\Task\CreationException;
 use Resque\UniqueList;
 
 class StandardProcessor implements IProcessor {
@@ -56,11 +55,11 @@ class StandardProcessor implements IProcessor {
             $this->includePath($job);
 
             if (!class_exists($job->getClass())) {
-                throw new CreationException("Job class {$job->getClass()} does not exist.");
+                throw new TaskCreationException("Job class {$job->getClass()} does not exist.");
             }
 
             if (!method_exists($job->getClass(), 'perform')) {
-                throw new CreationException("Job class {$job->getClass()} does not contain a perform method.");
+                throw new TaskCreationException("Job class {$job->getClass()} does not contain a perform method.");
             }
 
             $className = $job->getClass();

@@ -2,7 +2,7 @@
 
 namespace Resque\Process;
 
-interface ProcessImage {
+interface IProcessImage {
 
     /**
      * @return string

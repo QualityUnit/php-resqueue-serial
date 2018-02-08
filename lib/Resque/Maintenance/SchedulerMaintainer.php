@@ -9,7 +9,7 @@ use Resque\Process\SchedulerImage;
 use Resque\Scheduler\SchedulerProcess;
 use Resque\SignalHandler;
 
-class SchedulerMaintainer implements ProcessMaintainer {
+class SchedulerMaintainer implements IProcessMaintainer {
 
     /**
      * @return SchedulerImage[]

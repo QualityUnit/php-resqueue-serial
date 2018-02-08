@@ -9,26 +9,26 @@ use Resque\Process;
 use Resque\SignalHandler;
 use Resque\StatsD;
 
-abstract class AbstractProcess implements StandaloneProcess {
+abstract class AbstractProcess implements IStandaloneProcess {
 
     /** @var bool */
     private $isShutDown = false;
-    /** @var ProcessImage */
+    /** @var IProcessImage */
     private $image;
     /** @var string */
     private $title;
 
     /**
      * @param string $title
-     * @param ProcessImage $image
+     * @param IProcessImage $image
      */
-    public function __construct($title, ProcessImage $image) {
+    public function __construct($title, IProcessImage $image) {
         $this->image = $image;
         $this->title = $title;
     }
 
     /**
-     * @return ProcessImage
+     * @return IProcessImage
      */
     public function getImage() {
         return $this->image;

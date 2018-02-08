@@ -9,7 +9,7 @@ use Resque\Config\GlobalConfig;
 use Resque\Log;
 use Resque\Maintenance\AllocatorMaintainer;
 use Resque\Maintenance\BatchPoolMaintainer;
-use Resque\Maintenance\ProcessMaintainer;
+use Resque\Maintenance\IProcessMaintainer;
 use Resque\Maintenance\SchedulerMaintainer;
 use Resque\Maintenance\StaticPoolMaintainer;
 use Resque\Process;
@@ -18,7 +18,7 @@ use Resque\StatsD;
 
 class InitProcess {
 
-    /** @var ProcessMaintainer[] */
+    /** @var IProcessMaintainer[] */
     private $maintainers = [];
 
     private $stopping = false;

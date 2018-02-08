@@ -1,95 +1,70 @@
 <?php
 
-
 namespace Resque\Worker;
 
-
 use Resque;
+use Resque\Config\GlobalConfig;
 use Resque\Key;
+use Resque\Process\AbstractProcessImage;
 
-class WorkerImage extends WorkerImageBase {
+class WorkerImage extends AbstractProcessImage {
 
-    /**
-     * @return string[] worker ids
-     */
-    public static function all() {
-        return Resque::redis()->sMembers(Key::workers());
-    }
-
-    /**
-     * @return $this
-     */
-    public function addToPool() {
-        Resque::redis()->sAdd(Key::workers(), $this->id);
-
-        return $this;
-    }
+    /** @var string */
+    private $poolName;
+    /** @var string */
+    private $code;
 
     /**
-     * @return $this
-     */
-    public function clearStarted() {
-        Resque::redis()->del(Key::workerStart($this->id));
-
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function clearState() {
-        Resque::redis()->del(Key::worker($this->id));
-
-        return $this;
-    }
-
-    /**
-     * @return bool
-     */
-    public function exists() {
-        return (bool)Resque::redis()->sIsMember(Key::workers(), $this->id);
-    }
-
-    /**
-     * @return string
-     */
-    public function getStarted() {
-        return Resque::redis()->get(Key::workerStart($this->id));
-    }
-
-    /**
-     * @return string
-     */
-    public function getState() {
-        return Resque::redis()->get(Key::worker($this->id));
-    }
-
-    /**
-     * @return $this
-     */
-    public function removeFromPool() {
-        Resque::redis()->sRem(Key::workers(), $this->id);
-
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setStartedNow() {
-        Resque::redis()->set(Key::workerStart($this->id), strftime('%a %b %d %H:%M:%S %Z %Y'));
-
-        return $this;
-    }
-
-    /**
-     * @param string $data
+     * @param string $poolName
+     * @param string $code
      *
-     * @return $this
+     * @return self
      */
-    public function updateState($data) {
-        Resque::redis()->set(Key::worker($this->id), $data);
+    public static function create($poolName, $code) {
+        $nodeId = GlobalConfig::getInstance()->getNodeId();
+        $pid = getmypid();
+        $id = "$nodeId~$poolName~$code~$pid";
 
-        return $this;
+        return new self($id, $nodeId, $poolName, $code, $pid);
+    }
+
+    public static function load($workerId) {
+        list($nodeId, $poolName, $code, $pid) = explode('~', $workerId, 4);
+
+        return new self($workerId, $nodeId, $poolName, $code, $pid);
+    }
+
+    protected function __construct($workerId, $nodeId, $poolName, $code, $pid) {
+        parent::__construct($workerId, $nodeId, $pid);
+
+        $this->poolName = $poolName;
+        $this->code = $code;
+    }
+
+    public function clearState() {
+        Resque::redis()->del(Key::worker($this->getId()));
+    }
+
+    /**
+     * @return string
+     */
+    public function getCode() {
+        return $this->code;
+    }
+
+    /**
+     * @param string $stateData
+     * @throws Resque\Api\RedisError
+     */
+    public function updateState($stateData) {
+        Resque::redis()->set(Key::worker($this->getId()), $stateData);
+    }
+
+    public function unregister() {
+        Resque::redis()->sRem(Key::localPoolProcesses($this->poolName), $this->getId());
+    }
+
+    public function register() {
+        Resque::redis()->sAdd(Key::localPoolProcesses($this->poolName), $this->getId());
     }
 }

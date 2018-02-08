@@ -9,8 +9,9 @@ use Resque\Key;
 use Resque\Log;
 use Resque\Process;
 use Resque\SignalHandler;
+use Resque\Worker\WorkerImage;
 
-class StaticPoolMaintainer implements ProcessMaintainer {
+class StaticPoolMaintainer implements IProcessMaintainer {
 
     /** @var string */
     private $poolName;

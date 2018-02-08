@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Resque\Job\Reservations;
+namespace Resque\Job;
 
 
 use Resque\Api\ResqueException;

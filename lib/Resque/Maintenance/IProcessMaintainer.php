@@ -2,12 +2,12 @@
 
 namespace Resque\Maintenance;
 
-use Resque\Process\ProcessImage;
+use Resque\Process\IProcessImage;
 
-interface ProcessMaintainer {
+interface IProcessMaintainer {
 
     /**
-     * @return ProcessImage[]
+     * @return IProcessImage[]
      */
     public function getLocalProcesses();
 

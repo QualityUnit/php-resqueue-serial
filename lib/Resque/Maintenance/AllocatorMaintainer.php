@@ -11,7 +11,7 @@ use Resque\Pool\JobAllocatorProcess;
 use Resque\Process;
 use Resque\SignalHandler;
 
-class AllocatorMaintainer implements ProcessMaintainer {
+class AllocatorMaintainer implements IProcessMaintainer {
 
     const PREFIX_BATCH = 'batch-';
     const PREFIX_JOB = 'job-';

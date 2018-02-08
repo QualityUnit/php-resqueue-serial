@@ -2,10 +2,10 @@
 
 namespace Resque\Process;
 
-interface StandaloneProcess {
+interface IStandaloneProcess {
 
     /**
-     * @return ProcessImage
+     * @return IProcessImage
      */
     public function getImage();
 

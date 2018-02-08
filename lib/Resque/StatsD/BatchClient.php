@@ -7,17 +7,17 @@ namespace Resque\StatsD;
  */
 class BatchClient extends AbstractClient {
 
-    /** @var Connection */
+    /** @var IConnection */
     private $connection;
 
     /** @var string[] */
     private $batch = [];
 
     /**
-     * @param Connection $connection
+     * @param IConnection $connection
      * @param string $namespace global key namespace
      */
-    public function __construct(Connection $connection, $namespace = '') {
+    public function __construct(IConnection $connection, $namespace = '') {
         parent::__construct($namespace);
         $this->connection = $connection;
     }

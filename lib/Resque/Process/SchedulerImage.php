@@ -8,7 +8,7 @@ use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Key;
 
-class SchedulerImage extends BaseProcessImage {
+class SchedulerImage extends AbstractProcessImage {
 
     /**
      * @return self

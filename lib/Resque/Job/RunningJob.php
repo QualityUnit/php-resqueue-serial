@@ -7,14 +7,13 @@ use Resque\Api\Job;
 use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
-use Resque\Worker\WorkerBase;
 use Resque\Worker\WorkerProcess;
 
 class RunningJob {
 
     /** @var string */
     private $id;
-    /** @var WorkerBase */
+    /** @var WorkerProcess */
     private $worker;
     /** @var Job */
     private $job;
@@ -63,7 +62,7 @@ class RunningJob {
     }
 
     /**
-     * @return WorkerBase
+     * @return WorkerProcess
      */
     public function getWorker() {
         return $this->worker;
@@ -122,13 +121,9 @@ class RunningJob {
      * @return Job
      */
     private function getJobToReschedule(JobDescriptor $descriptor) {
-        $jobToReschedule = $this->job;
-        if ($descriptor !== null) {
-            $jobToReschedule = Job::fromJobDescriptor($descriptor);
-            $jobToReschedule->setQueue($this->job->getQueue());
-        }
-
-        return $jobToReschedule;
+        return $descriptor !== null
+            ? Job::fromJobDescriptor($descriptor)
+            : $this->job;
     }
 
     /**

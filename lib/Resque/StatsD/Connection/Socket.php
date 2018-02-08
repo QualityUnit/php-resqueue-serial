@@ -2,9 +2,9 @@
 
 namespace Resque\StatsD\Connection;
 
-use Resque\StatsD\Connection;
+use Resque\StatsD\IConnection;
 
-abstract class Socket implements Connection {
+abstract class Socket implements IConnection {
     /** @var string */
     private $host;
 

@@ -7,14 +7,14 @@ namespace Resque\StatsD;
  */
 class Client extends AbstractClient {
 
-    /** @var Connection */
+    /** @var IConnection */
     private $connection;
 
     /**
-     * @param Connection $connection
+     * @param IConnection $connection
      * @param string $namespace global key namespace
      */
-    public function __construct(Connection $connection, $namespace = '') {
+    public function __construct(IConnection $connection, $namespace = '') {
         parent::__construct($namespace);
         $this->connection = $connection;
     }

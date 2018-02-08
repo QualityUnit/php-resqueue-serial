@@ -4,7 +4,7 @@ namespace Resque\Process;
 
 use Resque\Config\GlobalConfig;
 
-abstract class BaseProcessImage implements ProcessImage {
+abstract class AbstractProcessImage implements IProcessImage {
 
     /** @var string */
     private $id;

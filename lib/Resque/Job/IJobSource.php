@@ -4,8 +4,6 @@
 namespace Resque\Job;
 
 
-use Resque\Job\Reservations\JobUnavailableException;
-
 interface IJobSource {
 
     /**

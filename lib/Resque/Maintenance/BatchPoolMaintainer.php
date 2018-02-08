@@ -8,10 +8,11 @@ use Resque\Config\GlobalConfig;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
-use Resque\Process\ProcessImage;
+use Resque\Process\IProcessImage;
 use Resque\SignalHandler;
+use Resque\Worker\WorkerImage;
 
-class BatchPoolMaintainer implements ProcessMaintainer {
+class BatchPoolMaintainer implements IProcessMaintainer {
 
     /**
      * KEYS [UNIT_QUEUES_SET_KEY, POOL_QUEUES_KEY]
@@ -222,9 +223,9 @@ LUA;
     }
 
     /**
-     * @param ProcessImage $image
+     * @param IProcessImage $image
      */
-    private function terminateWorker(ProcessImage $image) {
+    private function terminateWorker(IProcessImage $image) {
         Log::notice("Terminating {$this->poolName} worker process");
         posix_kill($image->getPid(), SIGTERM);
     }

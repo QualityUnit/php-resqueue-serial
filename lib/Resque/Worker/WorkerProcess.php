@@ -5,23 +5,24 @@ namespace Resque\Worker;
 
 
 use Resque\Job\IJobSource;
+use Resque\Job\JobUnavailableException;
+use Resque\Job\Processor\StandardProcessor;
 use Resque\Job\QueuedJob;
-use Resque\Job\Reservations\JobUnavailableException;
 use Resque\Job\RunningJob;
 use Resque\Log;
-use Resque\Maintenance\WorkerImage;
 use Resque\Process\AbstractProcess;
 
 class WorkerProcess extends AbstractProcess {
 
-    /**
-     * @var IJobSource
-     */
+    /** @var IJobSource */
     private $source;
+    /** @var StandardProcessor */
+    private $processor;
 
     public function __construct(string $title, IJobSource $source, WorkerImage $image) {
         parent::__construct($title, $image);
         $this->source = $source;
+        $this->processor = new StandardProcessor();
     }
 
     /**
@@ -53,8 +54,10 @@ class WorkerProcess extends AbstractProcess {
         $runningJob = $this->startWorkOn($queuedJob);
 
         try {
-            $this->resolveProcessor($runningJob->getJob())->process($runningJob);
-            Log::info("Processing of job {$runningJob->getId()} has finished");
+            $this->processor->process($runningJob);
+            Log::info("Processing of job {$runningJob->getId()} has finished", [
+                'payload' => $runningJob->getJob()->toString()
+            ]);
         } catch (\Exception $e) {
             Log::critical('Unexpected error occurred during execution of a job.', [
                 'exception' => $e,
@@ -62,11 +65,11 @@ class WorkerProcess extends AbstractProcess {
             ]);
         }
 
-        $this->workDone($runningJob);
+        $this->getImage()->clearState();
     }
 
     protected function prepareWork() {
-        // TODO: Implement prepareWork() method.
+        // NOOP
     }
 
     private function getWorkerStatusData(RunningJob $runningJob) {
@@ -80,6 +83,7 @@ class WorkerProcess extends AbstractProcess {
      * @param QueuedJob $queuedJob
      *
      * @return RunningJob
+     * @throws \Resque\Api\RedisError
      */
     private function startWorkOn(QueuedJob $queuedJob) {
         $runningJob = new RunningJob($this, $queuedJob);
@@ -87,9 +91,5 @@ class WorkerProcess extends AbstractProcess {
         $this->getImage()->updateState($this->getWorkerStatusData($runningJob));
 
         return $runningJob;
-    }
-
-    private function workDone(RunningJob $runningJob) {
-        $this->getImage()->clearState();
     }
 }

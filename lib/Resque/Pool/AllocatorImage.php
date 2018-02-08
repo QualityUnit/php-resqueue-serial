@@ -5,9 +5,9 @@ namespace Resque\Pool;
 use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Key;
-use Resque\Process\BaseProcessImage;
+use Resque\Process\AbstractProcessImage;
 
-class AllocatorImage extends BaseProcessImage {
+class AllocatorImage extends AbstractProcessImage {
 
     /** @var string */
     private $code;
