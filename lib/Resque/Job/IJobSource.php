@@ -7,9 +7,12 @@ namespace Resque\Job;
 interface IJobSource {
 
     /**
-     * @return QueuedJob|null Next job or null if source is empty
-     * @throws JobUnavailableException when source can no longer provide jobs
+     * @return QueuedJob|null next job or null if source is empty
      */
-    public function getNextJob();
+    public function bufferNextJob();
 
+    /**
+     * @return QueuedJob|null buffered job or null if buffer is empty
+     */
+    public function bufferPop();
 }

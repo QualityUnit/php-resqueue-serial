@@ -210,7 +210,7 @@ class GlobalConfig {
         );
 
         if (!empty($intersection)) {
-            throw new \RuntimeException('All pool names must be unique.');
+            throw new ConfigException('All pool names must be unique.');
         }
     }
 

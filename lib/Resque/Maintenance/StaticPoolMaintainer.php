@@ -10,6 +10,7 @@ use Resque\Log;
 use Resque\Process;
 use Resque\SignalHandler;
 use Resque\Worker\WorkerImage;
+use Resque\Worker\WorkerProcess;
 
 class StaticPoolMaintainer implements IProcessMaintainer {
 
@@ -98,7 +99,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
             SignalHandler::instance()->unregisterAll();
 
             $image = WorkerImage::create($this->poolName, 'static');
-            $worker = new StaticWorkerProcess($image);
+            $worker = new WorkerProcess($staticSource, $image);
             if ($worker === null) {
                 exit(0);
             }

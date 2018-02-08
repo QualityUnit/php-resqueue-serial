@@ -5,7 +5,6 @@ namespace Resque\Worker;
 
 
 use Resque\Job\IJobSource;
-use Resque\Job\JobUnavailableException;
 use Resque\Job\Processor\StandardProcessor;
 use Resque\Job\QueuedJob;
 use Resque\Job\RunningJob;
@@ -19,8 +18,8 @@ class WorkerProcess extends AbstractProcess {
     /** @var StandardProcessor */
     private $processor;
 
-    public function __construct(string $title, IJobSource $source, WorkerImage $image) {
-        parent::__construct($title, $image);
+    public function __construct(IJobSource $source, WorkerImage $image) {
+        parent::__construct("w-{$image->getPoolName()}-{$image->getCode()}", $image);
         $this->source = $source;
         $this->processor = new StandardProcessor();
     }
@@ -34,15 +33,7 @@ class WorkerProcess extends AbstractProcess {
     }
 
     protected function doWork() {
-        try {
-            $queuedJob = $this->source->getNextJob();
-        } catch (JobUnavailableException $e) {
-            Log::notice('Job not found. Terminating.', [
-                'exception' => $e
-            ]);
-            $this->shutDown();
-            return;
-        }
+        $queuedJob = $this->source->bufferNextJob();
 
         if ($queuedJob === null) {
             Log::debug('Job not found.');
@@ -65,18 +56,12 @@ class WorkerProcess extends AbstractProcess {
             ]);
         }
 
-        $this->getImage()->clearState();
+        $bufferedJob = $this->source->bufferPop();
+        $this->validateJob($queuedJob, $bufferedJob);
     }
 
     protected function prepareWork() {
         // NOOP
-    }
-
-    private function getWorkerStatusData(RunningJob $runningJob) {
-        return json_encode(array(
-            'run_at' => strftime('%a %b %d %H:%M:%S %Z %Y', $runningJob->getStartTime()),
-            'payload' => $runningJob->getJob()->toArray()
-        ));
     }
 
     /**
@@ -86,10 +71,20 @@ class WorkerProcess extends AbstractProcess {
      * @throws \Resque\Api\RedisError
      */
     private function startWorkOn(QueuedJob $queuedJob) {
-        $runningJob = new RunningJob($this, $queuedJob);
+        return new RunningJob($this, $queuedJob);
+    }
 
-        $this->getImage()->updateState($this->getWorkerStatusData($runningJob));
-
-        return $runningJob;
+    /**
+     * @param QueuedJob $expected
+     * @param QueuedJob $actual
+     */
+    private function validateJob(QueuedJob $expected, QueuedJob $actual) {
+        if ($expected->getId() !== $actual->getId()) {
+            Log::critical('Dequeued job does not match buffered job.', [
+                'payload' => $expected->toString(),
+                'actual' => $actual->toString()
+            ]);
+            exit(0);
+        }
     }
 }

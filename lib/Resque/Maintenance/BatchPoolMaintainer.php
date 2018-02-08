@@ -11,6 +11,7 @@ use Resque\Process;
 use Resque\Process\IProcessImage;
 use Resque\SignalHandler;
 use Resque\Worker\WorkerImage;
+use Resque\Worker\WorkerProcess;
 
 class BatchPoolMaintainer implements IProcessMaintainer {
 
@@ -168,7 +169,7 @@ LUA;
             SignalHandler::instance()->unregisterAll();
 
             $image = WorkerImage::create($this->poolName, $this->resolveLocalUnitId($unitNumber));
-            $worker = new BatchWorkerProcess($image);
+            $worker = new WorkerProcess($batchSource, $image);
             if ($worker === null) {
                 exit(0);
             }

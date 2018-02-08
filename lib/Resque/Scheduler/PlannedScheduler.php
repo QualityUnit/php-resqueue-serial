@@ -57,6 +57,7 @@ LUA;
      * no more jobs left to run at that timestamp.
      *
      * @param int $timestamp Matching timestamp for $key.
+     * @throws Resque\Api\RedisError
      */
     private static function cleanupTimestamp($timestamp) {
         $redis = Resque::redis();
@@ -72,6 +73,7 @@ LUA;
      * @param $planId
      *
      * @return null|PlannedJob
+     * @throws Resque\Api\RedisError
      */
     private static function getPlannedJob($planId) {
         $data = Resque::redis()->get(Key::plan($planId));
@@ -100,11 +102,15 @@ LUA;
      * planned jobs and pushes them across to Resque.
      *
      * @param int $timestamp Search for any items up to this timestamp to schedule.
+     *
+     * @throws Resque\Api\DeferredException
+     * @throws Resque\Api\RedisError
+     * @throws Resque\Api\UniqueException
      */
     public function enqueueItemsForTimestamp($timestamp) {
         while (($plannedJob = $this->nextJobForTimestamp($timestamp)) !== null) {
             $job = $plannedJob->getJob();
-            Log::info("[planner] queueing {$job->getClass()} in {$job->getQueue()}");
+            Log::info("[planner] queueing {$job->getName()}");
 
             $futurePlannedJob = $this->moveTimestamp($plannedJob, $timestamp);
             Resque::redis()->eval(
@@ -137,6 +143,7 @@ LUA;
      * @param $timestamp
      *
      * @return PlannedJob
+     * @throws Resque\Api\RedisError
      */
     private function moveTimestamp(PlannedJob $plannedJob, $timestamp) {
         $futurePlannedJob = $plannedJob->copy();
@@ -157,6 +164,7 @@ LUA;
      * @param int $timestamp Instance of DateTime or UNIX timestamp.
      *
      * @return null|PlannedJob Job at timestamp.
+     * @throws Resque\Api\RedisError
      */
     private function nextJobForTimestamp($timestamp) {
         $planId = Resque::redis()->lPop(Key::planTimestamp($timestamp));
@@ -184,6 +192,7 @@ LUA;
      * @param int $at UNIX timestamp. Defaults to now.
      *
      * @return int|false UNIX timestamp, or false if nothing to run.
+     * @throws Resque\Api\RedisError
      */
     private function nextTimestamp($at = null) {
         if ($at === null) {

@@ -41,8 +41,11 @@ class WorkerImage extends AbstractProcessImage {
         $this->code = $code;
     }
 
-    public function clearState() {
-        Resque::redis()->del(Key::worker($this->getId()));
+    /**
+     * @return string
+     */
+    public function getPoolName() {
+        return $this->poolName;
     }
 
     /**
@@ -50,14 +53,6 @@ class WorkerImage extends AbstractProcessImage {
      */
     public function getCode() {
         return $this->code;
-    }
-
-    /**
-     * @param string $stateData
-     * @throws Resque\Api\RedisError
-     */
-    public function updateState($stateData) {
-        Resque::redis()->set(Key::worker($this->getId()), $stateData);
     }
 
     public function unregister() {

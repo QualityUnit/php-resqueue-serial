@@ -110,13 +110,6 @@ class Job {
     }
 
     /**
-     * @deprecated
-     * @return string
-     */
-    public function getQueue() {
-    }
-
-    /**
      * @return string
      */
     public function getName() {
@@ -158,15 +151,6 @@ class Job {
      */
     public function isMonitored() {
         return $this->isMonitored;
-    }
-
-    /**
-     * @deprecated
-     * @param string $queue
-     *
-     * @return Job
-     */
-    public function setQueue($queue) {
     }
 
     public function toArray() {

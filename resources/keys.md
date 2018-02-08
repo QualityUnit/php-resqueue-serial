@@ -27,7 +27,7 @@ resqu-v4:
         // <allocator_id> == <node_id>~<code>~<pid>
         allocator: set(<allocator_id>)
 
-    worker:<worker_id>: <job_data>
+    worker:<worker_id>: list(<job_data>)
 
     unique:<unique_id>:
         state: {'queued', 'running'}
