@@ -15,6 +15,7 @@ class QueueStats implements Stats {
     private $queueName;
 
     /**
+     * @deprecated
      * @param $queueName
      */
     public function __construct($queueName) {

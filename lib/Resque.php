@@ -1,9 +1,15 @@
 <?php
 
+use Resque\Api\DeferredException;
 use Resque\Api\Job;
-use Resque\Queue\Queue;
+use Resque\Api\UniqueException;
+use Resque\Job\QueuedJob;
+use Resque\Key;
+use Resque\Queue\JobQueue;
 use Resque\Redis;
 use Resque\Scheduler\DelayedScheduler;
+use Resque\Stats\QueueStats;
+use Resque\UniqueList;
 
 class Resque {
 
@@ -16,18 +22,46 @@ class Resque {
      */
     private static $redisServer;
 
+    /**
+     * @return string
+     */
     public static function generateJobId() {
         return md5(uniqid('', true));
     }
 
+    /**
+     * @param Job $job
+     * @param bool $checkUnique
+     *
+     * @return QueuedJob
+     * @throws DeferredException
+     * @throws UniqueException
+     * @throws \Resque\Api\RedisError
+     */
     public static function enqueue(Job $job, $checkUnique) {
-        return Queue::push($job, $checkUnique)->getId();
+        UniqueList::add($job, !$checkUnique);
+
+        $unassignedQueue = new JobQueue(Key::unassigned(), new QueueStats('refactorMePrettyPlease'));
+        return $unassignedQueue->push($job);
     }
 
+    /**
+     * @param int $delay Delay in seconds
+     * @param Job $job
+     * @param bool $checkUnique
+     *
+     * @throws DeferredException
+     * @throws UniqueException
+     * @throws \Resque\Api\RedisError
+     */
     public static function enqueueDelayed($delay, Job $job, $checkUnique) {
         DelayedScheduler::schedule(time() + $delay, $job, $checkUnique);
     }
 
+    /**
+     * @return Redis
+     * @throws \Resque\Api\RedisError
+     */
     public static function redis() {
         if (self::$redis !== null) {
             return self::$redis;

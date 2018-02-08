@@ -50,6 +50,7 @@ LUA;
      *
      * @throws DeferredException if job was deferred and should not be queued
      * @throws UniqueException if adding wasn't successful and job could not be deferred
+     * @throws Api\RedisError
      */
     public static function add(Job $job, $ignoreFail = false) {
         $uniqueId = $job->getUniqueId();
@@ -102,6 +103,7 @@ LUA;
      * @param $uniqueId
      *
      * @return false|string Return false
+     * @throws Api\RedisError
      */
     public static function finalize($uniqueId) {
         return !$uniqueId
