@@ -9,8 +9,6 @@ use Resque\Job\PlannedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
-use Resque\Redis;
-use Resque\ResqueImpl;
 
 class PlannedScheduler implements IScheduler {
 
@@ -123,7 +121,7 @@ LUA;
                     ]
             );
 
-            ResqueImpl::getInstance()->jobEnqueue($job, true);
+            Resque::jobEnqueue($job, true);
         }
     }
 

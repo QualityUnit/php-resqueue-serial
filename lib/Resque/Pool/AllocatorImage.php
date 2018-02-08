@@ -2,6 +2,7 @@
 
 namespace Resque\Pool;
 
+use Resque\Config\GlobalConfig;
 use Resque\Process\BaseProcessImage;
 
 class AllocatorImage extends BaseProcessImage {

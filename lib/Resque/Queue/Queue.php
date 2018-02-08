@@ -11,7 +11,6 @@ use Resque\Job\IJobSource;
 use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
-use Resque\ResqueImpl;
 use Resque\Stats;
 use Resque\Stats\QueueStats;
 use Resque\UniqueList;
@@ -36,7 +35,7 @@ class Queue implements IJobSource {
      * @throws UniqueException
      */
     public static function push(Job $job, $checkUnique = true) {
-        $queuedJob = new QueuedJob($job, ResqueImpl::getInstance()->generateJobId());
+        $queuedJob = new QueuedJob($job, Resque::generateJobId());
 
         UniqueList::add($job, !$checkUnique);
 

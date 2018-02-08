@@ -1,9 +1,8 @@
 <?php
 
-
 namespace Resque\Job\Processor;
 
-
+use Resque;
 use Resque\Api\Job;
 use Resque\Api\RescheduleException;
 use Resque\Api\RetryException;
@@ -13,7 +12,6 @@ use Resque\Job\FailException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
-use Resque\ResqueImpl;
 use Resque\Task\CreationException;
 use Resque\UniqueList;
 
@@ -89,9 +87,9 @@ class StandardProcessor implements IProcessor {
         $deferredJob = Job::fromArray($deferred);
         $delay = $deferredJob->getUid()->getDeferralDelay();
         if ($delay > 0) {
-            ResqueImpl::getInstance()->jobEnqueueDelayed($delay, $deferredJob, true);
+            Resque::jobEnqueueDelayed($delay, $deferredJob, true);
         } else {
-            ResqueImpl::getInstance()->jobEnqueue($deferredJob, true);
+            Resque::jobEnqueue($deferredJob, true);
         }
     }
 

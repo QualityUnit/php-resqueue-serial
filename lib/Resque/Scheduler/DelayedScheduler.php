@@ -9,7 +9,6 @@ use Resque\Api\Job;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
-use Resque\ResqueImpl;
 
 class DelayedScheduler implements IScheduler {
 
@@ -25,7 +24,7 @@ class DelayedScheduler implements IScheduler {
         while (($job = $this->nextJobForTimestamp($timestamp)) !== null) {
             Log::info("queueing {$job->getClass()} in {$job->getQueue()} [delayed]");
 
-            ResqueImpl::getInstance()->jobEnqueue($job, false);
+            Resque::jobEnqueue($job, false);
         }
     }
 

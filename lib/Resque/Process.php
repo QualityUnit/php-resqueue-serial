@@ -1,8 +1,8 @@
 <?php
 
-
 namespace Resque;
 
+use Resque;
 
 class Process {
     /** @var string */
@@ -29,12 +29,12 @@ class Process {
 
         if ($pid === 0) {
             // Close the connection to Redis after forking. This is a workaround for issues phpredis has.
-            ResqueImpl::getInstance()->resetRedis();
+            Resque::resetRedis();
         }
 
         return $pid;
     }
-    
+
     public static function setTitle($title) {
         if (function_exists('cli_set_process_title') && PHP_OS !== 'Darwin') {
             cli_set_process_title(self::getTitlePrefix() . ": $title");

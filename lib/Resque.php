@@ -1,87 +1,81 @@
 <?php
 
-
+use Resque\Api\Job;
 use Resque\Api\JobDescriptor;
-use Resque\Api\ResqueApi;
-use Resque\Api\UniqueException;
+use Resque\Queue\Queue;
 use Resque\Redis;
-use Resque\ResqueImpl;
+use Resque\Scheduler\PlannedScheduler;
+use Resque\Scheduler\SchedulerProcess;
 
 class Resque {
 
     const VERSION_PREFIX = 'resque-v3';
 
-    /** @var ResqueApi */
-    private static $instance;
-
+    /** @var Redis Instance of Resque_Redis that talks to redis. */
+    private static $redis;
     /**
-     * @param string $queue The name of the queue to place the job in.
-     * @param JobDescriptor $job
-     *
-     * @return string Job ID when the job was created
-     * @throws UniqueException
+     * @var mixed Host/port combination separated by a colon, or a nested array of server switch
+     *         host/port pairs
      */
+    private static $redisServer;
+
     public static function enqueue($queue, JobDescriptor $job) {
-        return self::getInstance()->enqueue($queue, $job);
+        return self::jobEnqueue(Job::fromJobDescriptor($job)->setQueue($queue), true);
     }
 
-    /**
-     * @param int $in Number of seconds from now when the job should be executed.
-     * @param string $queue The name of the queue to place the job in.
-     * @param JobDescriptor $job
-     */
-    public static function enqueueIn($in, $queue, JobDescriptor $job) {
-        self::getInstance()->enqueueDelayed($in, $queue, $job);
+    public static function enqueueDelayed($delay, $queue, JobDescriptor $job) {
+        self::jobEnqueueDelayed($delay, Job::fromJobDescriptor($job)->setQueue($queue), true);
     }
 
-    /**
-     * @param \DateTime $startDate
-     * @param \DateInterval $recurrencePeriod
-     * @param string $queue
-     * @param JobDescriptor $job
-     * @return string Plan identifier
-     */
+    public static function generateJobId() {
+        return md5(uniqid('', true));
+    }
+
+    public static function jobEnqueue(Job $job, $checkUnique) {
+        return Queue::push($job, $checkUnique)->getId();
+    }
+
+    public static function jobEnqueueDelayed($delay, Job $job, $checkUnique) {
+        SchedulerProcess::schedule(time() + $delay, $job, $checkUnique);
+    }
+
     public static function planCreate(\DateTime $startDate, \DateInterval $recurrencePeriod, $queue, JobDescriptor $job) {
-        return self::getInstance()->planCreate($startDate, $recurrencePeriod, $queue, $job);
-    }
-
-    /**
-     * @param string $id Plan identifier
-     * @return boolean
-     */
-    public static function planRemove($id) {
-        return self::getInstance()->planRemove($id);
-    }
-
-    /**
-     * @return ResqueApi
-     */
-    public static function getInstance() {
-        if (!self::$instance) {
-            self::$instance = new ResqueImpl();
+        if ($recurrencePeriod->invert === 1) {
+            throw new Exception('Expected positive recurrence period');
         }
 
-        return self::$instance;
+        return PlannedScheduler::insertJob($startDate, $recurrencePeriod, Job::fromJobDescriptor($job)->setQueue($queue));
     }
 
-    /**
-     * @return Redis
-     */
+    public static function planRemove($id) {
+        return PlannedScheduler::removeJob($id);
+    }
+
     public static function redis() {
-        return self::getInstance()->redis();
+        if (self::$redis !== null) {
+            return self::$redis;
+        }
+
+        self::$redis = new Redis(self::$redisServer);
+
+        Redis::prefix(\Resque::VERSION_PREFIX);
+
+        return self::$redis;
     }
 
-    /**
-     * Given a host/port combination separated by a colon, set it as
-     * the redis server that Resque will talk to.
-     *
-     * @param mixed $server Host/port combination separated by a colon, DSN-formatted URI, or
-     *                      a callable that receives the configured database ID
-     *                      and returns a Resque_Redis instance, or
-     *                      a nested array of servers with host/port pairs.
-     * @param int $database
-     */
-    public static function setBackend($server, $database = 0) {
-        self::getInstance()->setBackend($server, $database);
+    public static function resetRedis() {
+        if (self::$redis === null) {
+            return;
+        }
+        try {
+            self::$redis->close();
+        } catch (Exception $ignore) {
+        }
+        self::$redis = null;
+    }
+
+    public static function setBackend($server) {
+        self::$redisServer = $server;
+        self::$redis = null;
     }
 }

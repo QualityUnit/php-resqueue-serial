@@ -7,7 +7,6 @@ use Resque\Api\Job;
 use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
-use Resque\ResqueImpl;
 use Resque\Worker\WorkerBase;
 
 class RunningJob {
@@ -70,14 +69,14 @@ class RunningJob {
     }
 
     public function reschedule(JobDescriptor $descriptor) {
-        ResqueImpl::getInstance()->jobEnqueue($this->getJobToReschedule($descriptor), false);
+        Resque::jobEnqueue($this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
 
     public function rescheduleDelayed(JobDescriptor $descriptor, $in) {
-        ResqueImpl::getInstance()->jobEnqueueDelayed($in,
-                $this->getJobToReschedule($descriptor), false);
+        Resque::jobEnqueueDelayed($in,
+            $this->getJobToReschedule($descriptor), false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
@@ -91,7 +90,7 @@ class RunningJob {
 
         $this->job->incFailCount();
 
-        $newJobId = ResqueImpl::getInstance()->jobEnqueue($this->job, false);
+        $newJobId = Resque::jobEnqueue($this->job, false);
         $this->reportRetry($e, $newJobId);
         $this->status->setRetried();
     }
