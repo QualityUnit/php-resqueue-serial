@@ -10,19 +10,11 @@ use Resque\Process;
 
 class DelayedScheduler implements IScheduler {
 
-    /**
-     * Schedule all of the delayed jobs for a given timestamp.
-     * Searches for all items for a given timestamp, pulls them off the list of
-     * delayed jobs and pushes them across to Resque.
-     *
-     * @param int $timestamp Search for any items up to this timestamp to schedule.
-     */
-    public function enqueueItemsForTimestamp($timestamp) {
-        while (($job = $this->nextJobForTimestamp($timestamp)) !== null) {
-            Log::info("queueing {$job->getName()} [delayed]");
+    public static function schedule($at, Job $job, $checkUnique = true) {
+        UniqueList::add($job, !$checkUnique);
 
-            Resque::enqueue($job, false);
-        }
+        Resque::redis()->rPush(Key::delayed($at), json_encode($job->toArray()));
+        Resque::redis()->zAdd(Key::delayedQueueSchedule(), $at, $at);
     }
 
     /**
@@ -55,27 +47,18 @@ class DelayedScheduler implements IScheduler {
     }
 
     /**
-     * Find the first timestamp in the delayed schedule before/including the timestamp.
-     * Will find and return the first timestamp upto and including the given
-     * timestamp. This is the heart of the ResqueScheduler that will make sure
-     * that any jobs scheduled for the past when the worker wasn't running are
-     * also queued up.
+     * Schedule all of the delayed jobs for a given timestamp.
+     * Searches for all items for a given timestamp, pulls them off the list of
+     * delayed jobs and pushes them across to Resque.
      *
-     * @param int $at UNIX timestamp. Defaults to now.
-     *
-     * @return int|false UNIX timestamp, or false if nothing to run.
+     * @param int $timestamp Search for any items up to this timestamp to schedule.
      */
-    private function nextTimestamp($at = null) {
-        if ($at === null) {
-            $at = time();
-        }
+    private function enqueueItemsForTimestamp($timestamp) {
+        while (($job = $this->nextJobForTimestamp($timestamp)) !== null) {
+            Log::info("queueing {$job->getName()} [delayed]");
 
-        $items = Resque::redis()->zRangeByScore(Key::delayedQueueSchedule(), '-inf', $at, ['limit' => [0, 1]]);
-        if (!empty($items)) {
-            return $items[0];
+            Resque::enqueue($job, false);
         }
-
-        return false;
     }
 
     /**
@@ -97,6 +80,30 @@ class DelayedScheduler implements IScheduler {
         self::cleanupTimestamp(Key::delayed($timestamp), $timestamp);
 
         return Job::fromArray(json_decode($item, true));
+    }
+
+    /**
+     * Find the first timestamp in the delayed schedule before/including the timestamp.
+     * Will find and return the first timestamp upto and including the given
+     * timestamp. This is the heart of the ResqueScheduler that will make sure
+     * that any jobs scheduled for the past when the worker wasn't running are
+     * also queued up.
+     *
+     * @param int $at UNIX timestamp. Defaults to now.
+     *
+     * @return int|false UNIX timestamp, or false if nothing to run.
+     */
+    private function nextTimestamp($at = null) {
+        if ($at === null) {
+            $at = time();
+        }
+
+        $items = Resque::redis()->zRangeByScore(Key::delayedQueueSchedule(), '-inf', $at, ['limit' => [0, 1]]);
+        if (!empty($items)) {
+            return $items[0];
+        }
+
+        return false;
     }
 
 }

@@ -13,7 +13,8 @@ class UniqueList {
      * KEYS [ STATE KEY, DEFERRED KEY ]
      * ARGS [ RUNNING STATE ]
      */
-    const SCRIPT_FINALIZE = <<<LUA
+    const SCRIPT_FINALIZE = /** @lang Lua */
+        <<<LUA
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then
     return false
 end
@@ -27,7 +28,8 @@ LUA;
      * KEYS [ STATE KEY, DEFERRED KEY ]
      * ARGS [ RUNNING STATE, JOB_PAYLOAD ]
      */
-    const SCRIPT_ADD_DEFERRED = <<<LUA
+    const SCRIPT_ADD_DEFERRED = /** @lang Lua */
+        <<<LUA
 local state = redis.call('GET', KEYS[1])
 if state ~= ARGV[1] then
     return false
@@ -53,8 +55,8 @@ LUA;
         $uniqueId = $job->getUniqueId();
 
         if (!$uniqueId
-                || Resque::redis()->setNx(Key::uniqueState($uniqueId), self::STATE_QUEUED)
-                || $ignoreFail) {
+            || Resque::redis()->setNx(Key::uniqueState($uniqueId), self::STATE_QUEUED)
+            || $ignoreFail) {
             return;
         }
 
@@ -67,24 +69,30 @@ LUA;
 
     public static function addDeferred(Job $job) {
         $uid = $job->getUid();
-        if ($uid == null || !$uid->isDeferred()) {
+        if ($uid === null || !$uid->isDeferred()) {
+            Log::error('Attempted to defer non-deferrable job.', [
+                'payload' => $job->toArray()
+            ]);
             throw new \RuntimeException('Only deferrable jobs can be deferred.');
         }
 
         return Resque::redis()->eval(
-                self::SCRIPT_ADD_DEFERRED,
-                [
-                        Key::uniqueState($uid->getId()),
-                        Key::uniqueDeferred($uid->getId())
-                ],
-                [self::STATE_RUNNING, $job->toString()]
+            self::SCRIPT_ADD_DEFERRED,
+            [
+                Key::uniqueState($uid->getId()),
+                Key::uniqueDeferred($uid->getId())
+            ],
+            [
+                self::STATE_RUNNING,
+                $job->toString()
+            ]
         );
     }
 
     public static function editState($uniqueId, $newState) {
         // 1 or 0 from native redis, true or false from phpredis
         return !$uniqueId
-                || Resque::redis()->set(Key::uniqueState($uniqueId), $newState, ['XX']);
+            || Resque::redis()->set(Key::uniqueState($uniqueId), $newState, ['XX']);
     }
 
     /**
@@ -97,26 +105,26 @@ LUA;
      */
     public static function finalize($uniqueId) {
         return !$uniqueId
-                || Resque::redis()->eval(
-                        self::SCRIPT_FINALIZE,
-                        [
-                                Key::uniqueState($uniqueId),
-                                Key::uniqueDeferred($uniqueId)
-                        ],
-                        [self::STATE_RUNNING]
-                );
+            || Resque::redis()->eval(
+                self::SCRIPT_FINALIZE,
+                [
+                    Key::uniqueState($uniqueId),
+                    Key::uniqueDeferred($uniqueId)
+                ],
+                [self::STATE_RUNNING]
+            );
     }
 
     public static function removeAll($uniqueId) {
         return !$uniqueId
-                || Resque::redis()->del([
-                        Key::uniqueState($uniqueId),
-                        Key::uniqueDeferred($uniqueId)
-                ]);
+            || Resque::redis()->del([
+                Key::uniqueState($uniqueId),
+                Key::uniqueDeferred($uniqueId)
+            ]);
     }
 
     public static function removeDeferred($uniqueId) {
         return !$uniqueId
-                || Resque::redis()->del(Key::uniqueDeferred($uniqueId));
+            || Resque::redis()->del(Key::uniqueDeferred($uniqueId));
     }
 }

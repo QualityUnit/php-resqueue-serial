@@ -3,7 +3,7 @@
 use Resque\Api\Job;
 use Resque\Queue\Queue;
 use Resque\Redis;
-use Resque\Scheduler\SchedulerProcess;
+use Resque\Scheduler\DelayedScheduler;
 
 class Resque {
 
@@ -25,7 +25,7 @@ class Resque {
     }
 
     public static function enqueueDelayed($delay, Job $job, $checkUnique) {
-        SchedulerProcess::schedule(time() + $delay, $job, $checkUnique);
+        DelayedScheduler::schedule(time() + $delay, $job, $checkUnique);
     }
 
     public static function redis() {
