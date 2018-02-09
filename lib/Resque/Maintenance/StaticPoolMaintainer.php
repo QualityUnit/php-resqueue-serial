@@ -5,10 +5,10 @@ namespace Resque\Maintenance;
 use Resque\Api\RedisError;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
-use Resque\Config\StaticPool;
 use Resque\Job\IJobSource;
 use Resque\Key;
 use Resque\Log;
+use Resque\Pool\StaticPool;
 use Resque\Process;
 use Resque\Resque;
 use Resque\SignalHandler;
@@ -124,7 +124,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
         if ($pid === 0) {
             SignalHandler::instance()->unregisterAll();
 
-            $image = WorkerImage::create($this->pool->getName(), 'static');
+            $image = WorkerImage::create($this->pool->getName(), 's');
             $jobSource = $this->pool->createJobSource($image);
             $this->clearBuffer($jobSource);
 

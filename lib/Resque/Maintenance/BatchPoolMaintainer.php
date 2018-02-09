@@ -88,14 +88,13 @@ LUA;
      */
     private function cleanupUnitQueues() {
         $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
-        $keys = Resque::redis()->zRange($poolQueuesKey, 0, -1);
-
         foreach ($this->getUnitQueueKeys() as $unitQueueKey) {
             Resque::redis()->zIncrBy($poolQueuesKey, 0, $unitQueueKey);
         }
 
         $localNodeId = GlobalConfig::getInstance()->getNodeId();
 
+        $keys = Resque::redis()->zRange($poolQueuesKey, 0, -1);
         foreach ($keys as $key) {
             $unitId = explode(':', $key)[2];
             list($nodeId, $unitNumber) = $this->pool->parseUnitId($unitId);
@@ -126,7 +125,7 @@ LUA;
                 continue;
             }
 
-            list(, $unitNumber) = $this->pool->parseUnitId($image->getCode());
+            $unitNumber = $image->getCode();
             if ($unitNumber >= $this->unitCount || $counts[$unitNumber] >= $this->workersPerUnit) {
                 $this->terminateWorker($image);
                 continue;
@@ -194,7 +193,7 @@ LUA;
         if ($pid === 0) {
             SignalHandler::instance()->unregisterAll();
 
-            $image = WorkerImage::create($this->pool->getName(), $this->pool->createLocalUnitId($unitNumber));
+            $image = WorkerImage::create($this->pool->getName(), $unitNumber);
             $jobSource = $this->pool->createJobSource($image);
             $this->clearBuffer($jobSource);
 

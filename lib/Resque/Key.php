@@ -101,7 +101,7 @@ class Key {
      * @return string
      */
     public static function localSchedulerProcesses() {
-        return self::of('workers', GlobalConfig::getInstance()->getNodeId(), 'scheduler');
+        return self::of('process', GlobalConfig::getInstance()->getNodeId(), 'scheduler');
     }
 
     /**

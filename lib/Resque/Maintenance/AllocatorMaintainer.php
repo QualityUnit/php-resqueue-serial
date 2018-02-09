@@ -142,13 +142,12 @@ class AllocatorMaintainer implements IProcessMaintainer {
             try {
                 $allocator->register();
                 $allocator->work();
+                $allocator->unregister();
             } catch (\Throwable $t) {
                 Log::error('Allocator process failed.', [
                     'exception' => $t,
                     'process_id' => $image->getId()
                 ]);
-            } finally {
-                $allocator->unregister();
             }
             exit(0);
         }

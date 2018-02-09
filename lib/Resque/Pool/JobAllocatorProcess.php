@@ -3,7 +3,6 @@
 namespace Resque\Pool;
 
 use Resque\Config\GlobalConfig;
-use Resque\Config\StaticPool;
 use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
@@ -29,7 +28,6 @@ class JobAllocatorProcess extends AbstractProcess {
     /**
      * main loop
      *
-     * @throws Resque\Api\RedisError
      * @throws \Resque\Api\RedisError
      */
     public function doWork() {
@@ -53,7 +51,6 @@ class JobAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws Resque\Api\RedisError
      * @throws \Resque\Api\RedisError
      */
     protected function prepareWork() {
@@ -74,7 +71,7 @@ class JobAllocatorProcess extends AbstractProcess {
     /**
      * @param $payload
      *
-     * @throws Resque\Api\RedisError if processing failed
+     * @throws \Resque\Api\RedisError if processing failed
      */
     private function processPayload($payload) {
         $decoded = json_decode($payload, true);

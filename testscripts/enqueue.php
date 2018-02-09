@@ -12,6 +12,13 @@ unlink('/tmp/serialjob.txt');
 
 GlobalConfig::initialize('./../resources/config.yml');
 
+class TestPerf__ {
+
+    public function perform() {
+        echo "AYY PERFORMED\n";
+    }
+}
+
 $proc = new InitProcess();
 
 $proc->start();
