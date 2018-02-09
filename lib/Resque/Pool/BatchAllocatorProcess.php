@@ -3,7 +3,6 @@
 namespace Resque\Pool;
 
 use Resque;
-use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Key;
 use Resque\Log;
@@ -68,7 +67,7 @@ class BatchAllocatorProcess extends AbstractProcess {
         $batch = BatchImage::load($batchId);
 
         try {
-            $this->resolvePool($batch)->assignBatch($batch);
+            BatchPool::assignBatch($batch, $this->resolvePoolName($batch));
             Resque::redis()->lRem($this->bufferKey, 1, $batchId);
         } catch (Resque\Exception $e) {
             Log::critical("Failed to allocate batch $batchId to pool.", [
@@ -82,14 +81,13 @@ class BatchAllocatorProcess extends AbstractProcess {
     /**
      * @param BatchImage $batch
      *
-     * @return BatchPool
-     * @throws ConfigException
+     * @return string
      */
-    private function resolvePool(BatchImage $batch) {
-        $poolName = GlobalConfig::getInstance()->getBatchPoolMapping()
-            ->resolvePoolName($batch->getSourceId(), $batch->getJobName());
-
-        return GlobalConfig::getInstance()->getBatchPoolConfig()->getPool($poolName);
+    private function resolvePoolName(BatchImage $batch) {
+        return GlobalConfig::getInstance()->getBatchPoolMapping()->resolvePoolName(
+            $batch->getSourceId(),
+            $batch->getJobName()
+        );
     }
 
     /**
@@ -97,12 +95,13 @@ class BatchAllocatorProcess extends AbstractProcess {
      * @param string $actual
      */
     private function validatePayload($expected, $actual) {
-        if ($expected !== $actual) {
-            Log::critical('Enqueued payload does not match processed batch ID.', [
-                'payload' => $expected,
-                'actual' => $actual
-            ]);
-            exit(0);
+        if ($expected === $actual) {
+            return;
         }
+        Log::critical('Enqueued payload does not match processed batch ID.', [
+            'payload' => $expected,
+            'actual' => $actual
+        ]);
+        exit(0);
     }
 }

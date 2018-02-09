@@ -3,7 +3,6 @@
 namespace Resque\Pool;
 
 use Resque;
-use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Config\StaticPool;
 use Resque\Job\QueuedJob;
@@ -100,31 +99,21 @@ class JobAllocatorProcess extends AbstractProcess {
             return;
         }
 
-        try {
-            $enqueuedPayload = $this->resolvePool($queuedJob)->assignJob($this->bufferKey);
-            $this->validatePayload($payload, $enqueuedPayload);
-        } catch (ConfigException $e) {
-            Log::critical('Failed to resolve pool for job.', [
-                'exception' => $e,
-                'payload' => $payload
-            ]);
-            $actualPayload = Resque::redis()->rPoplPush($this->bufferKey, Key::jobAllocationFailures());
-            $this->validatePayload($payload, $actualPayload);
-        }
+        $poolName = $this->resolvePoolName($queuedJob);
+        $enqueuedPayload = StaticPool::assignJob($this->bufferKey, $poolName);
+        $this->validatePayload($payload, $enqueuedPayload);
     }
 
     /**
      * @param QueuedJob $queuedJob
      *
-     * @return StaticPool
-     * @throws ConfigException
+     * @return string
      */
-    private function resolvePool(QueuedJob $queuedJob) {
-        $job = $queuedJob->getJob();
-        $poolName = GlobalConfig::getInstance()->getStaticPoolMapping()
-            ->resolvePoolName($job->getSourceId(), $job->getName());
-
-        return GlobalConfig::getInstance()->getStaticPoolConfig()->getPool($poolName);
+    private function resolvePoolName(QueuedJob $queuedJob) {
+        return GlobalConfig::getInstance()->getStaticPoolMapping()->resolvePoolName(
+            $queuedJob->getJob()->getSourceId(),
+            $queuedJob->getJob()->getName()
+        );
     }
 
     /**
@@ -132,12 +121,14 @@ class JobAllocatorProcess extends AbstractProcess {
      * @param string $actual
      */
     private function validatePayload($expected, $actual) {
-        if ($expected !== $actual) {
-            Log::critical('Enqueued payload does not match processed payload.', [
-                'payload' => $expected,
-                'actual' => $actual
-            ]);
-            exit(0);
+        if ($expected === $actual) {
+            return;
         }
+
+        Log::critical('Enqueued payload does not match processed payload.', [
+            'payload' => $expected,
+            'actual' => $actual
+        ]);
+        exit(0);
     }
 }

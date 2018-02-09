@@ -58,20 +58,21 @@ LUA;
 
     /**
      * @param BatchImage $batch
+     * @param string $poolName
      *
      * @throws PoolStateException
      * @throws Resque\Api\RedisError
      */
-    public function assignBatch(BatchImage $batch) {
-        $unitId = $this->getNextUnitId();
+    public static function assignBatch(BatchImage $batch, $poolName) {
+        $unitId = self::getNextUnitId($poolName);
 
         Resque::redis()->eval(
             self::SCRIPT_ASSIGN_BATCH,
             [
-                Key::batchPoolSourceWorker($this->poolName),
-                Key::batchPoolBacklogList($this->poolName, $batch->getSourceId()),
-                Key::batchPoolUnitQueueList($this->poolName, $unitId),
-                Key::batchPoolQueuesSortedSet($this->poolName)
+                Key::batchPoolSourceWorker($poolName),
+                Key::batchPoolBacklogList($poolName, $batch->getSourceId()),
+                Key::batchPoolUnitQueueList($poolName, $unitId),
+                Key::batchPoolQueuesSortedSet($poolName)
             ],
             [
                 $batch->getSourceId(),
@@ -115,6 +116,7 @@ LUA;
             $queueListKey,
             $bufferQueue,
             function (BatchImage $image) use ($unitId) {
+                /** @noinspection ExceptionsAnnotatingAndHandlingInspection */
                 $this->removeBatch($image, $unitId);
             }
         );
@@ -165,15 +167,17 @@ LUA;
     }
 
     /**
+     * @param string $poolName
+     *
      * @return string
      * @throws PoolStateException
      * @throws Resque\Api\RedisError
      */
-    private function getNextUnitId() {
-        $result = Resque::redis()->zRange(Key::batchPoolQueuesSortedSet($this->poolName), 0, 0);
+    private static function getNextUnitId($poolName) {
+        $result = Resque::redis()->zRange(Key::batchPoolQueuesSortedSet($poolName), 0, 0);
 
         if (!\is_array($result) || \count($result) !== 1) {
-            throw new PoolStateException("No units available for pool {$this->poolName}.");
+            throw new PoolStateException("No units available for pool $poolName.");
         }
 
         return $result[0];

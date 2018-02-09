@@ -39,7 +39,6 @@ class WorkerProcess extends AbstractProcess {
         $queuedJob = $this->source->bufferNextJob();
 
         if ($queuedJob === null) {
-            Log::debug('Job not found.');
             return;
         }
 
@@ -87,12 +86,14 @@ class WorkerProcess extends AbstractProcess {
      * @param QueuedJob $actual
      */
     private function validateJob(QueuedJob $expected, QueuedJob $actual) {
-        if ($expected->getId() !== $actual->getId()) {
-            Log::critical('Dequeued job does not match buffered job.', [
-                'payload' => $expected->toString(),
-                'actual' => $actual->toString()
-            ]);
-            exit(0);
+        if ($expected->getId() === $actual->getId()) {
+            return;
         }
+
+        Log::critical('Dequeued job does not match buffered job.', [
+            'payload' => $expected->toString(),
+            'actual' => $actual->toString()
+        ]);
+        exit(0);
     }
 }

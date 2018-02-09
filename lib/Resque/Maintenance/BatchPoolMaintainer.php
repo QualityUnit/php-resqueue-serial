@@ -36,6 +36,10 @@ LUA;
     private $pool;
     /** @var string */
     private $processSetKey;
+    /** @var int */
+    private $unitCount;
+    /** @var int */
+    private $workersPerUnit;
 
     /**
      * @param string $poolName
@@ -45,6 +49,8 @@ LUA;
     public function __construct($poolName) {
         $this->processSetKey = Key::localPoolProcesses($poolName);
         $this->pool = GlobalConfig::getInstance()->getBatchPoolConfig()->getPool($poolName);
+        $this->workersPerUnit = $this->pool->getWorkersPerUnit();
+        $this->unitCount = $this->pool->getUnitCount();
     }
 
 
@@ -69,27 +75,22 @@ LUA;
      * @throws Resque\Api\RedisError
      */
     public function maintain() {
-        $unitCount = $this->pool->getUnitCount();
-        $workersPerUnit = $this->pool->getWorkersPerUnit();
-
-        $unitsAlive = $this->cleanupUnits($unitCount, $workersPerUnit);
+        $unitsAlive = $this->cleanupUnits();
         foreach ($unitsAlive as $unitNumber => $workerCount) {
-            $this->createUnitWorkers($unitNumber, $workersPerUnit - $workerCount);
+            $this->createUnitWorkers($unitNumber, $this->workersPerUnit - $workerCount);
         }
 
-        $this->cleanupUnitQueues($unitCount);
+        $this->cleanupUnitQueues();
     }
 
     /**
-     * @param int $unitCount
-     *
      * @throws Resque\Api\RedisError
      */
-    private function cleanupUnitQueues($unitCount) {
+    private function cleanupUnitQueues() {
         $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
         $keys = Resque::redis()->zRange($poolQueuesKey, 0, -1);
 
-        foreach ($this->getUnitQueueKeys($unitCount) as $unitQueueKey) {
+        foreach ($this->getUnitQueueKeys() as $unitQueueKey) {
             Resque::redis()->zIncrBy($poolQueuesKey, 0, $unitQueueKey);
         }
 
@@ -102,21 +103,18 @@ LUA;
                 continue;
             }
 
-            if ($unitNumber >= $unitCount) {
+            if ($unitNumber >= $this->unitCount) {
                 $this->clearQueue($unitId);
             }
         }
     }
 
     /**
-     * @param int $unitCount
-     * @param int $workersPerUnit
-     *
      * @return int[]
      * @throws Resque\Api\RedisError
      */
-    private function cleanupUnits($unitCount, $workersPerUnit) {
-        $counts = array_fill(0, $unitCount, 0);
+    private function cleanupUnits() {
+        $counts = array_fill(0, $this->unitCount, 0);
 
         foreach ($this->getLocalProcesses() as $image) {
             if (!$image->isAlive()) {
@@ -129,7 +127,7 @@ LUA;
             }
 
             list(, $unitNumber) = $this->pool->parseUnitId($image->getCode());
-            if ($unitNumber >= $unitCount || $counts[$unitNumber] >= $workersPerUnit) {
+            if ($unitNumber >= $this->unitCount || $counts[$unitNumber] >= $this->workersPerUnit) {
                 $this->terminateWorker($image);
                 continue;
             }
@@ -220,13 +218,11 @@ LUA;
     }
 
     /**
-     * @param int $unitCount
-     *
      * @return string[]
      */
-    private function getUnitQueueKeys($unitCount) {
+    private function getUnitQueueKeys() {
         $keys = [];
-        for ($i = 0; $i < $unitCount; $i++) {
+        for ($i = 0; $i < $this->unitCount; $i++) {
             $keys[] = Key::batchPoolUnitQueueList($this->pool->getName(), $this->pool->createLocalUnitId($i));
         }
 
