@@ -2,10 +2,10 @@
 
 namespace Resque\Pool;
 
-use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Key;
 use Resque\Process\AbstractProcessImage;
+use Resque\Resque;
 
 class AllocatorImage extends AbstractProcessImage {
 

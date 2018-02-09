@@ -16,7 +16,7 @@ class SchedulerMaintainer implements IProcessMaintainer {
      * @throws \Resque\Api\RedisError
      */
     public function getLocalProcesses() {
-        $scheduleIds = \Resque::redis()->sMembers(Key::localSchedulerProcesses());
+        $scheduleIds = \Resque\Resque::redis()->sMembers(Key::localSchedulerProcesses());
         $images = [];
 
         foreach ($scheduleIds as $processId) {

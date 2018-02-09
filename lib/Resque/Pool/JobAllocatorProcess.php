@@ -2,13 +2,13 @@
 
 namespace Resque\Pool;
 
-use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Config\StaticPool;
 use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
+use Resque\Resque;
 
 class JobAllocatorProcess extends AbstractProcess {
 
@@ -30,6 +30,7 @@ class JobAllocatorProcess extends AbstractProcess {
      * main loop
      *
      * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function doWork() {
         $keyFrom = Key::unassigned();
@@ -42,7 +43,7 @@ class JobAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function revertBuffer() {
         $keyTo = Key::unassigned();
@@ -53,6 +54,7 @@ class JobAllocatorProcess extends AbstractProcess {
 
     /**
      * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     protected function prepareWork() {
         while (false !== ($payload = Resque::redis()->lIndex($this->bufferKey, -1))) {
@@ -63,7 +65,7 @@ class JobAllocatorProcess extends AbstractProcess {
     /**
      * @param $payload
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function clearBuffer($payload) {
         Resque::redis()->lRem($this->bufferKey, 1, $payload);

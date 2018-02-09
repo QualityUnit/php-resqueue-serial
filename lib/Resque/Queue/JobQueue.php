@@ -4,10 +4,11 @@
 namespace Resque\Queue;
 
 
-use Resque;
 use Resque\Api\Job;
+use Resque\Api\RedisError;
 use Resque\Job\QueuedJob;
 use Resque\Log;
+use Resque\Resque;
 
 class JobQueue implements IQueue {
 
@@ -24,7 +25,7 @@ class JobQueue implements IQueue {
 
     /**
      * @return QueuedJob|null payload
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function pop() {
         return $this->decodeJob($this->queue->pop());
@@ -34,7 +35,7 @@ class JobQueue implements IQueue {
      * @param int $timeout Timeout in seconds
      *
      * @return QueuedJob|null payload
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function popBlocking($timeout) {
         return $this->decodeJob($this->queue->popBlocking($timeout));
@@ -44,7 +45,7 @@ class JobQueue implements IQueue {
      * @param IQueue $destinationQueue
      *
      * @return null|QueuedJob
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function popInto(IQueue $destinationQueue) {
         return $this->decodeJob($this->queue->popInto($destinationQueue));
@@ -55,7 +56,7 @@ class JobQueue implements IQueue {
      * @param int $timeout Timeout in seconds
      *
      * @return QueuedJob|null
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function popIntoBlocking(IQueue $destinationQueue, $timeout) {
         return $this->decodeJob($this->queue->popIntoBlocking($destinationQueue, $timeout));
@@ -65,7 +66,7 @@ class JobQueue implements IQueue {
      * @param Job $payload
      *
      * @return QueuedJob
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function push($payload) {
         $queuedJob = new QueuedJob($payload, Resque::generateJobId());

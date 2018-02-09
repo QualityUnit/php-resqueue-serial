@@ -63,7 +63,7 @@ class StatsD {
             $config->getConnectTimeout()
         );
 
-        self::$client = new Client($connection, \Resque::VERSION_PREFIX);
+        self::$client = new Client($connection, \Resque\Resque::VERSION_PREFIX);
     }
 
     /**

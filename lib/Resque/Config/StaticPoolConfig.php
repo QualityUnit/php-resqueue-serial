@@ -2,6 +2,8 @@
 
 namespace Resque\Config;
 
+use Resque\Pool\StaticPool;
+
 class StaticPoolConfig {
 
     const WORKER_COUNT = 'worker_count';

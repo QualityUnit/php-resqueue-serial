@@ -2,12 +2,11 @@
 
 namespace Resque\Pool;
 
-use Resque;
 use Resque\Config\GlobalConfig;
-use Resque\Config\IPool;
 use Resque\Job\BatchJobSource;
 use Resque\Key;
 use Resque\Queue\JobQueue;
+use Resque\Resque;
 use Resque\Worker\WorkerImage;
 
 class BatchPool implements IPool {
@@ -61,7 +60,7 @@ LUA;
      * @param string $poolName
      *
      * @throws PoolStateException
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public static function assignBatch(BatchImage $batch, $poolName) {
         $unitId = self::getNextUnitId($poolName);
@@ -147,7 +146,7 @@ LUA;
      * @param BatchImage $batch
      * @param string $unitId
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function removeBatch(BatchImage $batch, $unitId) {
         Resque::redis()->eval(
@@ -171,7 +170,7 @@ LUA;
      *
      * @return string
      * @throws PoolStateException
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private static function getNextUnitId($poolName) {
         $result = Resque::redis()->zRange(Key::batchPoolQueuesSortedSet($poolName), 0, 0);

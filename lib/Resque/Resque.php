@@ -1,15 +1,14 @@
 <?php
 
+namespace Resque;
+
+use Exception;
 use Resque\Api\DeferredException;
 use Resque\Api\Job;
 use Resque\Api\UniqueException;
 use Resque\Job\QueuedJob;
-use Resque\Key;
 use Resque\Queue\JobQueue;
-use Resque\Redis;
 use Resque\Scheduler\DelayedScheduler;
-use Resque\Stats\QueueStats;
-use Resque\UniqueList;
 
 class Resque {
 
@@ -23,25 +22,19 @@ class Resque {
     private static $redisServer;
 
     /**
-     * @return string
-     */
-    public static function generateJobId() {
-        return md5(uniqid('', true));
-    }
-
-    /**
      * @param Job $job
      * @param bool $checkUnique
      *
      * @return QueuedJob
+     * @throws Api\RedisError
      * @throws DeferredException
      * @throws UniqueException
-     * @throws \Resque\Api\RedisError
      */
     public static function enqueue(Job $job, $checkUnique) {
         UniqueList::add($job, !$checkUnique);
 
-        $unassignedQueue = new JobQueue(Key::unassigned(), new QueueStats('refactorMePrettyPlease'));
+        $unassignedQueue = new JobQueue(Key::unassigned());
+
         return $unassignedQueue->push($job);
     }
 
@@ -50,12 +43,19 @@ class Resque {
      * @param Job $job
      * @param bool $checkUnique
      *
+     * @throws Api\RedisError
      * @throws DeferredException
      * @throws UniqueException
-     * @throws \Resque\Api\RedisError
      */
     public static function enqueueDelayed($delay, Job $job, $checkUnique) {
         DelayedScheduler::schedule(time() + $delay, $job, $checkUnique);
+    }
+
+    /**
+     * @return string
+     */
+    public static function generateJobId() {
+        return md5(uniqid('', true));
     }
 
     /**
@@ -69,7 +69,7 @@ class Resque {
 
         self::$redis = new Redis(self::$redisServer);
 
-        Redis::prefix(\Resque::VERSION_PREFIX);
+        Redis::prefix(self::VERSION_PREFIX);
 
         return self::$redis;
     }

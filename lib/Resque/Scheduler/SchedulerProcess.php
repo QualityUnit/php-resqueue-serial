@@ -2,7 +2,6 @@
 
 namespace Resque\Scheduler;
 
-use Resque;
 use Resque\Process\AbstractProcess;
 use Resque\Process\SchedulerImage;
 

@@ -2,10 +2,10 @@
 
 namespace Resque\Worker;
 
-use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Key;
 use Resque\Process\AbstractProcessImage;
+use Resque\Resque;
 
 class WorkerImage extends AbstractProcessImage {
 
@@ -56,14 +56,14 @@ class WorkerImage extends AbstractProcessImage {
     }
 
     /**
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function unregister() {
         Resque::redis()->sRem(Key::localPoolProcesses($this->poolName), $this->getId());
     }
 
     /**
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function register() {
         Resque::redis()->sAdd(Key::localPoolProcesses($this->poolName), $this->getId());

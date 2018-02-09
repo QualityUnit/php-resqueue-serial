@@ -2,7 +2,6 @@
 
 namespace Resque\Job\Processor;
 
-use Resque;
 use Resque\Api\Job;
 use Resque\Api\RescheduleException;
 use Resque\Api\RetryException;
@@ -12,6 +11,7 @@ use Resque\Job\FailException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
+use Resque\Resque;
 use Resque\UniqueList;
 
 class StandardProcessor implements IProcessor {

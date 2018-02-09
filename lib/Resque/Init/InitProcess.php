@@ -4,7 +4,7 @@
 namespace Resque\Init;
 
 
-use Resque;
+use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
 use Resque\Maintenance\AllocatorMaintainer;
@@ -13,6 +13,7 @@ use Resque\Maintenance\IProcessMaintainer;
 use Resque\Maintenance\SchedulerMaintainer;
 use Resque\Maintenance\StaticPoolMaintainer;
 use Resque\Process;
+use Resque\Resque;
 use Resque\SignalHandler;
 use Resque\StatsD;
 
@@ -95,11 +96,23 @@ class InitProcess {
         $this->maintainers = [];
 
         foreach (GlobalConfig::getInstance()->getStaticPoolConfig()->getPoolNames() as $poolName) {
-            $this->maintainers[] = new StaticPoolMaintainer($poolName);
+            try {
+                $this->maintainers[] = new StaticPoolMaintainer($poolName);
+            } catch (ConfigException $e) {
+                Log::error("Failed to initialize static pool $poolName maintainer.", [
+                    'exception' => $e
+                ]);
+            }
         }
 
         foreach (GlobalConfig::getInstance()->getBatchPoolConfig()->getPoolNames() as $poolName) {
-            $this->maintainers[] = new BatchPoolMaintainer($poolName);
+            try {
+                $this->maintainers[] = new BatchPoolMaintainer($poolName);
+            } catch (ConfigException $e) {
+                Log::error("Failed to initialize batch pool $poolName maintainer.", [
+                    'exception' => $e
+                ]);
+            }
         }
 
         $this->maintainers[] = new AllocatorMaintainer();

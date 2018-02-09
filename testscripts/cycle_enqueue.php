@@ -1,5 +1,7 @@
 <?php
 
+use Resque\Resque;
+
 require_once '../vendor/autoload.php';
 
 require_once 'shared.php';
@@ -16,13 +18,13 @@ unlink('/tmp/serialjob.txt');
 //}
 
 
-//Resque::enqueue('example_queue', new Descriptor(__FailJob::class, [
+//Resque\Resque::enqueue('example_queue', new Descriptor(__FailJob::class, [
 //        'arg' => 'test',
 //        'uniqueId' => 'testId'
 //]));
 
 
-//Resque::enqueue('example_queue', RunApplicationTask::class, [
+//Resque\Resque::enqueue('example_queue', RunApplicationTask::class, [
 //        'include_path' => 'something.php',
 //        'job_args' => [],
 //        'job_class' => '__ApplicationTask',
@@ -33,4 +35,4 @@ unlink('/tmp/serialjob.txt');
 //
 //$interval = new DateInterval('PT1M');
 //
-//echo Resque::planCreate($start, $interval, 'example_queue', new Descriptor(__TestJob::class, []));
+//echo Resque\Resque::planCreate($start, $interval, 'example_queue', new Descriptor(__TestJob::class, []));

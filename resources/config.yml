@@ -1,13 +1,13 @@
 # MANDATORY <STRING> instance id /^[a-zA-Z0-9_]+$/ (must be unique for each resque instance)
-node_id: ""
+node_id: "lokal"
 
 log:
     # default = notice
-    level: notice
+    level: debug
     # default = "/var/log/resque-serial.log"
     path: "/var/log/resque-serial.log"
     # the application that sends the data, used as the "type" field of logstash
-    application_name: "resque-v3"
+    application_name: "resque-v4"
     # the system/machine name, used as the "source" field of logstash, defaults to the hostname of the machine
     system_name: ""
     # prefix for extra keys inside logstash "fields"
@@ -15,7 +15,7 @@ log:
     # prefix for context keys inside logstash "fields", defaults to "ctxt_"
     context_prefix: "ctxt_"
     # the logstash format version to use, defaults to 0
-    logstash_version: 0
+    logstash_version: 1
 
 statsd:
     # default = localhost
@@ -34,24 +34,32 @@ redis:
 # {sourceId} will be replaced with source ID provided by job
 task_include_path: "/opt/qu/qu/apps/versions/la/"
 
-# default = 3
-fail_retries: 3
-
 allocators:
     # default = 0
-    job-count: 0
+    job-count: 1
     # default = 0
-    batch-count: 0
+    batch-count: 1
 
 pools:
     static:
-        <pool name>:
+        static_1:
+            # MANDATORY <INT>
+            worker_count: 2
+        static_2:
+            # MANDATORY <INT>
+            worker_count: 2
+        static_3:
             # MANDATORY <INT>
             worker_count: 2
     batch:
-        <pool name>:
+        batch_1:
             # MANDATORY <INT>
             unit_count: 2
+            # MANDATORY <INT>
+            workers_per_unit: 1
+        batch_2:
+            # MANDATORY <INT>
+            unit_count: 1
             # MANDATORY <INT>
             workers_per_unit: 2
 
@@ -61,20 +69,12 @@ mapping:
     static:
         default:
             # MANDATORY <STRING>
-            default: <pool name>
-            <job name>: <pool name>
-            <job name>: <pool name>
-            <job name>: <pool name>
-        <source id>:
-            <job name>: <pool name>
-            <job name>: <pool name>
-            <job name>: <pool name>
+            default: static_1
+        test_source:
+            test_job: static_2
     batch:
         default:
             # MANDATORY <STRING>
-            default: <pool name>
-            <job name1>: <pool name>
-            <job name2>: <pool name>
-            <job name3>: <pool name>
-        <source id>:
-            <job name3>: <pool name>
+            default: batch_1
+        test_source:
+            test_job: batch_2

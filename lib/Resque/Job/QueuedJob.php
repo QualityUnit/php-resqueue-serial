@@ -2,7 +2,6 @@
 
 namespace Resque\Job;
 
-use Resque;
 use Resque\Api\Job;
 
 class QueuedJob {

@@ -20,7 +20,7 @@ class LogConfig {
 
     private $level = LogLevel::NOTICE;
     private $path = '/var/log/resque-serial.log';
-    private $applicationName = \Resque::VERSION_PREFIX;
+    private $applicationName = \Resque\Resque::VERSION_PREFIX;
     private $systemName;
     private $extraPrefix = '';
     private $contextPrefix = 'ctxt_';

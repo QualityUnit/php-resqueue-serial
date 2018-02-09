@@ -1,8 +1,7 @@
 <?php
 
-namespace Resque\Config;
+namespace Resque\Pool;
 
-use Resque;
 use Resque\Job\StaticJobSource;
 use Resque\Worker\WorkerImage;
 

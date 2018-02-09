@@ -4,7 +4,6 @@
 namespace Resque\Stats;
 
 
-use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Stats;
 use Resque\StatsD;

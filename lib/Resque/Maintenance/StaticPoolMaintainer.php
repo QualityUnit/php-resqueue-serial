@@ -2,7 +2,6 @@
 
 namespace Resque\Maintenance;
 
-use Resque;
 use Resque\Api\RedisError;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
@@ -11,6 +10,7 @@ use Resque\Job\IJobSource;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
+use Resque\Resque;
 use Resque\SignalHandler;
 use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;

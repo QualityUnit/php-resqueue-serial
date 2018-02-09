@@ -2,10 +2,9 @@
 
 require_once '../vendor/autoload.php';
 
-require_once 'shared.php';
-
 use Resque\Config\GlobalConfig;
 use Resque\Init\InitProcess;
+
 ini_set('display_errors', true);
 error_reporting(E_ALL);
 

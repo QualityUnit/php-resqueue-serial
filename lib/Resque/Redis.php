@@ -9,7 +9,7 @@ use Resque\Api\RedisError;
 /**
  * Wrap Credis to add namespace support and various helper methods.
  *
- * @package        Resque/Redis
+ * @package        Resque\Resque/Redis
  * @author        Chris Boulton <chris@bigcommerce.com>
  * @license        http://www.opensource.org/licenses/mit-license.php
  * COPIED FROM CREDIS CLIENT PHPDOC
@@ -151,7 +151,7 @@ class Redis {
 
     /**
      * @var array List of all commands in Redis that supply a key as their
-     *    first argument. Used to prefix keys with the Resque namespace.
+     *    first argument. Used to prefix keys with the Resque\Resque namespace.
      */
     private $keyCommands = [
         'exists' => [0, 1, 2, 3, 4],
@@ -208,6 +208,7 @@ class Redis {
         'sinterstore' => [0, 1, 2, 3, 4],
         'sdiffstore' => [0, 1, 2, 3, 4],
         'zadd' => [0],
+        'zincrby' => [0],
         'zrem' => [0],
         'zrange' => [0],
         'zrevrange' => [0],

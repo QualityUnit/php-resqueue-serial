@@ -2,11 +2,12 @@
 
 namespace Resque\Pool;
 
-use Resque;
 use Resque\Config\GlobalConfig;
+use Resque\Exception;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
+use Resque\Resque;
 
 class BatchAllocatorProcess extends AbstractProcess {
 
@@ -27,7 +28,8 @@ class BatchAllocatorProcess extends AbstractProcess {
     /**
      * main loop
      *
-     * @throws Resque\Api\RedisError
+     * @throws PoolStateException
+     * @throws \Resque\Api\RedisError
      */
     public function doWork() {
         $keyFrom = Key::committedBatchList();
@@ -40,7 +42,7 @@ class BatchAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function revertBuffer() {
         $keyTo = Key::committedBatchList();
@@ -50,7 +52,7 @@ class BatchAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     protected function prepareWork() {
         while (false !== ($batchId = Resque::redis()->lIndex($this->bufferKey, -1))) {
@@ -61,7 +63,7 @@ class BatchAllocatorProcess extends AbstractProcess {
     /**
      * @param $batchId
      *
-     * @throws Resque\Api\RedisError if processing failed
+     * @throws \Resque\Api\RedisError
      */
     private function assignBatch($batchId) {
         $batch = BatchImage::load($batchId);
@@ -69,7 +71,7 @@ class BatchAllocatorProcess extends AbstractProcess {
         try {
             BatchPool::assignBatch($batch, $this->resolvePoolName($batch));
             Resque::redis()->lRem($this->bufferKey, 1, $batchId);
-        } catch (Resque\Exception $e) {
+        } catch (Exception $e) {
             Log::critical("Failed to allocate batch $batchId to pool.", [
                 'exception' => $e
             ]);

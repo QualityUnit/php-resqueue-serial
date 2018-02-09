@@ -5,6 +5,7 @@ namespace Resque\Job;
 use Resque\Api\RedisError;
 use Resque\Pool\BatchImage;
 use Resque\Queue\JobQueue;
+use Resque\Resque;
 
 class BatchJobSource implements IJobSource {
 
@@ -33,8 +34,8 @@ class BatchJobSource implements IJobSource {
      * @throws RedisError
      */
     public function bufferNextJob() {
-        $batchId = \Resque::redis()->brPoplPush($this->batchListKey, $this->batchListKey, 3);
-        if ($batchId === null) {
+        $batchId = Resque::redis()->brPoplPush($this->batchListKey, $this->batchListKey, 3);
+        if ($batchId === false) {
             return null;
         }
         $batchImage = BatchImage::load($batchId);

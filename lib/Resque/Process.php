@@ -2,8 +2,6 @@
 
 namespace Resque;
 
-use Resque;
-
 class Process {
     /** @var string */
     private static $prefix = null;
@@ -48,7 +46,7 @@ class Process {
     }
 
     private static function getTitlePrefix() {
-        return \Resque::VERSION_PREFIX . '-' . (self::$prefix ? self::$prefix : 'unset');
+        return Resque::VERSION_PREFIX . '-' . (self::$prefix ? self::$prefix : 'unset');
     }
 
     /**

@@ -2,7 +2,6 @@
 
 namespace Resque\Maintenance;
 
-use Resque;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Job\IJobSource;
@@ -11,6 +10,7 @@ use Resque\Log;
 use Resque\Pool\BatchPool;
 use Resque\Process;
 use Resque\Process\IProcessImage;
+use Resque\Resque;
 use Resque\SignalHandler;
 use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;
@@ -56,7 +56,7 @@ LUA;
 
     /**
      * @return WorkerImage[]
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function getLocalProcesses() {
         $workerIds = Resque::redis()->sMembers($this->processSetKey);
@@ -72,7 +72,7 @@ LUA;
     /**
      * Cleans up and recovers local processes.
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     public function maintain() {
         $unitsAlive = $this->cleanupUnits();
@@ -84,7 +84,7 @@ LUA;
     }
 
     /**
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function cleanupUnitQueues() {
         $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
@@ -111,7 +111,7 @@ LUA;
 
     /**
      * @return int[]
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function cleanupUnits() {
         $counts = array_fill(0, $this->unitCount, 0);
@@ -122,7 +122,7 @@ LUA;
                     'process_id' => $image->getId()
                 ]);
                 $image->unregister();
-                $this->clearBuffer($this->pool->createJobSource($image->getId()));
+                $this->clearBuffer($this->pool->createJobSource($image));
                 continue;
             }
 
@@ -141,7 +141,7 @@ LUA;
     /**
      * @param IJobSource $jobSource
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function clearBuffer(IJobSource $jobSource) {
         while (($buffered = $jobSource->bufferPop()) !== null) {
@@ -154,7 +154,7 @@ LUA;
     /**
      * @param string $unitId
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function clearQueue($unitId) {
         Resque::redis()->eval(
@@ -170,7 +170,7 @@ LUA;
      * @param string $unitNumber
      * @param int $workersToCreate
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function createUnitWorkers($unitNumber, $workersToCreate) {
         for ($i = 0; $i < $workersToCreate; $i++) {
@@ -181,7 +181,7 @@ LUA;
     /**
      * @param $unitNumber
      *
-     * @throws Resque\Api\RedisError
+     * @throws \Resque\Api\RedisError
      */
     private function forkWorker($unitNumber) {
         $pid = Process::fork();

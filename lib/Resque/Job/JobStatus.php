@@ -2,9 +2,9 @@
 
 namespace Resque\Job;
 
-use Resque;
 use Resque\Api\Job;
 use Resque\Key;
+use Resque\Resque;
 
 class JobStatus {
 

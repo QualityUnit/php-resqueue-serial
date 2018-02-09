@@ -21,7 +21,7 @@ class AllocatorMaintainer implements IProcessMaintainer {
      * @throws \Resque\Api\RedisError
      */
     public function getLocalProcesses() {
-        $allocatorIds = \Resque::redis()->sMembers(Key::localAllocatorProcesses());
+        $allocatorIds = \Resque\Resque::redis()->sMembers(Key::localAllocatorProcesses());
         $images = [];
 
         foreach ($allocatorIds as $processId) {

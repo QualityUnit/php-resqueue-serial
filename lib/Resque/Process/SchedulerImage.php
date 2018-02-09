@@ -4,9 +4,9 @@
 namespace Resque\Process;
 
 
-use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Key;
+use Resque\Resque;
 
 class SchedulerImage extends AbstractProcessImage {
 

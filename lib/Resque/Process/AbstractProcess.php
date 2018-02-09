@@ -2,7 +2,6 @@
 
 namespace Resque\Process;
 
-use Resque;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
 use Resque\Process;
@@ -83,7 +82,7 @@ abstract class AbstractProcess implements IStandaloneProcess {
     /**
      * The primary loop for a worker.
      * Every $interval (seconds), the scheduled queue will be checked for jobs
-     * that should be pushed to Resque.
+     * that should be pushed to Resque\Resque.
      */
     public function work() {
         Process::setTitle('Working');

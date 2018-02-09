@@ -2,11 +2,11 @@
 
 namespace Resque\Job;
 
-use Resque;
 use Resque\Api\Job;
 use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
+use Resque\Resque;
 use Resque\Worker\WorkerProcess;
 
 class RunningJob {
