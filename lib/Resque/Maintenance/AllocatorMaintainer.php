@@ -66,6 +66,9 @@ class AllocatorMaintainer implements IProcessMaintainer {
         foreach ($this->getLocalProcesses() as $image) {
             // cleanup if dead
             if (!$image->isAlive()) {
+                Log::notice('Cleaning up dead allocator.', [
+                    'process_id' => $image->getId()
+                ]);
                 $this->removeAllocatorRecord($image);
                 continue;
             }
@@ -170,7 +173,7 @@ class AllocatorMaintainer implements IProcessMaintainer {
             $processObject->revertBuffer();
         }
 
-        \Resque::redis()->sRem(Key::localAllocatorProcesses(), $image->getId());
+        $image->unregister();
     }
 
     /**

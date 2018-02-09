@@ -42,6 +42,9 @@ class JobAllocatorProcess extends AbstractProcess {
         $this->processPayload($payload);
     }
 
+    /**
+     * @throws Resque\Api\RedisError
+     */
     public function revertBuffer() {
         $keyTo = Key::unassigned();
         while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
@@ -58,6 +61,11 @@ class JobAllocatorProcess extends AbstractProcess {
         }
     }
 
+    /**
+     * @param $payload
+     *
+     * @throws Resque\Api\RedisError
+     */
     private function clearBuffer($payload) {
         Resque::redis()->lRem($this->bufferKey, 1, $payload);
     }

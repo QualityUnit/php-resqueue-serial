@@ -51,7 +51,7 @@ class BaseQueue implements IQueue {
     /**
      * @param IQueue $destinationQueue
      *
-     * @return null|string
+     * @return string|null
      * @throws Resque\Api\RedisError
      */
     public function popInto(IQueue $destinationQueue) {
@@ -62,16 +62,11 @@ class BaseQueue implements IQueue {
      * @param IQueue $destinationQueue
      * @param int $timeout Timeout in seconds
      *
-     * @return array|null
+     * @return string|null
      * @throws Resque\Api\RedisError
      */
     public function popIntoBlocking(IQueue $destinationQueue, $timeout) {
-        $payload = Resque::redis()->brPoplPush($this->key, $destinationQueue->getKey(), $timeout);
-        if (!is_array($payload) || !isset($payload[1])) {
-            return null;
-        }
-
-        return $payload[1];
+        return Resque::redis()->brPoplPush($this->key, $destinationQueue->getKey(), $timeout);
     }
 
     /**

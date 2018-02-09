@@ -47,16 +47,19 @@ class SchedulerMaintainer implements IProcessMaintainer {
      */
     private function cleanupSchedulers() {
         $oneAlive = false;
-        foreach ($this->getLocalProcesses() as $localProcess) {
+        foreach ($this->getLocalProcesses() as $image) {
             // cleanup if dead
-            if (!$localProcess->isAlive()) {
-                $this->removeSchedulerRecord($localProcess->getId());
+            if (!$image->isAlive()) {
+                Log::notice('Cleaning up dead scheduler.', [
+                    'process_id' => $image->getId()
+                ]);
+                $image->unregister();
                 continue;
             }
             // kill and cleanup
             if ($oneAlive) {
                 Log::notice('Terminating extra scheduler process');
-                posix_kill($localProcess->getPid(), SIGTERM);
+                posix_kill($image->getPid(), SIGTERM);
                 continue;
             }
 
@@ -80,22 +83,13 @@ class SchedulerMaintainer implements IProcessMaintainer {
             try {
                 $scheduler->register();
                 $scheduler->work();
+                $scheduler->unregister();
             } catch (\Throwable $t) {
                 Log::error('Scheduler process failed.', [
                     'exception' => $t
                 ]);
-            } finally {
-                $scheduler->unregister();
             }
             exit(0);
         }
-    }
-
-    /**
-     * @param string $schedulerId
-     * @throws \Resque\Api\RedisError
-     */
-    private function removeSchedulerRecord($schedulerId) {
-        \Resque::redis()->sRem(Key::localSchedulerProcesses(), $schedulerId);
     }
 }

@@ -3,9 +3,12 @@
 namespace Resque\Config;
 
 use Resque;
+use Resque\Job\StaticJobSource;
 use Resque\Key;
+use Resque\Queue\JobQueue;
+use Resque\Worker\WorkerImage;
 
-class StaticPool {
+class StaticPool implements IPool {
 
     /** @var string */
     private $poolName;
@@ -25,9 +28,29 @@ class StaticPool {
      * @param string $bufferKey
      *
      * @return string
+     * @throws Resque\Api\RedisError
      */
     public function assignJob($bufferKey) {
         return Resque::redis()->rPoplPush($bufferKey, Key::staticPoolQueue($this->poolName));
+    }
+
+    /**
+     * @param WorkerImage $workerImage
+     *
+     * @return StaticJobSource
+     */
+    public function createJobSource(WorkerImage $workerImage) {
+        $jobQueue = new JobQueue(Key::staticPoolQueue($this->poolName));
+        $bufferQueue = new JobQueue(Key::workerBuffer($workerImage->getId()));
+
+        return new StaticJobSource($jobQueue, $bufferQueue);
+    }
+
+    /**
+     * @return string
+     */
+    public function getName() {
+        return $this->poolName;
     }
 
     /**

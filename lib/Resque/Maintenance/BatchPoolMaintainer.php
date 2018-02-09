@@ -5,8 +5,10 @@ namespace Resque\Maintenance;
 use Resque;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
+use Resque\Job\IJobSource;
 use Resque\Key;
 use Resque\Log;
+use Resque\Pool\BatchPool;
 use Resque\Process;
 use Resque\Process\IProcessImage;
 use Resque\SignalHandler;
@@ -14,7 +16,6 @@ use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;
 
 class BatchPoolMaintainer implements IProcessMaintainer {
-
     /**
      * KEYS [UNIT_QUEUES_SET_KEY, POOL_QUEUES_KEY]
      * ARGS []
@@ -22,24 +23,28 @@ class BatchPoolMaintainer implements IProcessMaintainer {
     const SCRIPT_CLEAR_UNIT_QUEUE = /* @lang Lua */
         <<<LUA
 redis.call('zrem', KEYS[2], KEYS[1]);
-for _,batch_key in ipairs(redis.call('smembers', KEYS[1], 0, -1)) do
-    local new_set = redis.call('zrange', KEYS[2], 0, 0);
-    local added = redis.call('sadd', new_set, batch_key)
-    redis.call('zincrby', KEYS[2], added, new_set)
+local b_key = redis.call('rpop', KEYS[1])
+while b_key ~= false do
+ local to_l = redis.call('zrange', KEYS[2], 0, 0);
+ local size = redis.call('lpush', to_l, b_key)
+ redis.call('zadd', KEYS[2], size, to_l)
+ b_key = redis.call('rpop', KEYS[1])
 end
 LUA;
 
-    /** @var string */
-    private $poolName;
+    /** @var BatchPool */
+    private $pool;
     /** @var string */
     private $processSetKey;
 
     /**
      * @param string $poolName
+     *
+     * @throws ConfigException
      */
     public function __construct($poolName) {
-        $this->poolName = $poolName;
-        $this->processSetKey = Key::localPoolProcesses($this->poolName);
+        $this->processSetKey = Key::localPoolProcesses($poolName);
+        $this->pool = GlobalConfig::getInstance()->getBatchPoolConfig()->getPool($poolName);
     }
 
 
@@ -61,14 +66,11 @@ LUA;
     /**
      * Cleans up and recovers local processes.
      *
-     * @throws ConfigException
      * @throws Resque\Api\RedisError
      */
     public function maintain() {
-        $pool = GlobalConfig::getInstance()->getBatchPoolConfig()->getPool($this->poolName);
-
-        $unitCount = $pool->getUnitCount();
-        $workersPerUnit = $pool->getWorkersPerUnit();
+        $unitCount = $this->pool->getUnitCount();
+        $workersPerUnit = $this->pool->getWorkersPerUnit();
 
         $unitsAlive = $this->cleanupUnits($unitCount, $workersPerUnit);
         foreach ($unitsAlive as $unitNumber => $workerCount) {
@@ -80,10 +82,11 @@ LUA;
 
     /**
      * @param int $unitCount
+     *
      * @throws Resque\Api\RedisError
      */
     private function cleanupUnitQueues($unitCount) {
-        $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->poolName);
+        $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
         $keys = Resque::redis()->zRange($poolQueuesKey, 0, -1);
 
         foreach ($this->getUnitQueueKeys($unitCount) as $unitQueueKey) {
@@ -94,7 +97,7 @@ LUA;
 
         foreach ($keys as $key) {
             $unitId = explode(':', $key)[2];
-            list($nodeId, $unitNumber) = $this->parseUnitId($unitId);
+            list($nodeId, $unitNumber) = $this->pool->parseUnitId($unitId);
             if ($nodeId !== $localNodeId) {
                 continue;
             }
@@ -115,15 +118,19 @@ LUA;
     private function cleanupUnits($unitCount, $workersPerUnit) {
         $counts = array_fill(0, $unitCount, 0);
 
-        foreach ($this->getLocalProcesses() as $process) {
-            if (!$process->isAlive()) {
-                Resque::redis()->sRem($this->processSetKey, $process->getId());
+        foreach ($this->getLocalProcesses() as $image) {
+            if (!$image->isAlive()) {
+                Log::notice("Cleaning up dead {$this->pool->getName()} worker.", [
+                    'process_id' => $image->getId()
+                ]);
+                $image->unregister();
+                $this->clearBuffer($this->pool->createJobSource($image->getId()));
                 continue;
             }
 
-            list(, $unitNumber) = $this->parseUnitId($process->getCode());
+            list(, $unitNumber) = $this->pool->parseUnitId($image->getCode());
             if ($unitNumber >= $unitCount || $counts[$unitNumber] >= $workersPerUnit) {
-                $this->terminateWorker($process);
+                $this->terminateWorker($image);
                 continue;
             }
 
@@ -134,15 +141,29 @@ LUA;
     }
 
     /**
+     * @param IJobSource $jobSource
+     *
+     * @throws Resque\Api\RedisError
+     */
+    private function clearBuffer(IJobSource $jobSource) {
+        while (($buffered = $jobSource->bufferPop()) !== null) {
+            Log::error("Found non-empty buffer for {$this->pool->getName()} worker.", [
+                'payload' => $buffered->toString()
+            ]);
+        }
+    }
+
+    /**
      * @param string $unitId
+     *
      * @throws Resque\Api\RedisError
      */
     private function clearQueue($unitId) {
         Resque::redis()->eval(
             self::SCRIPT_CLEAR_UNIT_QUEUE,
             [
-                Key::batchPoolUnitQueueSet($this->poolName, $unitId),
-                Key::batchPoolQueuesSortedSet($this->poolName)
+                Key::batchPoolUnitQueueList($this->pool->getName(), $unitId),
+                Key::batchPoolQueuesSortedSet($this->pool->getName())
             ]
         );
     }
@@ -150,6 +171,8 @@ LUA;
     /**
      * @param string $unitNumber
      * @param int $workersToCreate
+     *
+     * @throws Resque\Api\RedisError
      */
     private function createUnitWorkers($unitNumber, $workersToCreate) {
         for ($i = 0; $i < $workersToCreate; $i++) {
@@ -157,6 +180,11 @@ LUA;
         }
     }
 
+    /**
+     * @param $unitNumber
+     *
+     * @throws Resque\Api\RedisError
+     */
     private function forkWorker($unitNumber) {
         $pid = Process::fork();
         if ($pid === false) {
@@ -168,8 +196,11 @@ LUA;
         if ($pid === 0) {
             SignalHandler::instance()->unregisterAll();
 
-            $image = WorkerImage::create($this->poolName, $this->resolveLocalUnitId($unitNumber));
-            $worker = new WorkerProcess($batchSource, $image);
+            $image = WorkerImage::create($this->pool->getName(), $this->pool->createLocalUnitId($unitNumber));
+            $jobSource = $this->pool->createJobSource($image);
+            $this->clearBuffer($jobSource);
+
+            $worker = new WorkerProcess($jobSource, $image);
             if ($worker === null) {
                 exit(0);
             }
@@ -177,13 +208,12 @@ LUA;
             try {
                 $worker->register();
                 $worker->work();
+                $worker->unregister();
             } catch (\Throwable $t) {
                 Log::error('Worker process failed.', [
                     'exception' => $t,
                     'process_id' => $image->getId()
                 ]);
-            } finally {
-                $worker->unregister();
             }
             exit(0);
         }
@@ -197,37 +227,17 @@ LUA;
     private function getUnitQueueKeys($unitCount) {
         $keys = [];
         for ($i = 0; $i < $unitCount; $i++) {
-            $keys[] = Key::batchPoolUnitQueueSet($this->poolName, $this->resolveLocalUnitId($i));
+            $keys[] = Key::batchPoolUnitQueueList($this->pool->getName(), $this->pool->createLocalUnitId($i));
         }
 
         return $keys;
     }
 
     /**
-     * @param string $unitId
-     *
-     * @return mixed[] values [nodeId, unitNumber]
-     */
-    private function parseUnitId($unitId) {
-        return explode('-', $unitId);
-    }
-
-    /**
-     * @param $unitNumber
-     *
-     * @return string
-     */
-    private function resolveLocalUnitId($unitNumber) {
-        $nodeId = GlobalConfig::getInstance()->getNodeId();
-
-        return "$nodeId-$unitNumber";
-    }
-
-    /**
      * @param IProcessImage $image
      */
     private function terminateWorker(IProcessImage $image) {
-        Log::notice("Terminating {$this->poolName} worker process");
+        Log::notice("Terminating {$this->pool->getName()} worker process");
         posix_kill($image->getPid(), SIGTERM);
     }
 }

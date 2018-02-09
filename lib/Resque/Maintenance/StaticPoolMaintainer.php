@@ -3,8 +3,11 @@
 namespace Resque\Maintenance;
 
 use Resque;
+use Resque\Api\RedisError;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
+use Resque\Config\StaticPool;
+use Resque\Job\IJobSource;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
@@ -14,23 +17,25 @@ use Resque\Worker\WorkerProcess;
 
 class StaticPoolMaintainer implements IProcessMaintainer {
 
-    /** @var string */
-    private $poolName;
+    /** @var StaticPool */
+    private $pool;
     /** @var string */
     private $processSetKey;
 
     /**
      * @param string $poolName
+     *
+     * @throws ConfigException
      */
     public function __construct($poolName) {
-        $this->poolName = $poolName;
-        $this->processSetKey = Key::localPoolProcesses($this->poolName);
+        $this->processSetKey = Key::localPoolProcesses($poolName);
+        $this->pool = GlobalConfig::getInstance()->getStaticPoolConfig()->getPool($poolName);
     }
 
 
     /**
      * @return WorkerImage[]
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function getLocalProcesses() {
         $workerIds = Resque::redis()->sMembers($this->processSetKey);
@@ -46,11 +51,10 @@ class StaticPoolMaintainer implements IProcessMaintainer {
     /**
      * Cleans up and recovers local processes.
      *
-     * @throws ConfigException
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     public function maintain() {
-        $workerLimit = GlobalConfig::getInstance()->getStaticPoolConfig()->getPool($this->poolName)->getWorkerCount();
+        $workerLimit = $this->pool->getWorkerCount();
 
         $alive = $this->cleanupWorkers($workerLimit);
 
@@ -63,20 +67,26 @@ class StaticPoolMaintainer implements IProcessMaintainer {
      * @param int $workerLimit
      *
      * @return int
-     * @throws Resque\Api\RedisError
+     * @throws RedisError
      */
     private function cleanupWorkers($workerLimit) {
         $alive = 0;
         foreach ($this->getLocalProcesses() as $image) {
             // cleanup if dead
             if (!$image->isAlive()) {
-                Resque::redis()->sRem($this->processSetKey, $image->getId());
+                Log::notice("Cleaning up dead {$this->pool->getName()} worker.", [
+                    'process_id' => $image->getId()
+                ]);
+                $image->unregister();
+                $this->clearBuffer($this->pool->createJobSource($image));
                 continue;
             }
 
             // kill and cleanup
             if ($alive >= $workerLimit) {
-                Log::notice("Terminating {$this->poolName} worker process");
+                Log::notice("Terminating {$this->pool->getName()} worker process.", [
+                    'worker_id' => $image->getId()
+                ]);
                 posix_kill($image->getPid(), SIGTERM);
                 continue;
             }
@@ -87,6 +97,22 @@ class StaticPoolMaintainer implements IProcessMaintainer {
         return $alive;
     }
 
+    /**
+     * @param IJobSource $jobSource
+     *
+     * @throws RedisError
+     */
+    private function clearBuffer(IJobSource $jobSource) {
+        while (($buffered = $jobSource->bufferPop()) !== null) {
+            Log::error("Found non-empty buffer for {$this->pool->getName()} worker.", [
+                'payload' => $buffered->toString()
+            ]);
+        }
+    }
+
+    /**
+     * @throws RedisError
+     */
     private function forkWorker() {
         $pid = Process::fork();
         if ($pid === false) {
@@ -98,8 +124,11 @@ class StaticPoolMaintainer implements IProcessMaintainer {
         if ($pid === 0) {
             SignalHandler::instance()->unregisterAll();
 
-            $image = WorkerImage::create($this->poolName, 'static');
-            $worker = new WorkerProcess($staticSource, $image);
+            $image = WorkerImage::create($this->pool->getName(), 'static');
+            $jobSource = $this->pool->createJobSource($image);
+            $this->clearBuffer($jobSource);
+
+            $worker = new WorkerProcess($jobSource, $image);
             if ($worker === null) {
                 exit(0);
             }
@@ -107,13 +136,12 @@ class StaticPoolMaintainer implements IProcessMaintainer {
             try {
                 $worker->register();
                 $worker->work();
+                $worker->unregister();
             } catch (\Throwable $t) {
                 Log::error('Worker process failed.', [
                     'exception' => $t,
                     'process_id' => $image->getId()
                 ]);
-            } finally {
-                $worker->unregister();
             }
             exit(0);
         }

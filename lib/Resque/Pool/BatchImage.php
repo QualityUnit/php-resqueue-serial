@@ -30,7 +30,7 @@ class BatchImage {
         return new self($batchId, $sourceId, $jobName, $suffix);
     }
 
-    public function getBatchKey() {
+    public function getKey() {
         return Key::committedBatch($this->id);
     }
 

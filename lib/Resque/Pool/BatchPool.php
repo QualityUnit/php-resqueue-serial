@@ -3,30 +3,36 @@
 namespace Resque\Pool;
 
 use Resque;
+use Resque\Config\GlobalConfig;
+use Resque\Config\IPool;
+use Resque\Job\BatchJobSource;
 use Resque\Key;
+use Resque\Queue\JobQueue;
+use Resque\Worker\WorkerImage;
 
-class BatchPool {
+class BatchPool implements IPool {
 
     /**
      * KEYS [SOURCE_WORKERS_KEY, BACKLOG_LIST_KEY, UNIT_QUEUES_SET_KEY, POOL_QUEUES_KEY]
-     * ARGS [SOURCE_ID, BATCH_ID, BATCH_KEY]
+     * ARGS [SOURCE_ID, BATCH_ID]
      */
     const SCRIPT_ASSIGN_BATCH = /* @lang Lua */
         <<<LUA
 if redis.call('hexists', KEYS[1], ARGV[1]) then
-    return redis.call('rpush', KEYS[2], ARGV[2])
+    return redis.call('lpush', KEYS[2], ARGV[2])
 end 
-local added = redis.call('sadd', KEYS[3], ARGV[3])
-redis.call('zincrby', KEYS[4], added, KEYS[3])
+local size = redis.call('lpush', KEYS[3], ARGV[2])
+redis.call('zadd', KEYS[4], size, KEYS[3])
 LUA;
 
     /**
      * KEYS [UNIT_QUEUES_SET_KEY, POOL_QUEUES_KEY, SOURCE_WORKERS_KEY, BACKLOG_LIST_KEY, COMMITTED_BATCH_LIST_KEY]
-     * ARGS [BATCH_KEY, SOURCE_ID]
+     * ARGS [BATCH_ID, SOURCE_ID]
      */
     const SCRIPT_REMOVE_BATCH = /* @lang Lua */
         <<<LUA
-local val = -redis.call('srem', KEYS[1], ARGV[1])
+local val = -redis.call('lrem', KEYS[1], ARGV[1])
+if (val == 0) then return end
 redis.call('zincrby', KEYS[2], val, KEYS[1])
 redis.call('hdel', KEYS[3], ARGV[2])
 redis.call('rpoplpush', KEYS[4], KEYS[5])
@@ -54,6 +60,7 @@ LUA;
      * @param BatchImage $batch
      *
      * @throws PoolStateException
+     * @throws Resque\Api\RedisError
      */
     public function assignBatch(BatchImage $batch) {
         $unitId = $this->getNextUnitId();
@@ -63,15 +70,61 @@ LUA;
             [
                 Key::batchPoolSourceWorker($this->poolName),
                 Key::batchPoolBacklogList($this->poolName, $batch->getSourceId()),
-                Key::batchPoolUnitQueueSet($this->poolName, $unitId),
+                Key::batchPoolUnitQueueList($this->poolName, $unitId),
                 Key::batchPoolQueuesSortedSet($this->poolName)
             ],
             [
                 $batch->getSourceId(),
                 $batch->getId(),
-                $batch->getBatchKey(),
             ]
         );
+    }
+
+    /**
+     * @param string $unitId
+     *
+     * @return mixed[] values [nodeId, unitNumber]
+     */
+    public function parseUnitId($unitId) {
+        return explode('-', $unitId);
+    }
+
+    /**
+     * @param $unitNumber
+     *
+     * @return string
+     */
+    public function createLocalUnitId($unitNumber) {
+        $nodeId = GlobalConfig::getInstance()->getNodeId();
+
+        return "$nodeId-$unitNumber";
+    }
+
+    /**
+     * @param WorkerImage $workerImage
+     *
+     * @return BatchJobSource
+     */
+    public function createJobSource(WorkerImage $workerImage) {
+        $bufferQueue = new JobQueue(Key::workerBuffer($workerImage->getId()));
+
+        $unitId = $workerImage->getCode();
+        $queueListKey = Key::batchPoolUnitQueueList($this->poolName, $unitId);
+
+        return new BatchJobSource(
+            $queueListKey,
+            $bufferQueue,
+            function (BatchImage $image) use ($unitId) {
+                $this->removeBatch($image, $unitId);
+            }
+        );
+    }
+
+    /**
+     * @return string
+     */
+    public function getName() {
+        return $this->poolName;
     }
 
     /**
@@ -91,19 +144,21 @@ LUA;
     /**
      * @param BatchImage $batch
      * @param string $unitId
+     *
+     * @throws Resque\Api\RedisError
      */
     public function removeBatch(BatchImage $batch, $unitId) {
         Resque::redis()->eval(
             self::SCRIPT_REMOVE_BATCH,
             [
-                Key::batchPoolUnitQueueSet($this->poolName, $unitId),
+                Key::batchPoolUnitQueueList($this->poolName, $unitId),
                 Key::batchPoolQueuesSortedSet($this->poolName),
                 Key::batchPoolSourceWorker($this->poolName),
                 Key::batchPoolBacklogList($this->poolName, $batch->getSourceId()),
                 Key::committedBatchList()
             ],
             [
-                $batch->getBatchKey(),
+                $batch->getId(),
                 $batch->getSourceId()
             ]
         );
@@ -112,6 +167,7 @@ LUA;
     /**
      * @return string
      * @throws PoolStateException
+     * @throws Resque\Api\RedisError
      */
     private function getNextUnitId() {
         $result = Resque::redis()->zRange(Key::batchPoolQueuesSortedSet($this->poolName), 0, 0);

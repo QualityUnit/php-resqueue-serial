@@ -24,7 +24,7 @@ class Key {
         return self::of('pool', $poolName);
     }
 
-    public static function batchPoolUnitQueueSet($poolName, $unitId) {
+    public static function batchPoolUnitQueueList($poolName, $unitId) {
         return self::of('pool', $poolName, $unitId, 'queues');
     }
 
@@ -187,12 +187,12 @@ class Key {
     }
 
     /**
-     * @param string $worker
+     * @param string $workerId
      *
      * @return string
      */
-    public static function worker($worker) {
-        return self::of('worker', $worker);
+    public static function workerBuffer($workerId) {
+        return self::of('worker', $workerId);
     }
 
     /**

@@ -40,6 +40,9 @@ class BatchAllocatorProcess extends AbstractProcess {
         $this->assignBatch($batchId);
     }
 
+    /**
+     * @throws Resque\Api\RedisError
+     */
     public function revertBuffer() {
         $keyTo = Key::committedBatchList();
         while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {

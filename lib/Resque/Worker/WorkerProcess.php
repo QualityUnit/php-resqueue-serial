@@ -32,6 +32,9 @@ class WorkerProcess extends AbstractProcess {
         return parent::getImage();
     }
 
+    /**
+     * @throws \Resque\Api\RedisError
+     */
     protected function doWork() {
         $queuedJob = $this->source->bufferNextJob();
 
@@ -57,6 +60,11 @@ class WorkerProcess extends AbstractProcess {
         }
 
         $bufferedJob = $this->source->bufferPop();
+        if ($bufferedJob === null) {
+            throw new \RuntimeException('Buffer is empty after processing.', [
+                'payload' => $queuedJob->toString()
+            ]);
+        }
         $this->validateJob($queuedJob, $bufferedJob);
     }
 
