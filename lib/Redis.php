@@ -236,7 +236,7 @@ class Redis {
         try {
             $this->redisServer = $server;
             $this->createDriver();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             throw new RedisError('Redis driver creation failed: ' . $e->getMessage(), 0, $e);
         }
     }

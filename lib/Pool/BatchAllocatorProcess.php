@@ -3,7 +3,6 @@
 namespace Resque\Pool;
 
 use Resque\Config\GlobalConfig;
-use Resque\Exception;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
@@ -71,7 +70,7 @@ class BatchAllocatorProcess extends AbstractProcess {
         try {
             BatchPool::assignBatch($batch, $this->resolvePoolName($batch));
             Resque::redis()->lRem($this->bufferKey, 1, $batchId);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::critical("Failed to allocate batch $batchId to pool.", [
                 'exception' => $e
             ]);

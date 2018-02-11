@@ -2,7 +2,6 @@
 
 namespace Resque;
 
-use Exception;
 use Resque\Job\QueuedJob;
 use Resque\Protocol\DeferredException;
 use Resque\Protocol\Job;
@@ -99,7 +98,7 @@ class Resque {
         }
         try {
             self::$redis->close();
-        } catch (Exception $ignore) {
+        } catch (\Exception $ignore) {
         }
         self::$redis = null;
     }
