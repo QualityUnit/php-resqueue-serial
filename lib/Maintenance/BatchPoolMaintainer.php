@@ -56,7 +56,7 @@ LUA;
 
     /**
      * @return WorkerImage[]
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function getLocalProcesses() {
         $workerIds = Resque::redis()->sMembers($this->processSetKey);
@@ -72,7 +72,7 @@ LUA;
     /**
      * Cleans up and recovers local processes.
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function maintain() {
         $unitsAlive = $this->cleanupUnits();
@@ -84,7 +84,7 @@ LUA;
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function cleanupUnitQueues() {
         $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
@@ -110,7 +110,7 @@ LUA;
 
     /**
      * @return int[]
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function cleanupUnits() {
         $counts = array_fill(0, $this->unitCount, 0);
@@ -140,7 +140,7 @@ LUA;
     /**
      * @param IJobSource $jobSource
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function clearBuffer(IJobSource $jobSource) {
         while (($buffered = $jobSource->bufferPop()) !== null) {
@@ -153,7 +153,7 @@ LUA;
     /**
      * @param string $unitId
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function clearQueue($unitId) {
         Resque::redis()->eval(
@@ -169,7 +169,7 @@ LUA;
      * @param string $unitNumber
      * @param int $workersToCreate
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function createUnitWorkers($unitNumber, $workersToCreate) {
         for ($i = 0; $i < $workersToCreate; $i++) {
@@ -180,7 +180,7 @@ LUA;
     /**
      * @param $unitNumber
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function forkWorker($unitNumber) {
         $pid = Process::fork();

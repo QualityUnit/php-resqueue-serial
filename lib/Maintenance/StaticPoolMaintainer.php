@@ -2,7 +2,6 @@
 
 namespace Resque\Maintenance;
 
-use Resque\Api\RedisError;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Job\IJobSource;
@@ -10,6 +9,7 @@ use Resque\Key;
 use Resque\Log;
 use Resque\Pool\StaticPool;
 use Resque\Process;
+use Resque\RedisError;
 use Resque\Resque;
 use Resque\SignalHandler;
 use Resque\Worker\WorkerImage;
@@ -35,7 +35,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
 
     /**
      * @return WorkerImage[]
-     * @throws RedisError
+     * @throws \Resque\RedisError
      */
     public function getLocalProcesses() {
         $workerIds = Resque::redis()->sMembers($this->processSetKey);
@@ -51,7 +51,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
     /**
      * Cleans up and recovers local processes.
      *
-     * @throws RedisError
+     * @throws \Resque\RedisError
      */
     public function maintain() {
         $workerLimit = $this->pool->getWorkerCount();

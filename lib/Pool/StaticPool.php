@@ -29,7 +29,7 @@ class StaticPool implements IPool {
      * @param string $poolName
      *
      * @return string
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public static function assignJob($bufferKey, $poolName) {
         return Resque::redis()->rPoplPush($bufferKey, Key::staticPoolQueue($poolName));

@@ -13,7 +13,7 @@ class SchedulerMaintainer implements IProcessMaintainer {
 
     /**
      * @return SchedulerImage[]
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function getLocalProcesses() {
         $scheduleIds = \Resque\Resque::redis()->sMembers(Key::localSchedulerProcesses());
@@ -30,7 +30,7 @@ class SchedulerMaintainer implements IProcessMaintainer {
      * Cleans up and recovers local processes.
      *
      * @return void
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function maintain() {
         $schedulerIsAlive = $this->cleanupSchedulers();
@@ -43,7 +43,7 @@ class SchedulerMaintainer implements IProcessMaintainer {
      * Checks all scheduler processes and keeps at most one alive.
      *
      * @return bool true if at least one scheduler process is alive after cleanup
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function cleanupSchedulers() {
         $oneAlive = false;

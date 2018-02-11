@@ -20,7 +20,7 @@ class StaticJobSource implements IJobSource {
 
     /**
      * @return QueuedJob|null next job or null if source is empty
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function bufferNextJob() {
         return $this->jobQueue->popIntoBlocking($this->buffer, 3);
@@ -28,7 +28,7 @@ class StaticJobSource implements IJobSource {
 
     /**
      * @return QueuedJob|null buffered job or null if buffer is empty
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function bufferPop() {
         return $this->buffer->pop();

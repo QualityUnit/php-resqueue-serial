@@ -56,14 +56,14 @@ class WorkerImage extends AbstractProcessImage {
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function unregister() {
         Resque::redis()->sRem(Key::localPoolProcesses($this->poolName), $this->getId());
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function register() {
         Resque::redis()->sAdd(Key::localPoolProcesses($this->poolName), $this->getId());

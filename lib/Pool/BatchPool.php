@@ -60,7 +60,7 @@ LUA;
      * @param string $poolName
      *
      * @throws PoolStateException
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public static function assignBatch(BatchImage $batch, $poolName) {
         $unitQueueKey = self::getNextUnitQueueKey($poolName);
@@ -147,7 +147,7 @@ LUA;
      * @param BatchImage $batch
      * @param string $unitId
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function removeBatch(BatchImage $batch, $unitId) {
         $unitQueueListKey = Key::batchPoolUnitQueueList($this->poolName, $unitId);
@@ -173,7 +173,7 @@ LUA;
      *
      * @return string
      * @throws PoolStateException
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private static function getNextUnitQueueKey($poolName) {
         $result = Resque::redis()->zRange(Key::batchPoolQueuesSortedSet($poolName), 0, 0);

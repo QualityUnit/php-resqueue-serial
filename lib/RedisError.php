@@ -1,6 +1,6 @@
 <?php
 
-namespace Resque\Api;
+namespace Resque;
 
 /**
  * Redis related exceptions

@@ -29,7 +29,7 @@ class BatchAllocatorProcess extends AbstractProcess {
      * main loop
      *
      * @throws PoolStateException
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function doWork() {
         $keyFrom = Key::committedBatchList();
@@ -42,7 +42,7 @@ class BatchAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function revertBuffer() {
         $keyTo = Key::committedBatchList();
@@ -52,7 +52,7 @@ class BatchAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     protected function prepareWork() {
         while (false !== ($batchId = Resque::redis()->lIndex($this->bufferKey, -1))) {
@@ -63,7 +63,7 @@ class BatchAllocatorProcess extends AbstractProcess {
     /**
      * @param $batchId
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function assignBatch($batchId) {
         $batch = BatchImage::load($batchId);

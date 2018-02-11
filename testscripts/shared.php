@@ -115,7 +115,7 @@ class Descriptor extends JobDescriptor {
 class UidDescriptor extends Descriptor {
 
     public function getUid() {
-        return new \Resque\Api\JobUid('test', 1);
+        return new \Resque\Protocol\JobUid('test', 1);
     }
 
 }

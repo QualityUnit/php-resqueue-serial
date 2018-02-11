@@ -4,7 +4,7 @@
 namespace Resque\Job;
 
 
-use Resque\Api\RedisError;
+use Resque\RedisError;
 
 interface IJobSource {
 

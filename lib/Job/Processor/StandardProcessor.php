@@ -2,20 +2,23 @@
 
 namespace Resque\Job\Processor;
 
-use Resque\Api\Job;
-use Resque\Api\RescheduleException;
-use Resque\Api\RetryException;
 use Resque\Config\GlobalConfig;
-use Resque\Exception;
 use Resque\Job\FailException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
+use Resque\Protocol\Exceptions;
+use Resque\Protocol\Job;
+use Resque\Protocol\UniqueList;
 use Resque\Resque;
-use Resque\UniqueList;
 
 class StandardProcessor implements IProcessor {
 
+    /**
+     * @param RunningJob $runningJob
+     *
+     * @throws \Resque\RedisError
+     */
     public function process(RunningJob $runningJob) {
         $pid = Process::fork();
         if ($pid === 0) {
@@ -48,6 +51,12 @@ class StandardProcessor implements IProcessor {
         }
     }
 
+    /**
+     * @param RunningJob $runningJob
+     *
+     * @return mixed
+     * @throws FailException
+     */
     private function createTask(RunningJob $runningJob) {
         $job = $runningJob->getJob();
         try {
@@ -77,9 +86,17 @@ class StandardProcessor implements IProcessor {
         }
     }
 
+    /**
+     * @param \Resque\Protocol\Job $job
+     *
+     * @throws \InvalidArgumentException
+     * @throws \Resque\Protocol\DeferredException
+     * @throws \Resque\RedisError
+     * @throws \Resque\Protocol\UniqueException
+     */
     private function enqueueDeferred(Job $job) {
         $deferred = json_decode(UniqueList::finalize($job->getUniqueId()), true);
-        if (!is_array($deferred)) {
+        if (!\is_array($deferred)) {
             return;
         }
 
@@ -94,6 +111,10 @@ class StandardProcessor implements IProcessor {
 
     /**
      * @param RunningJob $runningJob
+     *
+     * @throws \Resque\Protocol\DeferredException
+     * @throws \Resque\RedisError
+     * @throws \Resque\Protocol\UniqueException
      */
     private function handleChild(RunningJob $runningJob) {
         $job = $runningJob->getJob();
@@ -108,17 +129,39 @@ class StandardProcessor implements IProcessor {
             $this->reportSuccess($runningJob);
 
             $this->enqueueDeferred($job);
-        } catch (RescheduleException $e) {
-            Log::debug("Rescheduling task {$job->getClass()} in {$e->getDelay()}s");
-
-            $this->rescheduleJob($runningJob, $e);
-        } catch (RetryException $e) {
-            UniqueList::removeAll($job->getUniqueId());
-            $runningJob->retry($e);
         } catch (\Exception $e) {
-            UniqueList::removeAll($job->getUniqueId());
-            $runningJob->fail($e);
+            $this->handleException($runningJob, $e);
         }
+    }
+
+    /**
+     * @param RunningJob $runningJob
+     * @param \Exception $e
+     *
+     * @throws \Resque\Protocol\DeferredException
+     * @throws \Resque\RedisError
+     * @throws \Resque\Protocol\UniqueException
+     */
+    private function handleException(RunningJob $runningJob, \Exception $e) {
+        if (\get_class($e) === \RuntimeException::class) {
+            switch ($e->getCode()) {
+                case Exceptions::CODE_RETRY:
+                    UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                    $runningJob->retry($e);
+
+                    return;
+                case Exceptions::CODE_RESCHEDULE:
+                    $delay = json_decode($e->getMessage(), true)['delay'] ?? 0;
+                    Log::debug("Rescheduling task {$runningJob->getJob()->getName()} in {$delay}s");
+                    $this->rescheduleJob($runningJob, $delay);
+
+                    return;
+                default: // fall through
+            }
+        }
+
+        UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+        $runningJob->fail($e);
     }
 
     private function includePath(Job $job) {
@@ -137,7 +180,7 @@ class StandardProcessor implements IProcessor {
     private function reportSuccess(RunningJob $runningJob) {
         try {
             $runningJob->success();
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             Log::error('Failed to report success of a job.', [
                 'exception' => $e,
                 'payload' => $runningJob->getJob()->toArray()
@@ -147,18 +190,19 @@ class StandardProcessor implements IProcessor {
 
     /**
      * @param RunningJob $runningJob
-     * @param RescheduleException $e
+     * @param int $delay
      *
+     * @throws \Resque\RedisError
      * @internal param $delay
      */
-    private function rescheduleJob(RunningJob $runningJob, RescheduleException $e) {
+    private function rescheduleJob(RunningJob $runningJob, $delay) {
         try {
             UniqueList::editState($runningJob->getJob()->getUniqueId(), UniqueList::STATE_QUEUED);
             UniqueList::removeDeferred($runningJob->getJob()->getUniqueId());
-            if ($e->getDelay() > 0) {
-                $runningJob->rescheduleDelayed($e->getJobDescriptor(), $e->getDelay());
+            if ($delay > 0) {
+                $runningJob->rescheduleDelayed($delay);
             } else {
-                $runningJob->reschedule($e->getJobDescriptor());
+                $runningJob->reschedule();
             }
         } catch (\Exception $e) {
             Log::critical('Failed to reschedule a job.', [
@@ -171,7 +215,7 @@ class StandardProcessor implements IProcessor {
 
     private function setupEnvironment(Job $job) {
         $env = $job->getEnvironment();
-        if (is_array($env)) {
+        if (\is_array($env)) {
             foreach ($env as $key => $value) {
                 $_SERVER[$key] = $value;
             }

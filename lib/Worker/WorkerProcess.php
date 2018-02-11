@@ -33,7 +33,7 @@ class WorkerProcess extends AbstractProcess {
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     protected function doWork() {
         $queuedJob = $this->source->bufferNextJob();
@@ -75,7 +75,7 @@ class WorkerProcess extends AbstractProcess {
      * @param QueuedJob $queuedJob
      *
      * @return RunningJob
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function startWorkOn(QueuedJob $queuedJob) {
         return new RunningJob($this, $queuedJob);

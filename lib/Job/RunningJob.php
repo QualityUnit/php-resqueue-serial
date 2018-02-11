@@ -2,10 +2,9 @@
 
 namespace Resque\Job;
 
-use Resque\Api\Job;
-use Resque\Api\JobDescriptor;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
+use Resque\Protocol\Job;
 use Resque\Resque;
 use Resque\Worker\WorkerProcess;
 
@@ -68,19 +67,33 @@ class RunningJob {
         return $this->worker;
     }
 
-    public function reschedule(JobDescriptor $descriptor) {
-        Resque::enqueue($this->getJobToReschedule($descriptor), false);
+    /**
+     * @throws \Resque\RedisError
+     */
+    public function reschedule() {
+        Resque::enqueue($this->job, false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
 
-    public function rescheduleDelayed(JobDescriptor $descriptor, $in) {
-        Resque::enqueueDelayed($in,
-            $this->getJobToReschedule($descriptor), false);
+    /**
+     * @param $in
+     *
+     * @throws \Resque\RedisError
+     */
+    public function rescheduleDelayed($in) {
+        Resque::enqueueDelayed($in, $this->job, false);
         $this->status->setFinished();
         $this->reportSuccess();
     }
 
+    /**
+     * @param \Exception $e
+     *
+     * @throws \Resque\Protocol\DeferredException
+     * @throws \Resque\RedisError
+     * @throws \Resque\Protocol\UniqueException
+     */
     public function retry(\Exception $e) {
         if ($this->job->getFailCount() >= (GlobalConfig::getInstance()->getMaxTaskFails() - 1)) {
             $this->fail($e);
@@ -113,17 +126,6 @@ class RunningJob {
             'exception' => $t,
             'retried_by' => $retryText
         ];
-    }
-
-    /**
-     * @param JobDescriptor $descriptor
-     *
-     * @return Job
-     */
-    private function getJobToReschedule(JobDescriptor $descriptor) {
-        return $descriptor !== null
-            ? Job::fromJobDescriptor($descriptor)
-            : $this->job;
     }
 
     /**

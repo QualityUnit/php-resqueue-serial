@@ -4,7 +4,6 @@ namespace Resque;
 
 use Credis_Client;
 use CredisException;
-use Resque\Api\RedisError;
 
 /**
  * Wrap Credis to add namespace support and various helper methods.
@@ -26,7 +25,7 @@ use Resque\Api\RedisError;
  * @method array|Credis_Client         role()
  * @method array|Credis_Client         time()
  * Keys:
- * @method int|Credis_Client           del(string | string [] $key)
+ * @method int|Credis_Client           del(string | string[] $key)
  * @method int|Credis_Client           exists(string $key)
  * @method int|Credis_Client           expire(string $key, int $seconds)
  * @method int|Credis_Client           expireAt(string $key, int $timestamp)

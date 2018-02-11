@@ -2,9 +2,9 @@
 
 namespace Resque\Job;
 
-use Resque\Api\RedisError;
 use Resque\Pool\BatchImage;
 use Resque\Queue\JobQueue;
+use Resque\RedisError;
 use Resque\Resque;
 
 class BatchJobSource implements IJobSource {
@@ -54,7 +54,7 @@ class BatchJobSource implements IJobSource {
 
     /**
      * @return QueuedJob|null buffered job or null if buffer is empty
-     * @throws RedisError
+     * @throws \Resque\RedisError
      */
     public function bufferPop() {
         return $this->buffer->pop();

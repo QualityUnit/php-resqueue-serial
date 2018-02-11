@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Resque\Api;
+namespace Resque\Protocol;
 
 
 class Job {
@@ -51,25 +51,6 @@ class Job {
         $job->failCount = $array['failCount'] ?? $job->failCount;
         $uidValid = isset($array['unique']) && \is_array($array['unique']);
         $job->uid = JobUid::fromArray($uidValid ? $array['unique'] : []);
-
-        return $job;
-    }
-
-    /**
-     * @param JobDescriptor $jobDescriptor
-     *
-     * @return Job
-     */
-    public static function fromJobDescriptor(JobDescriptor $jobDescriptor) {
-        $job = new Job();
-        $job->class = $jobDescriptor->getClass();
-        $job->sourceId = $jobDescriptor->getSourceId();
-        $job->name = $jobDescriptor->getName();
-        $job->args = $jobDescriptor->getArgs();
-        $job->uid = $jobDescriptor->getUid();
-        $job->isMonitored = $jobDescriptor->isMonitored();
-        $job->includePath = $jobDescriptor->getIncludePath();
-        $job->environment = $jobDescriptor->getEnvironment();
 
         return $job;
     }

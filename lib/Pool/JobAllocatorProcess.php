@@ -28,7 +28,7 @@ class JobAllocatorProcess extends AbstractProcess {
     /**
      * main loop
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function doWork() {
         $keyFrom = Key::unassigned();
@@ -41,7 +41,7 @@ class JobAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function revertBuffer() {
         $keyTo = Key::unassigned();
@@ -51,7 +51,7 @@ class JobAllocatorProcess extends AbstractProcess {
     }
 
     /**
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     protected function prepareWork() {
         while (false !== ($payload = Resque::redis()->lIndex($this->bufferKey, -1))) {
@@ -62,7 +62,7 @@ class JobAllocatorProcess extends AbstractProcess {
     /**
      * @param $payload
      *
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     private function clearBuffer($payload) {
         Resque::redis()->lRem($this->bufferKey, 1, $payload);
@@ -71,7 +71,7 @@ class JobAllocatorProcess extends AbstractProcess {
     /**
      * @param $payload
      *
-     * @throws \Resque\Api\RedisError if processing failed
+     * @throws \Resque\RedisError if processing failed
      */
     private function processPayload($payload) {
         $decoded = json_decode($payload, true);

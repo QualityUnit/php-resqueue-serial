@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Resque\Api;
+namespace Resque\Protocol;
 
 
 class JobUid {

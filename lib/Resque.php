@@ -3,10 +3,11 @@
 namespace Resque;
 
 use Exception;
-use Resque\Api\DeferredException;
-use Resque\Api\Job;
-use Resque\Api\UniqueException;
 use Resque\Job\QueuedJob;
+use Resque\Protocol\DeferredException;
+use Resque\Protocol\Job;
+use Resque\Protocol\UniqueException;
+use Resque\Protocol\UniqueList;
 use Resque\Queue\JobQueue;
 use Resque\Scheduler\DelayedScheduler;
 
@@ -26,7 +27,7 @@ class Resque {
      * @param bool $checkUnique
      *
      * @return QueuedJob
-     * @throws Api\RedisError
+     * @throws \Resque\RedisError
      * @throws DeferredException
      * @throws UniqueException
      */
@@ -40,12 +41,12 @@ class Resque {
 
     /**
      * @param int $delay Delay in seconds
-     * @param Job $job
+     * @param \Resque\Protocol\Job $job
      * @param bool $checkUnique
      *
-     * @throws Api\RedisError
      * @throws DeferredException
      * @throws UniqueException
+     * @throws RedisError
      */
     public static function enqueueDelayed($delay, Job $job, $checkUnique) {
         DelayedScheduler::schedule(time() + $delay, $job, $checkUnique);
@@ -60,7 +61,7 @@ class Resque {
 
     /**
      * @return Redis
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public static function redis() {
         if (self::$redis !== null) {

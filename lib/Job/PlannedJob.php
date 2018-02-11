@@ -2,7 +2,7 @@
 
 namespace Resque\Job;
 
-use Resque\Api\Job;
+use Resque\Protocol\Job;
 
 class PlannedJob {
 

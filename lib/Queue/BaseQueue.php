@@ -27,7 +27,7 @@ class BaseQueue implements IQueue {
 
     /**
      * @return string|null payload
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function pop() {
         return Resque::redis()->rPop($this->key) ?: null;
@@ -37,7 +37,7 @@ class BaseQueue implements IQueue {
      * @param int $timeout Timeout in seconds
      *
      * @return string|null payload
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function popBlocking($timeout) {
         $payload = Resque::redis()->brPop($this->key, $timeout);
@@ -52,7 +52,7 @@ class BaseQueue implements IQueue {
      * @param IQueue $destinationQueue
      *
      * @return string|null
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function popInto(IQueue $destinationQueue) {
         return Resque::redis()->rPoplPush($this->key, $destinationQueue->getKey()) ?: null;
@@ -63,7 +63,7 @@ class BaseQueue implements IQueue {
      * @param int $timeout Timeout in seconds
      *
      * @return string|null
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function popIntoBlocking(IQueue $destinationQueue, $timeout) {
         return Resque::redis()->brPoplPush($this->key, $destinationQueue->getKey(), $timeout) ?: null;
@@ -73,7 +73,7 @@ class BaseQueue implements IQueue {
      * @param string $payload
      *
      * @return string
-     * @throws \Resque\Api\RedisError
+     * @throws \Resque\RedisError
      */
     public function push($payload) {
         Resque::redis()->lPush($this->key, $payload);

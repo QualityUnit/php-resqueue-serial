@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Resque\Api;
+namespace Resque;
 
 /**
  * All exceptions thrown from resque api will be descendants of this class.
