@@ -43,18 +43,13 @@ LUA;
 
     /**
      * @param \Resque\Protocol\Job $job job to create unique record for
-     * @param bool $ignoreFail if true, ignore already existing unique record
      *
      * @throws DeferredException if job was deferred and should not be queued
      * @throws UniqueException if adding wasn't successful and job could not be deferred
      * @throws \Resque\RedisError
      */
-    public static function add(Job $job, $ignoreFail = false) {
-        $uniqueId = $job->getUniqueId();
-
-        if (!$uniqueId
-            || Resque::redis()->setNx(Key::uniqueState($uniqueId), self::STATE_QUEUED)
-            || $ignoreFail) {
+    public static function add(Job $job) {
+        if (self::addIfNotExists($job)) {
             return;
         }
 
@@ -68,29 +63,13 @@ LUA;
     /**
      * @param Job $job
      *
-     * @return bool
+     * @return bool false if unique state already exists, true otherwise
      * @throws \Resque\RedisError
      */
-    public static function addDeferred(Job $job) {
-        $uid = $job->getUid();
-        if ($uid === null || !$uid->isDeferred()) {
-            Log::error('Attempted to defer non-deferrable job.', [
-                'payload' => $job->toArray()
-            ]);
-            throw new \RuntimeException('Only deferrable jobs can be deferred.');
-        }
+    public static function addIfNotExists(Job $job) {
+        $uniqueId = $job->getUniqueId();
 
-        return false !== Resque::redis()->eval(
-                self::SCRIPT_ADD_DEFERRED,
-                [
-                    Key::uniqueState($uid->getId()),
-                    Key::uniqueDeferred($uid->getId())
-                ],
-                [
-                    self::STATE_RUNNING,
-                    $job->toString()
-                ]
-            );
+        return !$uniqueId || Resque::redis()->setNx(Key::uniqueState($uniqueId), self::STATE_QUEUED);
     }
 
     /**
@@ -150,5 +129,33 @@ LUA;
     public static function removeDeferred($uniqueId) {
         return !$uniqueId
             || Resque::redis()->del(Key::uniqueDeferred($uniqueId));
+    }
+
+    /**
+     * @param Job $job
+     *
+     * @return bool
+     * @throws \Resque\RedisError
+     */
+    private static function addDeferred(Job $job) {
+        $uid = $job->getUid();
+        if ($uid === null || !$uid->isDeferred()) {
+            Log::error('Attempted to defer non-deferrable job.', [
+                'payload' => $job->toArray()
+            ]);
+            throw new \RuntimeException('Only deferrable jobs can be deferred.');
+        }
+
+        return false !== Resque::redis()->eval(
+                self::SCRIPT_ADD_DEFERRED,
+                [
+                    Key::uniqueState($uid->getId()),
+                    Key::uniqueDeferred($uid->getId())
+                ],
+                [
+                    self::STATE_RUNNING,
+                    $job->toString()
+                ]
+            );
     }
 }

@@ -103,9 +103,9 @@ class StandardProcessor implements IProcessor {
         $deferredJob = Job::fromArray($deferred);
         $delay = $deferredJob->getUid()->getDeferralDelay();
         if ($delay > 0) {
-            Resque::enqueueDelayed($delay, $deferredJob, true);
+            Resque::delayedEnqueue($delay, $deferredJob);
         } else {
-            Resque::enqueue($deferredJob, true);
+            Resque::enqueue($deferredJob);
         }
     }
 

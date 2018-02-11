@@ -14,15 +14,36 @@ class DelayedScheduler implements IScheduler {
     /**
      * @param int $at Unix timestamp
      * @param \Resque\Protocol\Job $job
-     * @param bool $checkUnique
      *
      * @throws \Resque\Protocol\DeferredException
-     * @throws \Resque\RedisError
      * @throws \Resque\Protocol\UniqueException
+     * @throws \Resque\RedisError
      */
-    public static function schedule($at, Job $job, $checkUnique = true) {
-        UniqueList::add($job, !$checkUnique);
+    public static function schedule($at, Job $job) {
+        UniqueList::add($job);
 
+        self::schedulePrivate($at, $job);
+    }
+
+    /**
+     * @param int $at Unix timestamp
+     * @param \Resque\Protocol\Job $job
+     *
+     * @throws \Resque\RedisError
+     */
+    public static function scheduleUnsafe($at, Job $job) {
+        UniqueList::addIfNotExists($job);
+
+        self::schedulePrivate($at, $job);
+    }
+
+    /**
+     * @param $at
+     * @param Job $job
+     *
+     * @throws \Resque\RedisError
+     */
+    private static function schedulePrivate($at, Job $job): void {
         Resque::redis()->rPush(Key::delayed($at), json_encode($job->toArray()));
         Resque::redis()->zAdd(Key::delayedQueueSchedule(), $at, $at);
     }
@@ -67,15 +88,13 @@ class DelayedScheduler implements IScheduler {
      *
      * @param int $timestamp Search for any items up to this timestamp to schedule.
      *
-     * @throws \Resque\Protocol\DeferredException
      * @throws \Resque\RedisError
-     * @throws \Resque\Protocol\UniqueException
      */
     private function enqueueItemsForTimestamp($timestamp) {
         while (($job = $this->nextJobForTimestamp($timestamp)) !== null) {
             Log::info("queueing {$job->getName()} [delayed]");
 
-            Resque::enqueue($job, false);
+            Resque::enqueueExisting($job);
         }
     }
 
@@ -93,6 +112,7 @@ class DelayedScheduler implements IScheduler {
         if (!$item) {
             // apparently broken timestamp
             Resque::redis()->zRem(Key::delayedQueueSchedule(), $timestamp);
+
             return null;
         }
 

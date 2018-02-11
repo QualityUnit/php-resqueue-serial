@@ -71,7 +71,7 @@ class RunningJob {
      * @throws \Resque\RedisError
      */
     public function reschedule() {
-        Resque::enqueue($this->job, false);
+        Resque::enqueueExisting($this->job);
         $this->status->setFinished();
         $this->reportSuccess();
     }
@@ -82,7 +82,7 @@ class RunningJob {
      * @throws \Resque\RedisError
      */
     public function rescheduleDelayed($in) {
-        Resque::enqueueDelayed($in, $this->job, false);
+        Resque::delayedEnqueueExisting($in, $this->job);
         $this->status->setFinished();
         $this->reportSuccess();
     }
@@ -103,7 +103,7 @@ class RunningJob {
 
         $this->job->incFailCount();
 
-        $newJobId = Resque::enqueue($this->job, false);
+        $newJobId = Resque::enqueueExisting($this->job);
         $this->reportRetry($e, $newJobId);
         $this->status->setRetried();
     }

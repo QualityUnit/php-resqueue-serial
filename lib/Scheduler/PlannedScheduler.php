@@ -127,7 +127,7 @@ LUA;
                     ]
             );
 
-            Resque::enqueue($job, true);
+            Resque::enqueue($job);
         }
     }
 
