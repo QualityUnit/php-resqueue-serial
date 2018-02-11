@@ -4,6 +4,7 @@
 namespace Resque\Init;
 
 
+use ReflectionClass;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Log;
@@ -38,13 +39,11 @@ class InitProcess {
     }
 
     public function recover() {
-        Log::debug('========= Starting maintenance');
-
         foreach ($this->maintainers as $maintainer) {
+            $className = (new ReflectionClass($maintainer))->getShortName();
+            Log::info("=== Maintenance started ($className)");
             $maintainer->maintain();
         }
-
-        Log::debug('========= Maintenance ended');
     }
 
     public function reload() {

@@ -5,6 +5,7 @@ namespace Resque\Pool;
 use Resque\Config\GlobalConfig;
 use Resque\Job\BatchJobSource;
 use Resque\Key;
+use Resque\Log;
 use Resque\Queue\JobQueue;
 use Resque\Resque;
 use Resque\Worker\WorkerImage;
@@ -63,6 +64,7 @@ LUA;
      * @throws \Resque\RedisError
      */
     public static function assignBatch(BatchImage $batch, $poolName) {
+        Log::debug("Assigning batch {$batch->getId()} to pool $poolName");
         $unitQueueKey = self::getNextUnitQueueKey($poolName);
 
         Resque::redis()->eval(

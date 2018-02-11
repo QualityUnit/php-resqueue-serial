@@ -125,6 +125,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
             SignalHandler::instance()->unregisterAll();
 
             $image = WorkerImage::create($this->pool->getName(), 's');
+            Log::info("Creating static pool worker {$image->getId()}");
             $jobSource = $this->pool->createJobSource($image);
             $this->clearBuffer($jobSource);
 

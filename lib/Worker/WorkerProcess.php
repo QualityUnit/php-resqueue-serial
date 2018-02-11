@@ -42,13 +42,13 @@ class WorkerProcess extends AbstractProcess {
             return;
         }
 
-        Log::info("Found job {$queuedJob->getId()}. Processing.");
+        Log::debug("Found job {$queuedJob->getId()}. Processing.");
 
         $runningJob = $this->startWorkOn($queuedJob);
 
         try {
             $this->processor->process($runningJob);
-            Log::info("Processing of job {$runningJob->getId()} has finished", [
+            Log::debug("Processing of job {$runningJob->getId()} has finished", [
                 'payload' => $runningJob->getJob()->toString()
             ]);
         } catch (\Exception $e) {

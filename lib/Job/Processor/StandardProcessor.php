@@ -77,7 +77,7 @@ class StandardProcessor implements IProcessor {
 
             $className = $job->getClass();
             $task = new $className;
-            $task->job = $job;
+            $task->args = $job->getArgs();
 
             return $task;
         } catch (\Exception $e) {
@@ -104,7 +104,11 @@ class StandardProcessor implements IProcessor {
             return;
         }
 
+
         $deferredJob = Job::fromArray($deferred);
+        Log::debug("Enqueuing deferred job {$deferredJob->getName()}", [
+            'payload' => $deferredJob->toString()
+        ]);
         $delay = $deferredJob->getUid()->getDeferralDelay();
         if ($delay > 0) {
             Resque::delayedEnqueue($delay, $deferredJob);

@@ -7,6 +7,7 @@ use Resque\Key;
 use Resque\Log;
 use Resque\Pool\AllocatorImage;
 use Resque\Pool\BatchAllocatorProcess;
+use Resque\Pool\IAllocatorProcess;
 use Resque\Pool\JobAllocatorProcess;
 use Resque\Process;
 use Resque\SignalHandler;
@@ -101,7 +102,7 @@ class AllocatorMaintainer implements IProcessMaintainer {
     /**
      * @param AllocatorImage $image
      *
-     * @return BatchAllocatorProcess|JobAllocatorProcess|null
+     * @return IAllocatorProcess|null
      */
     private function createProcessObject(AllocatorImage $image) {
         if ($this->isJobAllocator($image)) {
@@ -134,6 +135,7 @@ class AllocatorMaintainer implements IProcessMaintainer {
             SignalHandler::instance()->unregisterAll();
 
             $image = AllocatorImage::create($codePrefix . getmypid());
+            Log::info("Creating allocator {$image->getId()}");
             $allocator = $this->createProcessObject($image);
             if ($allocator === null) {
                 exit(0);
@@ -180,7 +182,7 @@ class AllocatorMaintainer implements IProcessMaintainer {
      * @param AllocatorImage $image
      */
     private function terminateAllocator(AllocatorImage $image) {
-        Log::notice('Terminating allocator process');
+        Log::notice("Terminating allocator process {$image->getId()}");
         posix_kill($image->getPid(), SIGTERM);
     }
 }

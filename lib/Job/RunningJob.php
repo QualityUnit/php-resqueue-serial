@@ -122,7 +122,7 @@ class RunningJob {
      */
     private function reportFail(\Throwable $t) {
         Log::error('Job failed.', $this->createFailContext($t));
-        $this->worker->getStats()->incFailed();
+        // TODO STATS fail
     }
 
     /**
@@ -131,15 +131,15 @@ class RunningJob {
      */
     private function reportRetry(\Exception $e, $retryJobId) {
         Log::error('Job was retried.', $this->createFailContext($e, $retryJobId));
-        $this->worker->getStats()->incRetried();
+        // TODO STATS retry
     }
 
     private function reportSuccess() {
         $duration = floor((microtime(true) - $this->startTime) * 1000);
         if ($duration > 0) {
-            $this->worker->getStats()->incProcessingTime($duration);
+            // TODO STATS processing time
         }
 
-        $this->worker->getStats()->incProcessed();
+        // TODO STATS success
     }
 }

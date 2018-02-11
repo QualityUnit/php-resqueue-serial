@@ -10,7 +10,7 @@ use Resque\Log;
 use Resque\Process\AbstractProcess;
 use Resque\Resque;
 
-class JobAllocatorProcess extends AbstractProcess {
+class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
     const BLOCKING_TIMEOUT = 3;
 
@@ -32,9 +32,11 @@ class JobAllocatorProcess extends AbstractProcess {
      * @throws \Resque\RedisError
      */
     public function doWork() {
+        Log::debug('Retrieving job from unassigned jobs');
         $keyFrom = Key::unassigned();
         $payload = Resque::redis()->brPoplPush($keyFrom, $this->bufferKey, self::BLOCKING_TIMEOUT);
         if ($payload === false) {
+            Log::debug('No jobs to allocate');
             return;
         }
 
@@ -45,6 +47,7 @@ class JobAllocatorProcess extends AbstractProcess {
      * @throws \Resque\RedisError
      */
     public function revertBuffer() {
+        Log::info("Reverting allocator buffer {$this->bufferKey}");
         $keyTo = Key::unassigned();
         while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
             // NOOP
@@ -98,6 +101,7 @@ class JobAllocatorProcess extends AbstractProcess {
 
             return;
         }
+        Log::debug("Found job {$queuedJob->getJob()->getName()}");
 
         $poolName = $this->resolvePoolName($queuedJob);
         $enqueuedPayload = StaticPool::assignJob($this->bufferKey, $poolName);

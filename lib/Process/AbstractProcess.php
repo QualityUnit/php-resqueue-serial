@@ -52,7 +52,7 @@ abstract class AbstractProcess implements IStandaloneProcess {
             ->register(SIGHUP, [$this, 'reloadAll'])
             ->register(SIGUSR1, [$this, 'initLogger']);
 
-        Log::notice('Initialization complete.');
+        Log::info('Initialization complete.');
     }
 
     public function reloadAll() {
@@ -76,7 +76,7 @@ abstract class AbstractProcess implements IStandaloneProcess {
         $this->getImage()->unregister();
 
         SignalHandler::instance()->unregisterAll();
-        Log::notice('Ended');
+        Log::notice('Process unregistered');
     }
 
     /**
@@ -86,6 +86,7 @@ abstract class AbstractProcess implements IStandaloneProcess {
      */
     public function work() {
         Process::setTitle('Working');
+        Log::info('Starting work');
 
         $this->prepareWork();
         while ($this->canRun()) {

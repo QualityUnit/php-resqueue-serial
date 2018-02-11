@@ -103,6 +103,7 @@ LUA;
             }
 
             if ($unitNumber >= $this->unitCount) {
+                Log::notice("Clearing unit $unitId queue");
                 $this->clearQueue($unitId);
             }
         }
@@ -194,6 +195,7 @@ LUA;
             SignalHandler::instance()->unregisterAll();
 
             $image = WorkerImage::create($this->pool->getName(), $unitNumber);
+            Log::info("Creating batch pool worker {$image->getId()}");
             $jobSource = $this->pool->createJobSource($image);
             $this->clearBuffer($jobSource);
 

@@ -8,7 +8,7 @@ use Resque\Log;
 use Resque\Process\AbstractProcess;
 use Resque\Resque;
 
-class BatchAllocatorProcess extends AbstractProcess {
+class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
     const BLOCKING_TIMEOUT = 3;
 
@@ -31,9 +31,11 @@ class BatchAllocatorProcess extends AbstractProcess {
      * @throws \Resque\RedisError
      */
     public function doWork() {
+        Log::debug('Retrieving batch from committed batches');
         $keyFrom = Key::committedBatchList();
         $batchId = Resque::redis()->brPoplPush($keyFrom, $this->bufferKey, self::BLOCKING_TIMEOUT);
         if ($batchId === false) {
+            Log::debug('No batches to allocate');
             return;
         }
 
@@ -44,6 +46,7 @@ class BatchAllocatorProcess extends AbstractProcess {
      * @throws \Resque\RedisError
      */
     public function revertBuffer() {
+        Log::info("Reverting allocator buffer {$this->bufferKey}");
         $keyTo = Key::committedBatchList();
         while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
             // NOOP

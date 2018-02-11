@@ -4,6 +4,7 @@ namespace Resque\Pool;
 
 use Resque\Job\StaticJobSource;
 use Resque\Key;
+use Resque\Log;
 use Resque\Queue\JobQueue;
 use Resque\Resque;
 use Resque\Worker\WorkerImage;
@@ -32,6 +33,7 @@ class StaticPool implements IPool {
      * @throws \Resque\RedisError
      */
     public static function assignJob($bufferKey, $poolName) {
+        Log::debug("Assigning job to pool $poolName");
         return Resque::redis()->rPoplPush($bufferKey, Key::staticPoolQueue($poolName));
     }
 

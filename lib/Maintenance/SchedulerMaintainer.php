@@ -58,7 +58,7 @@ class SchedulerMaintainer implements IProcessMaintainer {
             }
             // kill and cleanup
             if ($oneAlive) {
-                Log::notice('Terminating extra scheduler process');
+                Log::notice("Terminating extra scheduler process {$image->getId()}");
                 posix_kill($image->getPid(), SIGTERM);
                 continue;
             }
@@ -79,6 +79,7 @@ class SchedulerMaintainer implements IProcessMaintainer {
 
         if ($pid === 0) {
             SignalHandler::instance()->unregisterAll();
+            Log::info('Creating scheduler ' . getmypid());
             $scheduler = new SchedulerProcess();
             try {
                 $scheduler->register();
