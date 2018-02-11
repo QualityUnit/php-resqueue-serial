@@ -18,8 +18,6 @@ class RunningJob {
     private $job;
     /** @var float */
     private $startTime;
-    /** @var JobStatus */
-    private $status;
 
     /**
      * @param WorkerProcess $worker
@@ -30,13 +28,10 @@ class RunningJob {
         $this->worker = $worker;
         $this->job = $queuedJob->getJob();
         $this->startTime = microtime(true);
-        $this->status = new JobStatus($this->getJob(), $this->getId());
-        $this->status->setRunning();
     }
 
     public function fail(\Throwable $t) {
         $this->reportFail($t);
-        $this->status->setFailed();
     }
 
     /**
@@ -72,7 +67,6 @@ class RunningJob {
      */
     public function reschedule() {
         Resque::enqueueExisting($this->job);
-        $this->status->setFinished();
         $this->reportSuccess();
     }
 
@@ -83,7 +77,6 @@ class RunningJob {
      */
     public function rescheduleDelayed($in) {
         Resque::delayedEnqueueExisting($in, $this->job);
-        $this->status->setFinished();
         $this->reportSuccess();
     }
 
@@ -105,11 +98,9 @@ class RunningJob {
 
         $newJobId = Resque::enqueueExisting($this->job);
         $this->reportRetry($e, $newJobId);
-        $this->status->setRetried();
     }
 
     public function success() {
-        $this->status->setFinished();
         $this->reportSuccess();
     }
 

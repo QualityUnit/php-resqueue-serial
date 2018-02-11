@@ -62,12 +62,6 @@ class QueuedJob {
         return $this->queuedTime;
     }
 
-    public function reportQueued() {
-        //TODO: Should this be here? Do we want also report dequeue status, or running from RunningJob is enough?
-        $status = new JobStatus($this->getJob(), $this->getId());
-        $status->setWaiting();
-    }
-
     public function toArray() {
         $array = $this->job->toArray();
         $array['id'] = $this->id;

@@ -16,8 +16,6 @@ class Job {
     protected $args = [];
     /** @var JobUid|null */
     protected $uid = null;
-    /** @var boolean */
-    protected $isMonitored = false;
     /** @var string */
     protected $includePath = null;
     /** @var string[] */
@@ -45,7 +43,6 @@ class Job {
         $job->name = $array['name'] ?? $job->name;
 
         $job->args = $array['args'] ?? $job->args;
-        $job->isMonitored = $array['isMonitored'] ?? $job->isMonitored;
         $job->includePath = $array['includePath'] ?? $job->includePath;
         $job->environment = $array['environment'] ?? $job->environment;
         $job->failCount = $array['failCount'] ?? $job->failCount;
@@ -127,13 +124,6 @@ class Job {
         return $this;
     }
 
-    /**
-     * @return boolean
-     */
-    public function isMonitored() {
-        return $this->isMonitored;
-    }
-
     public function toArray() {
         return array_filter([
             'class' => $this->class,
@@ -141,7 +131,6 @@ class Job {
             'name' => $this->name,
             'args' => $this->args,
             'unique' => $this->uid === null ? null : $this->uid->toArray(),
-            'isMonitored' => $this->isMonitored,
             'includePath' => $this->includePath,
             'environment' => $this->environment,
             'failCount' => $this->failCount,
