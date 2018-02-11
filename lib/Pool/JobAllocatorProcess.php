@@ -3,6 +3,7 @@
 namespace Resque\Pool;
 
 use Resque\Config\GlobalConfig;
+use Resque\Job\JobParseException;
 use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
@@ -87,7 +88,7 @@ class JobAllocatorProcess extends AbstractProcess {
 
         try {
             $queuedJob = QueuedJob::fromArray($decoded);
-        } catch (\InvalidArgumentException $e) {
+        } catch (JobParseException $e) {
             Log::error('Failed to create job from payload.', [
                 'exception' => $e,
                 'payload' => $payload

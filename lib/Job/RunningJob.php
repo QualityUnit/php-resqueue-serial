@@ -83,9 +83,7 @@ class RunningJob {
     /**
      * @param \Exception $e
      *
-     * @throws \Resque\Protocol\DeferredException
      * @throws \Resque\RedisError
-     * @throws \Resque\Protocol\UniqueException
      */
     public function retry(\Exception $e) {
         if ($this->job->getFailCount() >= (GlobalConfig::getInstance()->getMaxTaskFails() - 1)) {

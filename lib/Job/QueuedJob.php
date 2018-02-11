@@ -27,11 +27,11 @@ class QueuedJob {
      * @param array $array
      *
      * @return QueuedJob
-     * @throws \InvalidArgumentException
+     * @throws JobParseException
      */
     public static function fromArray(array $array) {
         if(!isset($array['id'], $array['queue_time'])) {
-            throw new \InvalidArgumentException('Mandatory QueuedJob parameters missing');
+            throw new JobParseException($array);
         }
 
         $job = Job::fromArray($array);

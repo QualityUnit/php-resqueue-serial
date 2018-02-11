@@ -4,6 +4,8 @@
 namespace Resque\Protocol;
 
 
+use Resque\Job\JobParseException;
+
 class Job {
 
     /** @var string */
@@ -30,11 +32,11 @@ class Job {
      * @param array $array
      *
      * @return Job
-     * @throws \InvalidArgumentException
+     * @throws JobParseException
      */
     public static function fromArray(array $array) {
         if (!isset($array['class'], $array['sourceId'], $array['name'])) {
-            throw new \InvalidArgumentException('Mandatory Job parameters missing');
+            throw new JobParseException($array);
         }
 
         $job = new Job();
@@ -112,7 +114,7 @@ class Job {
      * @return string
      */
     public function getUniqueId() {
-        return $this->uid != null ? $this->uid->getId() : null;
+        return $this->uid !== null ? $this->uid->getId() : null;
     }
 
     /**

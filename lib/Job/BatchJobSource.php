@@ -32,6 +32,7 @@ class BatchJobSource implements IJobSource {
     /**
      * @return QueuedJob|null next job or null if source is empty
      * @throws RedisError
+     * @throws JobParseException
      */
     public function bufferNextJob() {
         $batchId = Resque::redis()->brPoplPush($this->batchListKey, $this->batchListKey, 3);
@@ -55,6 +56,7 @@ class BatchJobSource implements IJobSource {
     /**
      * @return QueuedJob|null buffered job or null if buffer is empty
      * @throws \Resque\RedisError
+     * @throws JobParseException
      */
     public function bufferPop() {
         return $this->buffer->pop();
