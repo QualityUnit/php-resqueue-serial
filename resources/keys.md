@@ -35,7 +35,8 @@ resqu-v4:
         
     plan_schedule: sorted_set(timestamp, timestamp)
     plan_schedule:<timestamp>: list(plan_id)
-    plan:<id>: <json_encoded timestamp, period, queue, Job>
+    plan_list:<source_id>: set(<plan_id>)
+    plan:<id>: <json_encoded timestamp, period, source_id, Job>
     
     delayed_queue_schedule: sorted_set(timestamp, timestamp)
     delayed:<timestamp>: list(<json_encoded Job>)
