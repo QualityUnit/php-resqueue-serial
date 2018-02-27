@@ -12,6 +12,7 @@ use Resque\Process;
 use Resque\RedisError;
 use Resque\Resque;
 use Resque\SignalHandler;
+use Resque\Stats\PoolStats;
 use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;
 
@@ -61,6 +62,9 @@ class StaticPoolMaintainer implements IProcessMaintainer {
         for ($i = $alive; $i < $workerLimit; $i++) {
             $this->forkWorker();
         }
+
+        $jobsInQueue = Resque::redis()->lLen(Key::staticPoolQueue($this->pool->getName()));
+        PoolStats::instance()->reportQueue($this->pool->getName(), $jobsInQueue);
     }
 
     /**

@@ -9,6 +9,7 @@ use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
 use Resque\Resque;
+use Resque\Stats\AllocatorStats;
 
 class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
@@ -105,6 +106,9 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
         $poolName = $this->resolvePoolName($queuedJob);
         $enqueuedPayload = StaticPool::assignJob($this->bufferKey, $poolName);
+
+        AllocatorStats::instance()->reportStaticAllocated();
+
         $this->validatePayload($payload, $enqueuedPayload);
     }
 

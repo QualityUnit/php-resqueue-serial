@@ -7,6 +7,7 @@ use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
 use Resque\Resque;
+use Resque\Stats\AllocatorStats;
 
 class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
@@ -72,6 +73,9 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
 
         try {
             BatchPool::assignBatch($batch, $this->resolvePoolName($batch));
+
+            AllocatorStats::instance()->reportBatchAllocated();
+
             Resque::redis()->lRem($this->bufferKey, 1, $batchId);
         } catch (\Exception $e) {
             Log::critical("Failed to allocate batch $batchId to pool.", [

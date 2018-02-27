@@ -6,6 +6,7 @@ use Resque\Config\GlobalConfig;
 use Resque\Log;
 use Resque\Protocol\Job;
 use Resque\Resque;
+use Resque\Stats\JobStats;
 use Resque\Worker\WorkerProcess;
 
 class RunningJob {
@@ -122,7 +123,7 @@ class RunningJob {
      */
     private function reportFail(\Throwable $t) {
         Log::error('Job failed.', $this->createFailContext($t));
-        // TODO STATS fail
+        JobStats::instance()->reportFail($this);
     }
 
     /**
@@ -131,15 +132,15 @@ class RunningJob {
      */
     private function reportRetry(\Exception $e, $retryJobId) {
         Log::error('Job was retried.', $this->createFailContext($e, $retryJobId));
-        // TODO STATS retry
+        JobStats::instance()->reportRetry($this);
     }
 
     private function reportSuccess() {
         $duration = floor((microtime(true) - $this->startTime) * 1000);
         if ($duration > 0) {
-            // TODO STATS processing time
+            JobStats::instance()->reportDuration($this, $duration);
         }
 
-        // TODO STATS success
+        JobStats::instance()->reportSuccess($this);
     }
 }

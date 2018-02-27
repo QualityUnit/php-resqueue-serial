@@ -12,6 +12,7 @@ use Resque\Process;
 use Resque\Process\IProcessImage;
 use Resque\Resque;
 use Resque\SignalHandler;
+use Resque\Stats\PoolStats;
 use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;
 
@@ -94,6 +95,8 @@ LUA;
 
         $localNodeId = GlobalConfig::getInstance()->getNodeId();
 
+        $batchesInQueue = 0;
+
         $keys = Resque::redis()->zRange($poolQueuesKey, 0, -1);
         foreach ($keys as $key) {
             $unitId = explode(':', $key)[2];
@@ -102,11 +105,15 @@ LUA;
                 continue;
             }
 
+            $batchesInQueue += Resque::redis()->lLen($key);
+
             if ($unitNumber >= $this->unitCount) {
                 Log::notice("Clearing unit $unitId queue");
                 $this->clearQueue($unitId);
             }
         }
+
+        PoolStats::instance()->reportQueue($this->pool->getName(), $batchesInQueue);
     }
 
     /**

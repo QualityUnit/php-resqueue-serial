@@ -10,7 +10,9 @@ use Resque\Pool\BatchAllocatorProcess;
 use Resque\Pool\IAllocatorProcess;
 use Resque\Pool\JobAllocatorProcess;
 use Resque\Process;
+use Resque\Resque;
 use Resque\SignalHandler;
+use Resque\Stats\AllocatorStats;
 
 class AllocatorMaintainer implements IProcessMaintainer {
 
@@ -22,7 +24,7 @@ class AllocatorMaintainer implements IProcessMaintainer {
      * @throws \Resque\RedisError
      */
     public function getLocalProcesses() {
-        $allocatorIds = \Resque\Resque::redis()->sMembers(Key::localAllocatorProcesses());
+        $allocatorIds = Resque::redis()->sMembers(Key::localAllocatorProcesses());
         $images = [];
 
         foreach ($allocatorIds as $processId) {
@@ -50,6 +52,9 @@ class AllocatorMaintainer implements IProcessMaintainer {
         for ($i = $batchAlive; $i < $batchLimit; $i++) {
             $this->forkAllocator(self::PREFIX_BATCH);
         }
+
+        AllocatorStats::instance()->reportStaticQueue(Resque::redis()->lLen(Key::unassigned()));
+        AllocatorStats::instance()->reportBatchQueue(Resque::redis()->lLen(Key::committedBatchList()));
     }
 
     /**

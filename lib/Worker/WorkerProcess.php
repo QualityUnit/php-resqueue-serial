@@ -10,6 +10,7 @@ use Resque\Job\QueuedJob;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
+use Resque\Stats\PoolStats;
 
 class WorkerProcess extends AbstractProcess {
 
@@ -17,9 +18,12 @@ class WorkerProcess extends AbstractProcess {
     private $source;
     /** @var StandardProcessor */
     private $processor;
+    /** @var WorkerImage */
+    private $image;
 
     public function __construct(IJobSource $source, WorkerImage $image) {
         parent::__construct("w-{$image->getPoolName()}-{$image->getCode()}", $image);
+        $this->image = $image;
         $this->source = $source;
         $this->processor = new StandardProcessor();
     }
@@ -51,6 +55,8 @@ class WorkerProcess extends AbstractProcess {
             Log::debug("Processing of job {$runningJob->getId()} has finished", [
                 'payload' => $runningJob->getJob()->toString()
             ]);
+
+            PoolStats::instance()->reportProcessed($this->image->getPoolName());
         } catch (\Exception $e) {
             Log::critical('Unexpected error occurred during execution of a job.', [
                 'exception' => $e,
