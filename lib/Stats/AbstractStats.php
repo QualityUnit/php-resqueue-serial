@@ -21,8 +21,12 @@ abstract class AbstractStats {
         StatsD::increment($this->getKey($stat), $value);
     }
 
-    protected function set($stat, $value) {
-        StatsD::set($this->getKey($stat), $value);
+    protected function gauge($stat, $value) {
+        StatsD::gauge($this->getKey($stat), $value);
+    }
+
+    protected function timing($stat, $value) {
+        StatsD::timing($this->getKey($stat), $value);
     }
 
     private function getKey($stat) {

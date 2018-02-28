@@ -29,7 +29,7 @@ class AllocatorStats extends AbstractStats {
      * @param int $length Number of batches waiting to be allocated
      */
     public function reportBatchQueue($length) {
-        $this->set('batch.queue', $length);
+        $this->gauge('batch.queue', $length);
     }
 
     /**
@@ -47,6 +47,6 @@ class AllocatorStats extends AbstractStats {
      * @param int $length Number of jobs waiting to be allocated
      */
     public function reportStaticQueue($length) {
-        $this->set('static.queue', $length);
+        $this->gauge('static.queue', $length);
     }
 }

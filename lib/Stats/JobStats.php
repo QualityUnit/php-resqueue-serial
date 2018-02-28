@@ -23,7 +23,7 @@ class JobStats extends AbstractStats {
      * @param int $duration in ms
      */
     public function reportDuration(RunningJob $job, $duration) {
-        $this->set($job->getJob()->getClass() . 'duration', $duration);
+        $this->timing($job->getJob()->getClass() . 'duration', $duration);
     }
 
     /**

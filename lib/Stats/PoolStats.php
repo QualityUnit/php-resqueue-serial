@@ -31,7 +31,7 @@ class PoolStats extends AbstractStats {
      * @param int $length
      */
     public function reportQueue($poolName, $length) {
-        $this->set($poolName . 'queue', $length);
+        $this->gauge($poolName . 'queue', $length);
     }
 
 }
