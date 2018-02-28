@@ -31,7 +31,7 @@ class StandardProcessor implements IProcessor {
                 $workerPid = $runningJob->getWorker()->getImage()->getPid();
                 Log::setPrefix("$workerPid-std-proc-" . posix_getpid());
                 Process::setTitlePrefix("$workerPid-std-proc");
-                Process::setTitle("Processing job {$runningJob->getJob()->getClass()}");
+                Process::setTitle("Processing job {$runningJob->getName()}");
                 $this->handleChild($runningJob);
             } catch (\Throwable $t) {
                 try {
@@ -167,7 +167,7 @@ class StandardProcessor implements IProcessor {
                     return;
                 case Exceptions::CODE_RESCHEDULE:
                     $delay = json_decode($e->getMessage(), true)['delay'] ?? 0;
-                    Log::debug("Rescheduling task {$runningJob->getJob()->getName()} in {$delay}s");
+                    Log::debug("Rescheduling task {$runningJob->getName()} in {$delay}s");
                     $this->rescheduleJob($runningJob, $delay);
 
                     return;

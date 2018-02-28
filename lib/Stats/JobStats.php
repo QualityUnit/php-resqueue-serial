@@ -23,7 +23,7 @@ class JobStats extends AbstractStats {
      * @param int $duration in ms
      */
     public function reportDuration(RunningJob $job, $duration) {
-        $this->timing($job->getJob()->getName() . '.duration', $duration);
+        $this->timing($job->getName() . '.duration', $duration);
     }
 
     /**
@@ -32,11 +32,11 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      */
     public function reportFail(RunningJob $job) {
-        $this->inc($job->getJob()->getClass() . '.fail', 1);
+        $this->inc($job->getName() . '.fail', 1);
     }
 
     public function reportRetry(RunningJob $job) {
-        $this->inc($job->getJob()->getClass() . '.retry', 1);
+        $this->inc($job->getName() . '.retry', 1);
     }
 
     /**
@@ -45,7 +45,7 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      */
     public function reportSuccess(RunningJob $job) {
-        $this->inc($job->getJob()->getClass() . '.success', 1);
+        $this->inc($job->getName() . '.success', 1);
     }
 
 }

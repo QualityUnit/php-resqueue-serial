@@ -50,6 +50,13 @@ class RunningJob {
     }
 
     /**
+     * @return string
+     */
+    public function getName() {
+        return $this->job->getName();
+    }
+
+    /**
      * @return float
      */
     public function getStartTime() {
