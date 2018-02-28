@@ -21,7 +21,7 @@ class PoolStats extends AbstractStats {
      * @param int $count
      */
     public function reportProcessed($poolName, $count = 1) {
-        $this->inc($poolName . 'processed', $count);
+        $this->inc($poolName . '.processed', $count);
     }
 
     /**
@@ -31,7 +31,7 @@ class PoolStats extends AbstractStats {
      * @param int $length
      */
     public function reportQueue($poolName, $length) {
-        $this->gauge($poolName . 'queue', $length);
+        $this->gauge($poolName . '.queue', $length);
     }
 
 }
