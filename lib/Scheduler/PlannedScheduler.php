@@ -6,7 +6,10 @@ use Resque\Job\PlannedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
+use Resque\Protocol\DeferredException;
 use Resque\Protocol\Job;
+use Resque\Protocol\UniqueException;
+use Resque\RedisError;
 use Resque\Resque;
 
 class PlannedScheduler implements IScheduler {
@@ -58,7 +61,7 @@ LUA;
      *
      * @param int $timestamp Matching timestamp for $key.
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private static function cleanupTimestamp($timestamp) {
         $redis = Resque::redis();
@@ -74,7 +77,7 @@ LUA;
      * @param $planId
      *
      * @return null|PlannedJob
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private static function getPlannedJob($planId) {
         $data = Resque::redis()->get(Key::plan($planId));
@@ -104,9 +107,7 @@ LUA;
      *
      * @param int $timestamp Search for any items up to this timestamp to schedule.
      *
-     * @throws \Resque\Protocol\DeferredException
-     * @throws \Resque\RedisError
-     * @throws \Resque\Protocol\UniqueException
+     * @throws RedisError
      */
     public function enqueueItemsForTimestamp($timestamp) {
         while (($plannedJob = $this->nextJobForTimestamp($timestamp)) !== null) {
@@ -127,10 +128,17 @@ LUA;
                     ]
             );
 
-            Resque::enqueue($job);
+            try {
+                Resque::enqueue($job);
+            } catch (DeferredException $ignore) {
+            } catch (UniqueException $ignore) {
+            }
         }
     }
 
+    /**
+     * @throws RedisError
+     */
     public function execute() {
         while (($oldestJobTimestamp = $this->nextTimestamp()) !== false) {
             Log::info("[planner] Running plans for $oldestJobTimestamp");
@@ -144,7 +152,7 @@ LUA;
      * @param $timestamp
      *
      * @return PlannedJob
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private function moveTimestamp(PlannedJob $plannedJob, $timestamp) {
         $futurePlannedJob = $plannedJob->copy();
@@ -165,7 +173,7 @@ LUA;
      * @param int $timestamp Instance of DateTime or UNIX timestamp.
      *
      * @return null|PlannedJob Job at timestamp.
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private function nextJobForTimestamp($timestamp) {
         $planId = Resque::redis()->lPop(Key::planTimestamp($timestamp));
@@ -193,7 +201,7 @@ LUA;
      * @param int $at UNIX timestamp. Defaults to now.
      *
      * @return int|false UNIX timestamp, or false if nothing to run.
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private function nextTimestamp($at = null) {
         if ($at === null) {
