@@ -4,7 +4,9 @@
 namespace Resque\Scheduler;
 
 use Resque;
+use Resque\Api\DeferredException;
 use Resque\Api\Job;
+use Resque\Api\UniqueException;
 use Resque\Job\PlannedJob;
 use Resque\Key;
 use Resque\Log;
@@ -124,7 +126,11 @@ LUA;
                     ]
             );
 
-            ResqueImpl::getInstance()->jobEnqueue($job, true);
+            try {
+                ResqueImpl::getInstance()->jobEnqueue($job, true);
+            } catch (UniqueException $ignore) {
+            } catch (DeferredException $ignore) {
+            }
         }
     }
 

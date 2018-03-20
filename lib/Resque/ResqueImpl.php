@@ -44,6 +44,14 @@ class ResqueImpl implements ResqueApi {
         return md5(uniqid('', true));
     }
 
+    /**
+     * @param Job $job
+     * @param $checkUnique
+     *
+     * @return string
+     * @throws Api\DeferredException
+     * @throws Api\UniqueException
+     */
     public function jobEnqueue(Job $job, $checkUnique) {
         return Queue::push($job, $checkUnique)->getId();
     }

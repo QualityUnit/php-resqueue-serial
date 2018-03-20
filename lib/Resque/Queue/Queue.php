@@ -5,6 +5,7 @@ namespace Resque\Queue;
 
 
 use Resque;
+use Resque\Api\DeferredException;
 use Resque\Api\Job;
 use Resque\Api\UniqueException;
 use Resque\Job\IJobSource;
@@ -34,6 +35,7 @@ class Queue implements IJobSource {
      *
      * @return QueuedJob
      * @throws UniqueException
+     * @throws DeferredException
      */
     public static function push(Job $job, $checkUnique = true) {
         $queuedJob = new QueuedJob($job, ResqueImpl::getInstance()->generateJobId());
