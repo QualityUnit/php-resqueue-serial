@@ -132,14 +132,11 @@ class PrefixLogger extends AbstractLogger {
      * @return void
      */
     public function log($level, $message, array $context = []) {
-        $this->logger->log($level, "$this->prefix$message", $context);
+        $context['process'] = $this->prefix;
+        $this->logger->log($level, $message, $context);
     }
 
     public function setPrefix($prefix) {
-        if ($prefix == null) {
-            $this->prefix = '';
-        } else {
-            $this->prefix = "[$prefix] ";
-        }
+        $this->prefix = $prefix ?: '';
     }
 }
