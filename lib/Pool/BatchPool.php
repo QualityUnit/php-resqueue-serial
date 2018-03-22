@@ -21,7 +21,7 @@ class BatchPool implements IPool {
 if redis.call('hexists', KEYS[1], ARGV[1]) == 1 then
     return redis.call('lpush', KEYS[2], ARGV[2])
 end
-redis.call('hset', KEYS[1], ARGV[4])
+redis.call('hset', KEYS[1], ARGV[1], ARGV[4])
 local size = redis.call('lpush', KEYS[3], ARGV[2])
 redis.call('zadd', KEYS[4], size, ARGV[3])
 LUA;
