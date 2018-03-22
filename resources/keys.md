@@ -12,7 +12,7 @@ resqu-v4:
     uncommitted:<batch_id>: list(<job_data>)
     committed: list(<batch_id>)
     committed:<batch_id>: list(<job_data>)
-    pool:<pool_name>: hash(<source_id>, <worker_id>)
+    pool:<pool_name>: hash(<source_id>, <node_id>)
         unit_queues: sorted_set(<unit_queues_key>)
         <unit_id>:queues: list(<batch_id>)
         backlog:<source_id>: list(<batch_id>)

@@ -20,7 +20,7 @@ class Key {
         return self::of('pool', $poolName, 'unit_queues');
     }
 
-    public static function batchPoolSourceWorker($poolName) {
+    public static function batchPoolSourceNodes($poolName) {
         return self::of('pool', $poolName);
     }
 

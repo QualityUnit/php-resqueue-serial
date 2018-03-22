@@ -13,20 +13,21 @@ use Resque\Worker\WorkerImage;
 class BatchPool implements IPool {
 
     /**
-     * KEYS [SOURCE_WORKERS_KEY, BACKLOG_LIST_KEY, UNIT_QUEUES_LIST_KEY, POOL_QUEUES_KEY]
-     * ARGS [SOURCE_ID, BATCH_ID, UNIT_QUEUES_LIST_KEY]
+     * KEYS [SOURCE_NODES_KEY, BACKLOG_LIST_KEY, UNIT_QUEUES_LIST_KEY, POOL_QUEUES_KEY]
+     * ARGS [SOURCE_ID, BATCH_ID, UNIT_QUEUES_LIST_KEY, NODE_ID]
      */
     const SCRIPT_ASSIGN_BATCH = /* @lang Lua */
         <<<LUA
 if redis.call('hexists', KEYS[1], ARGV[1]) == 1 then
     return redis.call('lpush', KEYS[2], ARGV[2])
-end 
+end
+redis.call('hset', KEYS[1], ARGV[4])
 local size = redis.call('lpush', KEYS[3], ARGV[2])
 redis.call('zadd', KEYS[4], size, ARGV[3])
 LUA;
 
     /**
-     * KEYS [UNIT_QUEUES_LIST_KEY, POOL_QUEUES_KEY, SOURCE_WORKERS_KEY, BACKLOG_LIST_KEY, COMMITTED_BATCH_LIST_KEY]
+     * KEYS [UNIT_QUEUES_LIST_KEY, POOL_QUEUES_KEY, SOURCE_NODES_KEY, BACKLOG_LIST_KEY, COMMITTED_BATCH_LIST_KEY]
      * ARGS [BATCH_ID, SOURCE_ID, UNIT_QUEUES_LIST_KEY]
      */
     const SCRIPT_REMOVE_BATCH = /* @lang Lua */
@@ -70,7 +71,7 @@ LUA;
         Resque::redis()->eval(
             self::SCRIPT_ASSIGN_BATCH,
             [
-                Key::batchPoolSourceWorker($poolName),
+                Key::batchPoolSourceNodes($poolName),
                 Key::batchPoolBacklogList($poolName, $batch->getSourceId()),
                 $unitQueueKey,
                 Key::batchPoolQueuesSortedSet($poolName)
@@ -78,7 +79,8 @@ LUA;
             [
                 $batch->getSourceId(),
                 $batch->getId(),
-                $unitQueueKey
+                $unitQueueKey,
+                GlobalConfig::getInstance()->getNodeId()
             ]
         );
     }
@@ -118,7 +120,6 @@ LUA;
             $queueListKey,
             $bufferQueue,
             function (BatchImage $image) use ($unitId) {
-                /** @noinspection ExceptionsAnnotatingAndHandlingInspection */
                 $this->removeBatch($image, $unitId);
             }
         );
@@ -158,7 +159,7 @@ LUA;
             [
                 $unitQueueListKey,
                 Key::batchPoolQueuesSortedSet($this->poolName),
-                Key::batchPoolSourceWorker($this->poolName),
+                Key::batchPoolSourceNodes($this->poolName),
                 Key::batchPoolBacklogList($this->poolName, $batch->getSourceId()),
                 Key::committedBatchList()
             ],
