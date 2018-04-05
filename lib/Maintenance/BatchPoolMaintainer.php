@@ -7,6 +7,7 @@ use Resque\Config\GlobalConfig;
 use Resque\Job\IJobSource;
 use Resque\Key;
 use Resque\Log;
+use Resque\Pool\BatchImage;
 use Resque\Pool\BatchPool;
 use Resque\Process;
 use Resque\Process\IProcessImage;
@@ -88,24 +89,24 @@ LUA;
      * @throws \Resque\RedisError
      */
     private function cleanupUnitQueues() {
-        $poolQueuesKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
+        $poolBatchListsKey = Key::batchPoolQueuesSortedSet($this->pool->getName());
         foreach ($this->getUnitQueueKeys() as $unitQueueKey) {
-            Resque::redis()->zIncrBy($poolQueuesKey, 0, $unitQueueKey);
+            Resque::redis()->zIncrBy($poolBatchListsKey, 0, $unitQueueKey);
         }
 
         $localNodeId = GlobalConfig::getInstance()->getNodeId();
 
         $batchesInQueue = 0;
 
-        $keys = Resque::redis()->zRange($poolQueuesKey, 0, -1);
-        foreach ($keys as $key) {
-            $unitId = explode(':', $key)[2];
+        $poolBatchLists = Resque::redis()->zRange($poolBatchListsKey, 0, -1);
+        foreach ($poolBatchLists as $unitBatchListKey) {
+            $unitId = explode(':', $unitBatchListKey)[2];
             list($nodeId, $unitNumber) = $this->pool->parseUnitId($unitId);
             if ($nodeId !== $localNodeId) {
                 continue;
             }
 
-            $batchesInQueue += Resque::redis()->lLen($key);
+            $batchesInQueue += Resque::redis()->lLen($unitBatchListKey);
 
             if ($unitNumber >= $this->unitCount) {
                 Log::notice("Clearing unit $unitId queue");
