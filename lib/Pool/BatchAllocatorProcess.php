@@ -12,6 +12,7 @@ use Resque\Stats\AllocatorStats;
 class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
     const BLOCKING_TIMEOUT = 3;
+    const TTL_UNSET_RESPONSE = -1;
 
     /** @var string */
     private $bufferKey;
@@ -72,6 +73,13 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
         $batch = BatchImage::load($batchId);
 
         try {
+            if (Resque::redis()->ttl($batch->getKey()) !== self::TTL_UNSET_RESPONSE) {
+                Resque::redis()->persist($batch->getKey());
+                Log::error('Detected and removed TTL on committed batch key.', [
+                    'batch_id' => $batch->getId()
+                ]);
+            }
+
             BatchPool::assignBatch($batch, $this->resolvePoolName($batch));
 
             AllocatorStats::instance()->reportBatchAllocated();
