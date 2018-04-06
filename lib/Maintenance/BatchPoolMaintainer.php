@@ -7,7 +7,6 @@ use Resque\Config\GlobalConfig;
 use Resque\Job\IJobSource;
 use Resque\Key;
 use Resque\Log;
-use Resque\Pool\BatchImage;
 use Resque\Pool\BatchPool;
 use Resque\Process;
 use Resque\Process\IProcessImage;
@@ -19,12 +18,12 @@ use Resque\Worker\WorkerProcess;
 
 class BatchPoolMaintainer implements IProcessMaintainer {
     /**
-     * KEYS [UNIT_QUEUES_SET_KEY, POOL_QUEUES_KEY]
-     * ARGS []
+     * KEYS [UNIT_QUEUES_LIST_KEY, POOL_QUEUES_KEY]
+     * ARGS [UNIT_QUEUES_LIST_KEY-NO_PREFIX]
      */
     const SCRIPT_CLEAR_UNIT_QUEUE = /* @lang Lua */
         <<<LUA
-redis.call('zrem', KEYS[2], KEYS[1]);
+redis.call('zrem', KEYS[2], ARGV[1]);
 local b_key = redis.call('rpop', KEYS[1])
 while b_key ~= false do
  local to_l = redis.call('zrange', KEYS[2], 0, 0);
@@ -109,7 +108,12 @@ LUA;
             $batchesInQueue += Resque::redis()->lLen($unitBatchListKey);
 
             if ($unitNumber >= $this->unitCount) {
-                Log::notice("Clearing unit $unitId queue");
+                Log::notice('Clearing unit batch list', [
+                    'unit_id' => $unitId,
+                    'pool_name' => $this->pool->getName(),
+                    'unit_number' => $unitNumber,
+                    'unit_count' => $this->unitCount
+                ]);
                 $this->clearQueue($unitId);
             }
         }
@@ -165,11 +169,15 @@ LUA;
      * @throws \Resque\RedisError
      */
     private function clearQueue($unitId) {
+        $unitBatchListKey = Key::batchPoolUnitQueueList($this->pool->getName(), $unitId);
         Resque::redis()->eval(
             self::SCRIPT_CLEAR_UNIT_QUEUE,
             [
-                Key::batchPoolUnitQueueList($this->pool->getName(), $unitId),
+                $unitBatchListKey,
                 Key::batchPoolQueuesSortedSet($this->pool->getName())
+            ],
+            [
+                $unitBatchListKey
             ]
         );
     }
