@@ -13,7 +13,7 @@ resqu-v4:
     committed: list(<batch_id>)
     committed:<batch_id>: list(<job_data>)
     pool:<pool_name>: hash(<source_id>, <node_id>)
-        unit_queues: sorted_set(<unit_queues_key>)
+        unit_queues: sorted_set(<unit_batch_list_key-no_prefix>)
         <unit_id>:queues: list(<batch_id>)
         backlog:<source_id>: list(<batch_id>)
     batch:allocation-failures: list(<batch_id>)
