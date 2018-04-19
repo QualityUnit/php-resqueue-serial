@@ -43,7 +43,7 @@ class DelayedScheduler implements IScheduler {
      *
      * @throws \Resque\RedisError
      */
-    private static function schedulePrivate($at, Job $job): void {
+    private static function schedulePrivate($at, Job $job) {
         Resque::redis()->rPush(Key::delayed($at), json_encode($job->toArray()));
         Resque::redis()->zAdd(Key::delayedQueueSchedule(), $at, $at);
     }
