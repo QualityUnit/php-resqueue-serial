@@ -102,7 +102,7 @@ class RunningJob {
 
         $this->job->incFailCount();
 
-        $newJobId = Resque::enqueueExisting($this->job);
+        $newJobId = Resque::enqueueExisting($this->job)->getId();
         $this->reportRetry($e, $newJobId);
     }
 
