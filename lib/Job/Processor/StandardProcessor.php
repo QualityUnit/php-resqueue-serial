@@ -179,16 +179,19 @@ class StandardProcessor implements IProcessor {
     }
 
     private function includePath(Job $job) {
-        $jobPath = ltrim(trim($job->getIncludePath()), '/\\');
+        $jobPath = ltrim(trim($job->getIncludePath()), DIRECTORY_SEPARATOR);
         if (!$jobPath) {
             return;
         }
 
-        $fullPath = GlobalConfig::getInstance()->getTaskIncludePath();
-        $fullPath = str_replace('{sourceId}', $job->getSourceId(), $fullPath);
-        $fullPath .= $jobPath;
+        $includePath = GlobalConfig::getInstance()->getTaskIncludePath();
+        $includePath = str_replace('{sourceId}', $job->getSourceId(), $includePath);
+        $includePath = rtrim($includePath, DIRECTORY_SEPARATOR);
+        if (is_link($includePath)) {
+            $includePath = readlink($includePath);
+        }
 
-        include_once $fullPath;
+        include_once $includePath . DIRECTORY_SEPARATOR . $jobPath;
     }
 
     private function reportSuccess(RunningJob $runningJob) {
