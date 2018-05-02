@@ -5,12 +5,21 @@
     "keywords": ["serial", "job", "background", "redis", "resque"],
     "homepage": "https://github.com/QualityUnit/php-resqueue-serial",
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/QualityUnit/resqu-client.git"
+        }
+    ],
     "require": {
         "php": ">=7.0.0",
         "ext-pcntl": "*",
         "colinmollenhour/credis": "^1.9.1",
         "symfony/yaml": "^3.2",
         "monolog/monolog": "^1.22"
+    },
+    "require-dev": {
+        "qualityunit/resqu-client": "~1.0"
     },
     "suggest": {
         "ext-proctitle": "Allows php-resque-serial to rename the title of UNIX processes to show the status of a worker.",
