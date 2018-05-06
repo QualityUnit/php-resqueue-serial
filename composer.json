@@ -6,7 +6,7 @@
     "homepage": "https://github.com/QualityUnit/php-resqueue-serial",
     "license": "MIT",
     "require": {
-        "php": ">=5.3.0",
+        "php": ">=7.0.0",
         "ext-pcntl": "*",
         "colinmollenhour/credis": "^1.9.1",
         "symfony/yaml": "^3.2",
