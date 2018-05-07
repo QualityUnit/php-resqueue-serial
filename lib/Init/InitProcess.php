@@ -52,6 +52,7 @@ class InitProcess {
         StatsD::initialize(GlobalConfig::getInstance()->getStatsConfig());
         Log::initialize(GlobalConfig::getInstance()->getLogConfig());
         Log::setPrefix('init-process');
+        $this->initializeMaintainers();
         $this->reloaded = true;
 
         $this->signalProcesses(SIGHUP, 'HUP');
@@ -92,6 +93,7 @@ class InitProcess {
     }
 
     private function initializeMaintainers() {
+        unset($this->maintainers);
         $this->maintainers = [];
 
         foreach (GlobalConfig::getInstance()->getStaticPoolConfig()->getPoolNames() as $poolName) {
