@@ -66,9 +66,10 @@ class WorkerProcess extends AbstractProcess {
 
         $bufferedJob = $this->source->bufferPop();
         if ($bufferedJob === null) {
-            throw new \RuntimeException('Buffer is empty after processing.', [
+            Log::error('Buffer is empty after processing.', [
                 'payload' => $queuedJob->toString()
             ]);
+            throw new \RuntimeException('Invalid state.');
         }
         $this->validateJob($queuedJob, $bufferedJob);
     }
