@@ -21,7 +21,7 @@ class WorkerStats extends AbstractStats {
      * @param int $runtime
      */
     public function reportJobRuntime(WorkerImage $image, $runtime) {
-        $this->gauge($image->getId() . '.runtime', (int) $runtime);
+        $this->gauge("{$image->getPoolName()}.{$image->getCode()}.{$image->getPid()}.runtime", (int) $runtime);
     }
 
 }
