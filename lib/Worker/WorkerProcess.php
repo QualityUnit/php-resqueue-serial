@@ -64,6 +64,14 @@ class WorkerProcess extends AbstractProcess {
             ]);
         }
 
+        $this->finishWorkOn($queuedJob);
+    }
+
+    protected function prepareWork() {
+        // NOOP
+    }
+
+    private function finishWorkOn(QueuedJob $queuedJob) {
         $bufferedJob = $this->source->bufferPop();
         if ($bufferedJob === null) {
             Log::error('Buffer is empty after processing.', [
@@ -71,11 +79,9 @@ class WorkerProcess extends AbstractProcess {
             ]);
             throw new \RuntimeException('Invalid state.');
         }
-        $this->validateJob($queuedJob, $bufferedJob);
-    }
+        $this->assertJobsEqual($queuedJob, $bufferedJob);
 
-    protected function prepareWork() {
-        // NOOP
+        $this->getImage()->clearRuntimeInfo();
     }
 
     /**
@@ -85,6 +91,8 @@ class WorkerProcess extends AbstractProcess {
      * @throws \Resque\RedisError
      */
     private function startWorkOn(QueuedJob $queuedJob) {
+        $this->getImage()->setRuntimeInfo(microtime(true), $queuedJob->getJob()->getName());
+
         return new RunningJob($this, $queuedJob);
     }
 
@@ -92,7 +100,7 @@ class WorkerProcess extends AbstractProcess {
      * @param QueuedJob $expected
      * @param QueuedJob $actual
      */
-    private function validateJob(QueuedJob $expected, QueuedJob $actual) {
+    private function assertJobsEqual(QueuedJob $expected, QueuedJob $actual) {
         if ($expected->getId() === $actual->getId()) {
             return;
         }

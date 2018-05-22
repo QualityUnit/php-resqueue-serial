@@ -196,12 +196,12 @@ class Key {
     }
 
     /**
-     * @param string $worker
+     * @param string $workerId
      *
      * @return string
      */
-    public static function workerStart($worker) {
-        return self::of('worker', $worker, 'started');
+    public static function workerRuntimeInfo($workerId) {
+        return self::of('worker', $workerId, 'runtime');
     }
 
     /**

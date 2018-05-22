@@ -14,6 +14,13 @@ class WorkerImage extends AbstractProcessImage {
     /** @var string */
     private $code;
 
+    protected function __construct($workerId, $nodeId, $poolName, $code, $pid) {
+        parent::__construct($workerId, $nodeId, $pid);
+
+        $this->poolName = $poolName;
+        $this->code = $code;
+    }
+
     /**
      * @param string $poolName
      * @param string $code
@@ -34,18 +41,8 @@ class WorkerImage extends AbstractProcessImage {
         return new self($workerId, $nodeId, $poolName, $code, $pid);
     }
 
-    protected function __construct($workerId, $nodeId, $poolName, $code, $pid) {
-        parent::__construct($workerId, $nodeId, $pid);
-
-        $this->poolName = $poolName;
-        $this->code = $code;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPoolName() {
-        return $this->poolName;
+    public function clearRuntimeInfo() {
+        Resque::redis()->del(Key::workerRuntimeInfo($this->getId()));
     }
 
     /**
@@ -56,10 +53,26 @@ class WorkerImage extends AbstractProcessImage {
     }
 
     /**
-     * @throws \Resque\RedisError
+     * @return string
      */
-    public function unregister() {
-        Resque::redis()->sRem(Key::localPoolProcesses($this->poolName), $this->getId());
+    public function getPoolName() {
+        return $this->poolName;
+    }
+
+    /**
+     * @return RuntimeInfo|null
+     */
+    public function getRuntimeInfo() {
+        $rawInfo = json_decode(Resque::redis()->get(Key::workerRuntimeInfo($this->getId())), true);
+        if (!\is_array($rawInfo)) {
+            $rawInfo = [];
+        }
+
+        $info = new RuntimeInfo();
+        $info->startTime = $rawInfo['start_time'] ?? 0.0;
+        $info->jobName = $rawInfo['job_name'] ?? 'unset';
+
+        return $info;
     }
 
     /**
@@ -67,5 +80,23 @@ class WorkerImage extends AbstractProcessImage {
      */
     public function register() {
         Resque::redis()->sAdd(Key::localPoolProcesses($this->poolName), $this->getId());
+    }
+
+    /**
+     * @param float $startTime
+     * @param string $jobName
+     */
+    public function setRuntimeInfo($startTime, $jobName) {
+        Resque::redis()->set(Key::workerRuntimeInfo($this->getId()), json_encode([
+            'start_time' => $startTime,
+            'job_name' => $jobName
+        ]));
+    }
+
+    /**
+     * @throws \Resque\RedisError
+     */
+    public function unregister() {
+        Resque::redis()->sRem(Key::localPoolProcesses($this->poolName), $this->getId());
     }
 }

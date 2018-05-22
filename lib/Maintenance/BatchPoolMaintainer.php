@@ -130,10 +130,13 @@ LUA;
 
         foreach ($this->getLocalProcesses() as $image) {
             if (!$image->isAlive()) {
+                $runtimeInfo = $image->getRuntimeInfo();
                 Log::notice("Cleaning up dead {$this->pool->getName()} worker.", [
-                    'process_id' => $image->getId()
+                    'process_id' => $image->getId(),
+                    'runtime_info' => $runtimeInfo
                 ]);
                 $image->unregister();
+                $image->clearRuntimeInfo();
                 $this->clearBuffer($this->pool->createJobSource($image));
                 continue;
             }
