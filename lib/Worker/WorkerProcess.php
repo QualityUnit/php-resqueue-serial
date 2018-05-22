@@ -11,6 +11,7 @@ use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
 use Resque\Stats\PoolStats;
+use Resque\Stats\SourceStats;
 
 class WorkerProcess extends AbstractProcess {
 
@@ -18,12 +19,9 @@ class WorkerProcess extends AbstractProcess {
     private $source;
     /** @var StandardProcessor */
     private $processor;
-    /** @var WorkerImage */
-    private $image;
 
     public function __construct(IJobSource $source, WorkerImage $image) {
         parent::__construct("w-{$image->getPoolName()}-{$image->getCode()}", $image);
-        $this->image = $image;
         $this->source = $source;
         $this->processor = new StandardProcessor();
     }
@@ -56,7 +54,7 @@ class WorkerProcess extends AbstractProcess {
                 'payload' => $runningJob->getJob()->toString()
             ]);
 
-            PoolStats::instance()->reportProcessed($this->image->getPoolName());
+            PoolStats::instance()->reportProcessed($this->getImage()->getPoolName());
         } catch (\Exception $e) {
             Log::critical('Unexpected error occurred during execution of a job.', [
                 'exception' => $e,
@@ -69,6 +67,22 @@ class WorkerProcess extends AbstractProcess {
 
     protected function prepareWork() {
         // NOOP
+    }
+
+    /**
+     * @param QueuedJob $expected
+     * @param QueuedJob $actual
+     */
+    private function assertJobsEqual(QueuedJob $expected, QueuedJob $actual) {
+        if ($expected->getId() === $actual->getId()) {
+            return;
+        }
+
+        Log::critical('Dequeued job does not match buffered job.', [
+            'payload' => $expected->toString(),
+            'actual' => $actual->toString()
+        ]);
+        exit(0);
     }
 
     private function finishWorkOn(QueuedJob $queuedJob) {
@@ -92,23 +106,9 @@ class WorkerProcess extends AbstractProcess {
      */
     private function startWorkOn(QueuedJob $queuedJob) {
         $this->getImage()->setRuntimeInfo(microtime(true), $queuedJob->getJob()->getName());
+        $runningJob = new RunningJob($this, $queuedJob);
+        SourceStats::instance()->reportJobProcessing($runningJob);
 
-        return new RunningJob($this, $queuedJob);
-    }
-
-    /**
-     * @param QueuedJob $expected
-     * @param QueuedJob $actual
-     */
-    private function assertJobsEqual(QueuedJob $expected, QueuedJob $actual) {
-        if ($expected->getId() === $actual->getId()) {
-            return;
-        }
-
-        Log::critical('Dequeued job does not match buffered job.', [
-            'payload' => $expected->toString(),
-            'actual' => $actual->toString()
-        ]);
-        exit(0);
+        return $runningJob;
     }
 }

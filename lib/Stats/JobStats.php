@@ -47,5 +47,4 @@ class JobStats extends AbstractStats {
     public function reportSuccess(RunningJob $job) {
         $this->inc($job->getName() . '.success', 1);
     }
-
 }
