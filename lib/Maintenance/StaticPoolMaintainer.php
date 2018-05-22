@@ -13,10 +13,13 @@ use Resque\RedisError;
 use Resque\Resque;
 use Resque\SignalHandler;
 use Resque\Stats\PoolStats;
+use Resque\Stats\WorkerStats;
 use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;
 
 class StaticPoolMaintainer implements IProcessMaintainer {
+
+    const MIN_REPORTABLE_RUNTIME_SECONDS = 10;
 
     /** @var StaticPool */
     private $pool;
@@ -96,6 +99,14 @@ class StaticPoolMaintainer implements IProcessMaintainer {
                 ]);
                 posix_kill($image->getPid(), SIGTERM);
                 continue;
+            }
+
+            $runtimeInfo = $image->getRuntimeInfo();
+            if ($runtimeInfo->startTime > 0) {
+                $currentRunTime = microtime(true) - $runtimeInfo->startTime;
+                if ($currentRunTime > self::MIN_REPORTABLE_RUNTIME_SECONDS) {
+                    WorkerStats::instance()->reportJobRuntime($image, $currentRunTime);
+                }
             }
 
             $alive++;

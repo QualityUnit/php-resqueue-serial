@@ -60,7 +60,7 @@ class WorkerImage extends AbstractProcessImage {
     }
 
     /**
-     * @return RuntimeInfo|null
+     * @return RuntimeInfo
      */
     public function getRuntimeInfo() {
         $rawInfo = json_decode(Resque::redis()->get(Key::workerRuntimeInfo($this->getId())), true);

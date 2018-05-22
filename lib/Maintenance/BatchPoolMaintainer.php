@@ -13,10 +13,14 @@ use Resque\Process\IProcessImage;
 use Resque\Resque;
 use Resque\SignalHandler;
 use Resque\Stats\PoolStats;
+use Resque\Stats\WorkerStats;
 use Resque\Worker\WorkerImage;
 use Resque\Worker\WorkerProcess;
 
 class BatchPoolMaintainer implements IProcessMaintainer {
+
+    const MIN_REPORTABLE_RUNTIME_SECONDS = 10;
+
     /**
      * KEYS [UNIT_QUEUES_LIST_KEY, POOL_QUEUES_KEY]
      * ARGS [UNIT_QUEUES_LIST_KEY-NO_PREFIX]
@@ -145,6 +149,14 @@ LUA;
             if ($unitNumber >= $this->unitCount || $counts[$unitNumber] >= $this->workersPerUnit) {
                 $this->terminateWorker($image);
                 continue;
+            }
+
+            $runtimeInfo = $image->getRuntimeInfo();
+            if ($runtimeInfo->startTime > 0) {
+                $currentRunTime = microtime(true) - $runtimeInfo->startTime;
+                if ($currentRunTime > self::MIN_REPORTABLE_RUNTIME_SECONDS) {
+                    WorkerStats::instance()->reportJobRuntime($image, $currentRunTime);
+                }
             }
 
             $counts[$unitNumber]++;
