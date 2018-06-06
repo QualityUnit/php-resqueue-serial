@@ -95,8 +95,11 @@ LUA;
      * @throws \Resque\RedisError
      */
     public static function finalize($uniqueId) {
-        return !$uniqueId
-            || Resque::redis()->eval(
+        if (!$uniqueId) {
+            return false;
+        }
+
+        return Resque::redis()->eval(
                 self::SCRIPT_FINALIZE,
                 [
                     Key::uniqueState($uniqueId),
