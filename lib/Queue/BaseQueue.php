@@ -4,6 +4,7 @@
 namespace Resque\Queue;
 
 
+use Resque\RedisError;
 use Resque\Resque;
 
 class BaseQueue implements IQueue {
@@ -27,7 +28,15 @@ class BaseQueue implements IQueue {
 
     /**
      * @return string|null payload
-     * @throws \Resque\RedisError
+     * @throws RedisError
+     */
+    public function peek() {
+        return Resque::redis()->lIndex($this->key, -1);
+    }
+
+    /**
+     * @return string|null payload
+     * @throws RedisError
      */
     public function pop() {
         return Resque::redis()->rPop($this->key) ?: null;
@@ -37,11 +46,11 @@ class BaseQueue implements IQueue {
      * @param int $timeout Timeout in seconds
      *
      * @return string|null payload
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public function popBlocking($timeout) {
         $payload = Resque::redis()->brPop($this->key, $timeout);
-        if (!is_array($payload) || !isset($payload[1])) {
+        if (!\is_array($payload) || !isset($payload[1])) {
             return null;
         }
 
@@ -52,7 +61,7 @@ class BaseQueue implements IQueue {
      * @param IQueue $destinationQueue
      *
      * @return string|null
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public function popInto(IQueue $destinationQueue) {
         return Resque::redis()->rPoplPush($this->key, $destinationQueue->getKey()) ?: null;
@@ -63,7 +72,7 @@ class BaseQueue implements IQueue {
      * @param int $timeout Timeout in seconds
      *
      * @return string|null
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public function popIntoBlocking(IQueue $destinationQueue, $timeout) {
         return Resque::redis()->brPoplPush($this->key, $destinationQueue->getKey(), $timeout) ?: null;
@@ -73,11 +82,20 @@ class BaseQueue implements IQueue {
      * @param string $payload
      *
      * @return string
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public function push($payload) {
         Resque::redis()->lPush($this->key, $payload);
 
         return $payload;
+    }
+
+    /**
+     * @param mixed $payload
+     *
+     * @return void
+     */
+    public function remove($payload) {
+        Resque::redis()->lRem($this->key, 1, $payload);
     }
 }

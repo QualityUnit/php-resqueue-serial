@@ -2,29 +2,31 @@
 
 namespace Resque\Pool;
 
-use Resque\Config\GlobalConfig;
 use Resque\Job\JobParseException;
 use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
-use Resque\Resque;
+use Resque\Queue\BaseQueue;
 use Resque\Stats\AllocatorStats;
 
 class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
     const BLOCKING_TIMEOUT = 3;
 
-    /** @var string */
-    private $bufferKey;
+    /** @var BaseQueue */
+    private $buffer;
+    /** @var BaseQueue */
+    private $unassignedQueue;
 
     /**
-     * @param $code
+     * @param string $code
      */
     public function __construct($code) {
         parent::__construct('job-allocator', AllocatorImage::create($code));
 
-        $this->bufferKey = Key::localAllocatorBuffer($code);
+        $this->buffer = new BaseQueue(Key::localAllocatorBuffer($code));
+        $this->unassignedQueue = new BaseQueue(Key::unassigned());
     }
 
     /**
@@ -34,8 +36,7 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
      */
     public function doWork() {
         Log::debug('Retrieving job from unassigned jobs');
-        $keyFrom = Key::unassigned();
-        $payload = Resque::redis()->brPoplPush($keyFrom, $this->bufferKey, self::BLOCKING_TIMEOUT);
+        $payload = $this->buffer->popIntoBlocking($this->unassignedQueue, self::BLOCKING_TIMEOUT);
         if ($payload === false) {
             Log::debug('No jobs to allocate');
             return;
@@ -48,9 +49,8 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
      * @throws \Resque\RedisError
      */
     public function revertBuffer() {
-        Log::info("Reverting allocator buffer {$this->bufferKey}");
-        $keyTo = Key::unassigned();
-        while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
+        Log::info("Reverting allocator buffer {$this->buffer->getKey()}");
+        while (false !== $this->buffer->popInto($this->unassignedQueue))  {
             // NOOP
         }
     }
@@ -59,18 +59,9 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
      * @throws \Resque\RedisError
      */
     protected function prepareWork() {
-        while (false !== ($payload = Resque::redis()->lIndex($this->bufferKey, -1))) {
+        while (false !== ($payload = $this->buffer->peek())) {
             $this->processPayload($payload);
         }
-    }
-
-    /**
-     * @param $payload
-     *
-     * @throws \Resque\RedisError
-     */
-    private function clearBuffer($payload) {
-        Resque::redis()->lRem($this->bufferKey, 1, $payload);
     }
 
     /**
@@ -85,7 +76,7 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
                 'payload' => $payload
             ]);
 
-            $this->clearBuffer($payload);
+            $this->buffer->remove($payload);
 
             return;
         }
@@ -98,30 +89,17 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
                 'payload' => $payload
             ]);
 
-            $this->clearBuffer($payload);
+            $this->buffer->remove($payload);
 
             return;
         }
         Log::debug("Found job {$queuedJob->getJob()->getName()}");
 
-        $poolName = $this->resolvePoolName($queuedJob);
-        $enqueuedPayload = StaticPool::assignJob($this->bufferKey, $poolName);
+        $enqueuedPayload = StaticPool::assignJob($queuedJob, $this->buffer);
 
         AllocatorStats::getInstance()->reportStaticAllocated();
 
         $this->validatePayload($payload, $enqueuedPayload);
-    }
-
-    /**
-     * @param QueuedJob $queuedJob
-     *
-     * @return string
-     */
-    private function resolvePoolName(QueuedJob $queuedJob) {
-        return GlobalConfig::getInstance()->getStaticPoolMapping()->resolvePoolName(
-            $queuedJob->getJob()->getSourceId(),
-            $queuedJob->getJob()->getName()
-        );
     }
 
     /**

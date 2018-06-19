@@ -2,38 +2,33 @@
 
 namespace Resque\Scheduler;
 
+use Resque\Job\JobParseException;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process;
 use Resque\Protocol\Job;
-use Resque\Protocol\UniqueList;
+use Resque\RedisError;
 use Resque\Resque;
 
 class DelayedScheduler implements IScheduler {
 
     /**
      * @param int $at Unix timestamp
-     * @param \Resque\Protocol\Job $job
+     * @param Job $job
      *
-     * @throws \Resque\Protocol\DeferredException
-     * @throws \Resque\Protocol\UniqueException
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public static function schedule($at, Job $job) {
-        UniqueList::add($job);
-
         self::schedulePrivate($at, $job);
     }
 
     /**
      * @param int $at Unix timestamp
-     * @param \Resque\Protocol\Job $job
+     * @param Job $job
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public static function scheduleUnsafe($at, Job $job) {
-        UniqueList::addIfNotExists($job);
-
         self::schedulePrivate($at, $job);
     }
 
@@ -41,7 +36,7 @@ class DelayedScheduler implements IScheduler {
      * @param $at
      * @param Job $job
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private static function schedulePrivate($at, Job $job) {
         Resque::redis()->rPush(Key::delayed($at), json_encode($job->toArray()));
@@ -53,7 +48,8 @@ class DelayedScheduler implements IScheduler {
      * Searches for any items that are due to be scheduled in Resque\Resque
      * and adds them to the appropriate job queue in Resque\Resque.
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
+     * @throws JobParseException
      */
     public function execute() {
         while (($oldestJobTimestamp = $this->nextTimestamp()) !== false) {
@@ -70,12 +66,12 @@ class DelayedScheduler implements IScheduler {
      * @param string $key Key to count number of items at.
      * @param int $timestamp Matching timestamp for $key.
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private function cleanupTimestamp($key, $timestamp) {
         $redis = Resque::redis();
 
-        if ($redis->lLen($key) == 0) {
+        if ($redis->lLen($key) === 0) {
             $redis->del($key);
             $redis->zRem(Key::delayedQueueSchedule(), $timestamp);
         }
@@ -88,13 +84,14 @@ class DelayedScheduler implements IScheduler {
      *
      * @param int $timestamp Search for any items up to this timestamp to schedule.
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
+     * @throws JobParseException
      */
     private function enqueueItemsForTimestamp($timestamp) {
         while (($job = $this->nextJobForTimestamp($timestamp)) !== null) {
             Log::info("queueing {$job->getName()} [delayed]");
 
-            Resque::enqueueExisting($job);
+            Resque::enqueue($job);
         }
     }
 
@@ -103,8 +100,9 @@ class DelayedScheduler implements IScheduler {
      *
      * @param int $timestamp Instance of DateTime or UNIX timestamp.
      *
-     * @return null|\Resque\Protocol\Job Job at timestamp.
-     * @throws \Resque\RedisError
+     * @return null|Job Job at timestamp.
+     * @throws RedisError
+     * @throws JobParseException
      */
     private function nextJobForTimestamp($timestamp) {
         $item = Resque::redis()->lPop(Key::delayed($timestamp));
@@ -131,7 +129,7 @@ class DelayedScheduler implements IScheduler {
      * @param int $at UNIX timestamp. Defaults to now.
      *
      * @return int|false UNIX timestamp, or false if nothing to run.
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     private function nextTimestamp($at = null) {
         if ($at === null) {

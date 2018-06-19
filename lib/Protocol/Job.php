@@ -117,6 +117,10 @@ class Job {
         return $this->uid !== null ? $this->uid->getId() : null;
     }
 
+    public function isDeferrable() {
+        return $this->uid !== null && $this->uid->isDeferrable();
+    }
+
     /**
      * @return Job
      */

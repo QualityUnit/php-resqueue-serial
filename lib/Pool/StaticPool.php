@@ -2,11 +2,15 @@
 
 namespace Resque\Pool;
 
+use Resque\Config\GlobalConfig;
+use Resque\Job\QueuedJob;
 use Resque\Job\StaticJobSource;
 use Resque\Key;
 use Resque\Log;
+use Resque\Protocol\UniqueList;
+use Resque\Queue\BaseQueue;
+use Resque\Queue\IQueue;
 use Resque\Queue\JobQueue;
-use Resque\Resque;
 use Resque\Worker\WorkerImage;
 
 class StaticPool implements IPool {
@@ -26,15 +30,50 @@ class StaticPool implements IPool {
     }
 
     /**
-     * @param string $bufferKey
-     * @param string $poolName
+     * @param QueuedJob $queuedJob
+     * @param IQueue $buffer
      *
-     * @return string
+     * @return string|null
      * @throws \Resque\RedisError
      */
-    public static function assignJob($bufferKey, $poolName) {
+    public static function assignJob($queuedJob, $buffer) {
+        $poolName = self::resolvePoolName($queuedJob);
+        $uniqueId = $queuedJob->getJob()->getUniqueId();
+        $poolQueue = new BaseQueue(Key::staticPoolQueue($poolName));
+
         Log::debug("Assigning job to pool $poolName");
-        return Resque::redis()->rPoplPush($bufferKey, Key::staticPoolQueue($poolName));
+
+        if (!$uniqueId) {
+            return $buffer->popInto($poolQueue);
+        }
+
+        $enqueued = UniqueList::add($uniqueId, $buffer->getKey(), $poolQueue->getKey());
+        if ($enqueued !== false) {
+            return $enqueued;
+        }
+
+        if ($queuedJob->getJob()->isDeferrable()) {
+            $deferred = UniqueList::addDeferred($uniqueId, $buffer->getKey());
+            if ($deferred !== false) {
+                return $deferred;
+            }
+
+            return $buffer->popInto(new BaseQueue(Key::unassigned()));
+        }
+
+        return $buffer->pop();
+    }
+
+    /**
+     * @param QueuedJob $queuedJob
+     *
+     * @return string
+     */
+    private static function resolvePoolName(QueuedJob $queuedJob) {
+        return GlobalConfig::getInstance()->getStaticPoolMapping()->resolvePoolName(
+            $queuedJob->getJob()->getSourceId(),
+            $queuedJob->getJob()->getName()
+        );
     }
 
     /**

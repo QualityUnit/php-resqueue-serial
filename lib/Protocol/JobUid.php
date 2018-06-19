@@ -9,7 +9,7 @@ class JobUid {
     /** @var string */
     private $id;
     /** @var bool */
-    private $isDeferred;
+    private $isDeferrable;
     /** @var int */
     private $deferralDelay;
 
@@ -20,7 +20,7 @@ class JobUid {
      */
     public function __construct($id, $deferrableBy = null) {
         $this->id = $id;
-        $this->isDeferred = $deferrableBy !== null;
+        $this->isDeferrable = $deferrableBy !== null;
         $this->deferralDelay = max(0, $deferrableBy);
     }
 
@@ -56,8 +56,8 @@ class JobUid {
     /**
      * @return bool
      */
-    public function isDeferred() {
-        return $this->isDeferred;
+    public function isDeferrable() {
+        return $this->isDeferrable;
     }
 
     /**
@@ -67,7 +67,7 @@ class JobUid {
         $result = [
                 'uid' => $this->id
         ];
-        if ($this->isDeferred) {
+        if ($this->isDeferrable) {
             $result['deferrableBy'] = $this->deferralDelay;
         }
 

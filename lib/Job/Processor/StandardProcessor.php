@@ -115,10 +115,8 @@ class StandardProcessor implements IProcessor {
     /**
      * @param \Resque\Protocol\Job $job
      *
-     * @throws DeferredException
      * @throws JobParseException
      * @throws RedisError
-     * @throws UniqueException
      */
     private function enqueueDeferred(Job $job) {
         $payload = UniqueList::finalize($job->getUniqueId());
@@ -173,8 +171,6 @@ class StandardProcessor implements IProcessor {
 
         try {
             $this->enqueueDeferred($job);
-        } catch (DeferredException $ignore) {
-        } catch (UniqueException $ignore) {
         } catch (JobParseException $e) {
             Log::error('Failed to enqueue deferred job.', [
                 'exception' => $e,

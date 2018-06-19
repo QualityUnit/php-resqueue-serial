@@ -25,9 +25,7 @@ class Resque {
      * @param int $delay Delay in seconds
      * @param \Resque\Protocol\Job $job
      *
-     * @throws DeferredException
      * @throws RedisError
-     * @throws UniqueException
      */
     public static function delayedEnqueue($delay, Job $job) {
         DelayedScheduler::schedule(time() + $delay, $job);
@@ -47,26 +45,12 @@ class Resque {
      * @param Job $job
      *
      * @return QueuedJob
-     * @throws DeferredException
      * @throws RedisError
-     * @throws UniqueException
      */
     public static function enqueue(Job $job) {
-        UniqueList::add($job);
+        $unassignedQueue = new JobQueue(Key::unassigned());
 
-        return self::enqueuePrivate($job);
-    }
-
-    /**
-     * @param Job $job
-     *
-     * @return QueuedJob
-     * @throws RedisError
-     */
-    public static function enqueueExisting(Job $job) {
-        UniqueList::addIfNotExists($job);
-
-        return self::enqueuePrivate($job);
+        return $unassignedQueue->push($job);
     }
 
     /**
@@ -106,17 +90,5 @@ class Resque {
     public static function setBackend($server) {
         self::$redisServer = $server;
         self::$redis = null;
-    }
-
-    /**
-     * @param Job $job
-     *
-     * @return QueuedJob
-     * @throws RedisError
-     */
-    private static function enqueuePrivate(Job $job): QueuedJob {
-        $unassignedQueue = new JobQueue(Key::unassigned());
-
-        return $unassignedQueue->push($job);
     }
 }

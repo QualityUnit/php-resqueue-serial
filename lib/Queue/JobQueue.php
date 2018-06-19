@@ -19,8 +19,20 @@ class JobQueue implements IQueue {
         $this->queue = new BaseQueue($key);
     }
 
+    /**
+     * @return string
+     */
     public function getKey() {
         return $this->queue->getKey();
+    }
+
+    /**
+     * @return mixed|null|QueuedJob
+     * @throws RedisError
+     * @throws JobParseException
+     */
+    public function peek() {
+        return $this->decodeJob($this->queue->peek());
     }
 
     /**
@@ -81,6 +93,16 @@ class JobQueue implements IQueue {
     }
 
     /**
+     * @param QueuedJob $payload
+     *
+     * @return void
+     * @throws RedisError
+     */
+    public function remove($payload) {
+        $this->queue->remove($payload->toString());
+    }
+
+    /**
      * @param $payload
      *
      * @return null|QueuedJob
@@ -94,6 +116,7 @@ class JobQueue implements IQueue {
         $data = json_decode($payload, true);
         if (!is_array($data)) {
             Log::error('Payload data corrupted on dequeue.', ['payload' => $payload]);
+
             return null;
         }
 
