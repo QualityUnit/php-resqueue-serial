@@ -8,8 +8,7 @@ use Resque\Job\StaticJobSource;
 use Resque\Key;
 use Resque\Log;
 use Resque\Protocol\UniqueList;
-use Resque\Queue\BaseQueue;
-use Resque\Queue\IQueue;
+use Resque\Queue\Queue;
 use Resque\Queue\JobQueue;
 use Resque\Worker\WorkerImage;
 
@@ -31,7 +30,7 @@ class StaticPool implements IPool {
 
     /**
      * @param QueuedJob $queuedJob
-     * @param IQueue $buffer
+     * @param Queue $buffer
      *
      * @return string|null
      * @throws \Resque\RedisError
@@ -39,7 +38,7 @@ class StaticPool implements IPool {
     public static function assignJob($queuedJob, $buffer) {
         $poolName = self::resolvePoolName($queuedJob);
         $uniqueId = $queuedJob->getJob()->getUniqueId();
-        $poolQueue = new BaseQueue(Key::staticPoolQueue($poolName));
+        $poolQueue = new Queue(Key::staticPoolQueue($poolName));
 
         Log::debug("Assigning job to pool $poolName");
 
@@ -58,7 +57,7 @@ class StaticPool implements IPool {
                 return $deferred;
             }
 
-            return $buffer->popInto(new BaseQueue(Key::unassigned()));
+            return $buffer->popInto(new Queue(Key::unassigned()));
         }
 
         return $buffer->pop();

@@ -24,7 +24,7 @@ class StaticJobSource implements IJobSource {
      * @throws JobParseException
      */
     public function bufferNextJob() {
-        return $this->jobQueue->popIntoBlocking($this->buffer, 3);
+        return $this->jobQueue->popJobIntoBlocking($this->buffer, 3);
     }
 
     /**
@@ -33,6 +33,6 @@ class StaticJobSource implements IJobSource {
      * @throws JobParseException
      */
     public function bufferPop() {
-        return $this->buffer->pop();
+        return $this->buffer->popJob();
     }
 }

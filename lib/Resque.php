@@ -50,7 +50,7 @@ class Resque {
     public static function enqueue(Job $job) {
         $unassignedQueue = new JobQueue(Key::unassigned());
 
-        return $unassignedQueue->push($job);
+        return $unassignedQueue->pushJob($job);
     }
 
     /**

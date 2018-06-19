@@ -42,7 +42,7 @@ class BatchJobSource implements IJobSource {
         $batchImage = BatchImage::load($batchId);
 
         $batchQueue = new JobQueue($batchImage->getKey());
-        $job = $batchQueue->popInto($this->buffer);
+        $job = $batchQueue->popJobInto($this->buffer);
 
         if ($job !== null) {
             return $job;
@@ -59,6 +59,6 @@ class BatchJobSource implements IJobSource {
      * @throws JobParseException
      */
     public function bufferPop() {
-        return $this->buffer->pop();
+        return $this->buffer->popJob();
     }
 }

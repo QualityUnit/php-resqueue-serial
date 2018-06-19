@@ -7,103 +7,60 @@ namespace Resque\Queue;
 use Resque\Job\JobParseException;
 use Resque\Job\QueuedJob;
 use Resque\Log;
+use Resque\Protocol\Job;
 use Resque\RedisError;
 use Resque\Resque;
 
-class JobQueue implements IQueue {
-
-    /** @var BaseQueue */
-    private $queue;
-
-    public function __construct($key) {
-        $this->queue = new BaseQueue($key);
-    }
-
-    /**
-     * @return string
-     */
-    public function getKey() {
-        return $this->queue->getKey();
-    }
-
-    /**
-     * @return mixed|null|QueuedJob
-     * @throws RedisError
-     * @throws JobParseException
-     */
-    public function peek() {
-        return $this->decodeJob($this->queue->peek());
-    }
+class JobQueue extends Queue {
 
     /**
      * @return QueuedJob|null payload
      * @throws RedisError
      * @throws JobParseException
      */
-    public function pop() {
-        return $this->decodeJob($this->queue->pop());
+    public function popJob() {
+        return $this->decodeJob($this->pop());
     }
 
     /**
-     * @param int $timeout Timeout in seconds
-     *
-     * @return QueuedJob|null payload
-     * @throws RedisError
-     * @throws JobParseException
-     */
-    public function popBlocking($timeout) {
-        return $this->decodeJob($this->queue->popBlocking($timeout));
-    }
-
-    /**
-     * @param IQueue $destinationQueue
+     * @param Queue $destinationQueue
      *
      * @return null|QueuedJob
      * @throws RedisError
      * @throws JobParseException
      */
-    public function popInto(IQueue $destinationQueue) {
-        return $this->decodeJob($this->queue->popInto($destinationQueue));
+    public function popJobInto(Queue $destinationQueue) {
+        return $this->decodeJob($this->popInto($destinationQueue));
     }
 
     /**
-     * @param IQueue $destinationQueue
+     * @param Queue $destinationQueue
      * @param int $timeout Timeout in seconds
      *
      * @return QueuedJob|null
      * @throws RedisError
      * @throws JobParseException
      */
-    public function popIntoBlocking(IQueue $destinationQueue, $timeout) {
-        return $this->decodeJob($this->queue->popIntoBlocking($destinationQueue, $timeout));
+    public function popJobIntoBlocking(Queue $destinationQueue, $timeout) {
+        return $this->decodeJob($this->popIntoBlocking($destinationQueue, $timeout));
     }
 
     /**
-     * @param \Resque\Protocol\Job $payload
+     * @param Job $job
      *
      * @return QueuedJob
      * @throws RedisError
      */
-    public function push($payload) {
-        $queuedJob = new QueuedJob($payload, Resque::generateJobId());
+    public function pushJob(Job $job) {
+        $queuedJob = new QueuedJob($job, Resque::generateJobId());
 
-        $this->queue->push($queuedJob->toString());
+        $this->push($queuedJob->toString());
 
         return $queuedJob;
     }
 
     /**
-     * @param QueuedJob $payload
-     *
-     * @return void
-     * @throws RedisError
-     */
-    public function remove($payload) {
-        $this->queue->remove($payload->toString());
-    }
-
-    /**
-     * @param $payload
+     * @param string $payload
      *
      * @return null|QueuedJob
      * @throws JobParseException
@@ -114,7 +71,7 @@ class JobQueue implements IQueue {
         }
 
         $data = json_decode($payload, true);
-        if (!is_array($data)) {
+        if (!\is_array($data)) {
             Log::error('Payload data corrupted on dequeue.', ['payload' => $payload]);
 
             return null;

@@ -7,7 +7,7 @@ namespace Resque\Queue;
 use Resque\RedisError;
 use Resque\Resque;
 
-class BaseQueue implements IQueue {
+class Queue {
 
     /** @var string */
     private $key;
@@ -58,23 +58,23 @@ class BaseQueue implements IQueue {
     }
 
     /**
-     * @param IQueue $destinationQueue
+     * @param Queue $destinationQueue
      *
      * @return string|null
      * @throws RedisError
      */
-    public function popInto(IQueue $destinationQueue) {
+    public function popInto(Queue $destinationQueue) {
         return Resque::redis()->rPoplPush($this->key, $destinationQueue->getKey()) ?: null;
     }
 
     /**
-     * @param IQueue $destinationQueue
+     * @param Queue $destinationQueue
      * @param int $timeout Timeout in seconds
      *
      * @return string|null
      * @throws RedisError
      */
-    public function popIntoBlocking(IQueue $destinationQueue, $timeout) {
+    public function popIntoBlocking(Queue $destinationQueue, $timeout) {
         return Resque::redis()->brPoplPush($this->key, $destinationQueue->getKey(), $timeout) ?: null;
     }
 
@@ -94,6 +94,7 @@ class BaseQueue implements IQueue {
      * @param mixed $payload
      *
      * @return void
+     * @throws RedisError
      */
     public function remove($payload) {
         Resque::redis()->lRem($this->key, 1, $payload);

@@ -7,16 +7,16 @@ use Resque\Job\QueuedJob;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
-use Resque\Queue\BaseQueue;
+use Resque\Queue\Queue;
 use Resque\Stats\AllocatorStats;
 
 class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
 
     const BLOCKING_TIMEOUT = 3;
 
-    /** @var BaseQueue */
+    /** @var Queue */
     private $buffer;
-    /** @var BaseQueue */
+    /** @var Queue */
     private $unassignedQueue;
 
     /**
@@ -25,8 +25,8 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
     public function __construct($code) {
         parent::__construct('job-allocator', AllocatorImage::create($code));
 
-        $this->buffer = new BaseQueue(Key::localAllocatorBuffer($code));
-        $this->unassignedQueue = new BaseQueue(Key::unassigned());
+        $this->buffer = new Queue(Key::localAllocatorBuffer($code));
+        $this->unassignedQueue = new Queue(Key::unassigned());
     }
 
     /**
