@@ -35,6 +35,20 @@ class JobStats extends AbstractStats {
         $this->inc($job->getName() . '.fail', 1);
     }
 
+    /**
+     * Reports the number of retried jobs
+     *
+     * @param RunningJob $job
+     */
+    public function reportReschedule(RunningJob $job) {
+        $this->inc($job->getName() . '.reschedule', 1);
+    }
+
+    /**
+     * Reports the number of retried jobs
+     *
+     * @param RunningJob $job
+     */
     public function reportRetry(RunningJob $job) {
         $this->inc($job->getName() . '.retry', 1);
     }

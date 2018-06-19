@@ -76,6 +76,7 @@ class RunningJob {
     public function reschedule() {
         Resque::enqueueExisting($this->job);
         $this->reportSuccess();
+        $this->reportReschedule();
     }
 
     /**
@@ -86,6 +87,7 @@ class RunningJob {
     public function rescheduleDelayed($in) {
         Resque::delayedEnqueueExisting($in, $this->job);
         $this->reportSuccess();
+        $this->reportReschedule();
     }
 
     /**
@@ -131,6 +133,10 @@ class RunningJob {
     private function reportFail(\Throwable $t) {
         Log::error('Job failed.', $this->createFailContext($t));
         JobStats::instance()->reportFail($this);
+    }
+
+    private function reportReschedule() {
+        JobStats::instance()->reportReschedule($this);
     }
 
     /**
