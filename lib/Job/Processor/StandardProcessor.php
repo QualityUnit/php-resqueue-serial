@@ -18,6 +18,9 @@ use Resque\Resque;
 
 class StandardProcessor implements IProcessor {
 
+    const CHILD_SIGNAL_TIMEOUT = 5;
+    const SIGNAL_SUCCESS = SIGUSR2;
+
     /**
      * @param RunningJob $runningJob
      *
@@ -33,10 +36,12 @@ class StandardProcessor implements IProcessor {
                 Process::setTitlePrefix("$workerPid-std-proc");
                 Process::setTitle("Processing job {$runningJob->getName()}");
                 $this->handleChild($runningJob);
+                Process::signal(self::SIGNAL_SUCCESS, $workerPid);
             } catch (\Throwable $t) {
                 try {
                     $runningJob->fail($t);
                     UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                    Process::signal(self::SIGNAL_SUCCESS, $workerPid ?? 0);
                 } catch (\Throwable $r) {
                     Log::critical('Failed to properly handle job failure.', [
                         'exception' => $r,
@@ -47,9 +52,15 @@ class StandardProcessor implements IProcessor {
             exit(0);
             // CHILD PROCESS END
         } else {
-            $exitCode = $this->waitForChild($pid);
-            if ($exitCode !== 0) {
-                $runningJob->fail(new FailException("Job execution failed with exit code: $exitCode"));
+            try {
+                $exitCode = $this->waitForChildProcess($pid);
+                if ($exitCode !== 0) {
+                    Log::warning("Job process signalled success, but exited with code $exitCode.", [
+                        'payload' => $runningJob->getJob()->toArray()
+                    ]);
+                }
+            } catch (\Exception $e) {
+                $runningJob->fail(new FailException("Job execution failed: {$e->getMessage()}"));
                 UniqueList::removeAll($runningJob->getJob()->getUniqueId());
             }
         }
@@ -108,6 +119,7 @@ class StandardProcessor implements IProcessor {
             Log::error('Unexpected deferred payload.', [
                 'raw_payload' => $payload
             ]);
+
             return;
         }
 
@@ -141,6 +153,7 @@ class StandardProcessor implements IProcessor {
             $task->perform();
         } catch (\Exception $e) {
             $this->handleException($runningJob, $e);
+
             return;
         }
 
@@ -251,13 +264,39 @@ class StandardProcessor implements IProcessor {
      * @param $pid
      *
      * @return int
+     * @throws \Exception
      */
-    private function waitForChild($pid) {
+    private function waitForChildProcess($pid) {
         $status = "Forked $pid at " . strftime('%F %T');
         Process::setTitle($status);
         Log::info($status);
 
+        while (!$this->waitForChildSignal($pid, self::CHILD_SIGNAL_TIMEOUT)) {
+            // NOOP
+        }
+
         return Process::waitForPid($pid);
+    }
+
+    /**
+     * @param $pid
+     * @param $timeoutSeconds
+     *
+     * @return bool
+     * @throws \Exception
+     */
+    private function waitForChildSignal($pid, $timeoutSeconds) {
+        pcntl_sigtimedwait([self::SIGNAL_SUCCESS], $sigInfo, $timeoutSeconds);
+
+        if ($sigInfo === null && !Process::isPidAlive($pid)) {
+            pcntl_sigtimedwait([self::SIGNAL_SUCCESS], $sigInfo, 1);
+
+            if ($sigInfo === null) {
+                throw new \Exception('Job process ended without signalling success.');
+            }
+        }
+
+        return $sigInfo !== null;
     }
 
 }

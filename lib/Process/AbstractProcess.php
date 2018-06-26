@@ -50,7 +50,8 @@ abstract class AbstractProcess implements IStandaloneProcess {
             ->register(SIGINT, [$this, 'shutDown'])
             ->register(SIGQUIT, [$this, 'shutDown'])
             ->register(SIGHUP, [$this, 'reloadAll'])
-            ->register(SIGUSR1, [$this, 'initLogger']);
+            ->register(SIGUSR1, [$this, 'initLogger'])
+            ->register(SIGUSR2, SIG_DFL);
 
         Log::info('Initialization complete.');
     }
