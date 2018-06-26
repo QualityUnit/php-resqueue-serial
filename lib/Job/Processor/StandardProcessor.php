@@ -99,14 +99,14 @@ class StandardProcessor implements IProcessor {
      */
     private function enqueueDeferred(Job $job) {
         $payload = UniqueList::finalize($job->getUniqueId());
-        if ($payload === false) {
+        if ($payload === 1) {
             return;
         }
 
         $deferred = json_decode($payload, true);
         if (!\is_array($deferred)) {
             Log::error('Unexpected deferred payload.', [
-                'payload' => $payload
+                'raw_payload' => $payload
             ]);
             return;
         }

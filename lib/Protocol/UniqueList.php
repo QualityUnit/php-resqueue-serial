@@ -30,12 +30,12 @@ LUA;
     const SCRIPT_FINALIZE = /** @lang Lua */
         <<<LUA
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then
-    return false
+    return 1
 end
 local deferred = redis.call('GET', KEYS[2])
 redis.call('DEL', KEYS[1], KEYS[2])
 
-return deferred
+return deferred or 1
 LUA;
 
     const STATE_QUEUED = 'queued';
