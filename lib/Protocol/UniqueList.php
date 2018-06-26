@@ -91,12 +91,12 @@ LUA;
      *
      * @param string $uniqueId
      *
-     * @return false|string Return false
+     * @return int|string Return 1 if there's nothing to defer
      * @throws \Resque\RedisError
      */
     public static function finalize($uniqueId) {
         if (!$uniqueId) {
-            return false;
+            return 1;
         }
 
         return Resque::redis()->eval(
