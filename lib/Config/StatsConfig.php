@@ -2,48 +2,46 @@
 
 namespace Resque\Config;
 
+use Resque\Log;
+
 class StatsConfig {
 
-    private $host = 'localhost';
-    private $port = 8125;
-    private $connectTimeout = 3;
+    /** @var ConnectionInfo[] */
+    private $connections = [];
 
     /**
      * @param mixed[] $configSection
      */
     public function __construct($configSection) {
-        $host = $configSection['host'];
-        if ($host != null) {
-            $this->host = $host;
-        }
-        $port = $configSection['port'];
-        if ($port != null) {
-            $this->port = $port;
-        }
-        $connectTimeout = $configSection['connect_timeout'];
-        if ($connectTimeout != null) {
-            $this->connectTimeout = $connectTimeout;
+        if (isset($configSection['host'])) {
+            $connectionInfo = new ConnectionInfo($configSection);
+            if ($connectionInfo->isDefault()) {
+                Log::info('Default statsd connection configuration detected.');
+            }
+            $this->connections[] = $connectionInfo;
+        } else if (\is_array($configSection)) {
+            $hasDefault = false;
+            foreach ($configSection as $subSection) {
+                $connectionInfo = new ConnectionInfo($subSection);
+                if ($connectionInfo->isDefault()) {
+                    if ($hasDefault) {
+                        Log::warning('More than one default statsd connection configuration detected. (misconfiguration?)');
+                        continue;
+                    }
+                    Log::info('Default statsd connection configuration used.');
+                    $hasDefault = true;
+                }
+                $this->connections[] = $connectionInfo;
+            }
+        } else {
+            Log::warning('Invalid or missing statsd connection configuration.');
         }
     }
 
     /**
-     * @return int
+     * @return ConnectionInfo[]
      */
-    public function getConnectTimeout() {
-        return $this->connectTimeout;
-    }
-
-    /**
-     * @return string
-     */
-    public function getHost() {
-        return $this->host;
-    }
-
-    /**
-     * @return int
-     */
-    public function getPort() {
-        return $this->port;
+    public function getConnections() {
+        return $this->connections;
     }
 }
