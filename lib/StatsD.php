@@ -5,6 +5,7 @@ namespace Resque;
 use Resque\Config\StatsConfig;
 use Resque\StatsD\BatchClient;
 use Resque\StatsD\Client;
+use Resque\StatsD\Connection\MultiConnection;
 use Resque\StatsD\Connection\UdpSocket;
 
 class StatsD {
@@ -57,11 +58,16 @@ class StatsD {
     }
 
     public static function initialize(StatsConfig $config) {
-        $connection = new UdpSocket(
-            $config->getHost(),
-            $config->getPort(),
-            $config->getConnectTimeout()
-        );
+        $connection = new MultiConnection();
+        foreach ($config->getConnections() as $connectionInfo) {
+            $connection->addConnection(
+                new UdpSocket(
+                    $connectionInfo->getHost(),
+                    $connectionInfo->getPort(),
+                    $connectionInfo->getConnectTimeout()
+                )
+            );
+        }
 
         self::$client = new Client($connection, \Resque\Resque::VERSION_PREFIX);
     }
