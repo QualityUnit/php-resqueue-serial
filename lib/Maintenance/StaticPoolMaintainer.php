@@ -123,7 +123,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
     private function clearBuffer(IJobSource $jobSource) {
         while (($buffered = $jobSource->bufferPop()) !== null) {
             Log::error("Found non-empty buffer for {$this->pool->getName()} worker.", [
-                'payload' => $buffered->toString()
+                'payload' => $buffered->getJob()->toArray()
             ]);
         }
     }
