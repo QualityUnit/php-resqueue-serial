@@ -1,23 +1,16 @@
 <?php
 
+ini_set('display_errors', true);
+error_reporting(E_ALL);
+
 require_once '../vendor/autoload.php';
 
 use Resque\Config\GlobalConfig;
 use Resque\Init\InitProcess;
 
-ini_set('display_errors', true);
-error_reporting(E_ALL);
-
-unlink('/tmp/serialjob.txt');
+require_once 'testjobs.php';
 
 GlobalConfig::initialize('./../resources/config.yml');
-
-class TestPerf__ {
-
-    public function perform() {
-        echo "AYY PERFORMED\n";
-    }
-}
 
 $proc = new InitProcess();
 
