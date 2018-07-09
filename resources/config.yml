@@ -3,9 +3,9 @@ node_id: "lokal"
 
 log:
     # default = notice
-    level: debug
+    level: notice
     # default = "/var/log/resque-serial.log"
-    path: "/var/log/resque-serial.log"
+    path: "php://stdout"
     # the application that sends the data, used as the "type" field of logstash
     application_name: "resque-v4"
     # the system/machine name, used as the "source" field of logstash, defaults to the hostname of the machine
@@ -45,23 +45,12 @@ pools:
         static_1:
             # MANDATORY <INT>
             worker_count: 2
-        static_2:
-            # MANDATORY <INT>
-            worker_count: 2
-        static_3:
-            # MANDATORY <INT>
-            worker_count: 2
     batch:
         batch_1:
             # MANDATORY <INT>
             unit_count: 2
             # MANDATORY <INT>
             workers_per_unit: 1
-        batch_2:
-            # MANDATORY <INT>
-            unit_count: 1
-            # MANDATORY <INT>
-            workers_per_unit: 2
 
 
 
@@ -70,11 +59,7 @@ mapping:
         default:
             # MANDATORY <STRING>
             default: static_1
-        test_source:
-            test_job: static_2
     batch:
         default:
             # MANDATORY <STRING>
             default: batch_1
-        test_source:
-            test_job: batch_2
