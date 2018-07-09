@@ -51,7 +51,9 @@ abstract class AbstractProcess implements IStandaloneProcess {
             ->register(SIGQUIT, [$this, 'shutDown'])
             ->register(SIGHUP, [$this, 'reloadAll'])
             ->register(SIGUSR1, [$this, 'initLogger'])
-            ->register(SIGUSR2, SIG_DFL);
+            ->register(SIGUSR2, function () {
+                Log::warning('Received unhandled SIGUSR2.');
+            });
 
         Log::info('Initialization complete.');
     }

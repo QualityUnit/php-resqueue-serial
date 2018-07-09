@@ -38,7 +38,7 @@ class Process {
      * @return bool
      */
     public static function isPidAlive($pid) {
-        return pcntl_waitpid($pid, $status, WNOHANG) > 0;
+        return pcntl_waitpid($pid, $status, WNOHANG) === 0;
     }
 
     public static function setTitle($title) {
