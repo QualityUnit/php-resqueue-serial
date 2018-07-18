@@ -3,20 +3,13 @@
 namespace Resque\Stats;
 
 use Resque\Job\RunningJob;
+use Resque\SingletonTrait;
 
-class SourceStats extends AbstractStats {
+class SourceStats {
 
-    private static $instance;
-
-    public static function instance() {
-        if (self::$instance === null) {
-            self::$instance = new self('sources');
-        }
-
-        return self::$instance;
-    }
+    use SingletonTrait;
 
     public function reportJobProcessing(RunningJob $job) {
-        $this->inc("{$job->getJob()->getSourceId()}.{$job->getName()}", 1);
+        Stats::old()->increment("sources.{$job->getJob()->getSourceId()}.{$job->getName()}");
     }
 }

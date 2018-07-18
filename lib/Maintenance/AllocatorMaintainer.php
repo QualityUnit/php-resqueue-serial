@@ -53,8 +53,8 @@ class AllocatorMaintainer implements IProcessMaintainer {
             $this->forkAllocator(self::PREFIX_BATCH);
         }
 
-        AllocatorStats::instance()->reportStaticQueue(Resque::redis()->lLen(Key::unassigned()));
-        AllocatorStats::instance()->reportBatchQueue(Resque::redis()->lLen(Key::committedBatchList()));
+        AllocatorStats::getInstance()->reportStaticQueue(Resque::redis()->lLen(Key::unassigned()));
+        AllocatorStats::getInstance()->reportBatchQueue(Resque::redis()->lLen(Key::committedBatchList()));
     }
 
     /**

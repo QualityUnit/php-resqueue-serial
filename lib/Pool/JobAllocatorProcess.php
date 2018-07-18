@@ -107,7 +107,7 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
         $poolName = $this->resolvePoolName($queuedJob);
         $enqueuedPayload = StaticPool::assignJob($this->bufferKey, $poolName);
 
-        AllocatorStats::instance()->reportStaticAllocated();
+        AllocatorStats::getInstance()->reportStaticAllocated();
 
         $this->validatePayload($payload, $enqueuedPayload);
     }

@@ -82,7 +82,7 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
 
             BatchPool::assignBatch($batch, $this->resolvePoolName($batch));
 
-            AllocatorStats::instance()->reportBatchAllocated();
+            AllocatorStats::getInstance()->reportBatchAllocated();
 
             Resque::redis()->lRem($this->bufferKey, 1, $batchId);
         } catch (\Exception $e) {

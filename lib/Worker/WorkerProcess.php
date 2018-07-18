@@ -54,7 +54,7 @@ class WorkerProcess extends AbstractProcess {
                 'payload' => $runningJob->getJob()->toString()
             ]);
 
-            PoolStats::instance()->reportProcessed($this->getImage()->getPoolName());
+            PoolStats::getInstance()->reportProcessed($this->getImage()->getPoolName());
         } catch (\Exception $e) {
             Log::critical('Unexpected error occurred during execution of a job.', [
                 'exception' => $e,
@@ -107,7 +107,7 @@ class WorkerProcess extends AbstractProcess {
     private function startWorkOn(QueuedJob $queuedJob) {
         $this->getImage()->setRuntimeInfo(microtime(true), $queuedJob->getJob()->getName());
         $runningJob = new RunningJob($this, $queuedJob);
-        SourceStats::instance()->reportJobProcessing($runningJob);
+        SourceStats::getInstance()->reportJobProcessing($runningJob);
 
         return $runningJob;
     }

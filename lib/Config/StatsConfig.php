@@ -21,7 +21,7 @@ class StatsConfig {
             $this->connections[] = $connectionInfo;
         } else if (\is_array($configSection)) {
             $hasDefault = false;
-            foreach ($configSection as $subSection) {
+            foreach ($configSection as $key => $subSection) {
                 $connectionInfo = new ConnectionInfo($subSection);
                 if ($connectionInfo->isDefault()) {
                     if ($hasDefault) {
@@ -31,7 +31,7 @@ class StatsConfig {
                     Log::info('Default statsd connection configuration used.');
                     $hasDefault = true;
                 }
-                $this->connections[] = $connectionInfo;
+                $this->connections[$key] = $connectionInfo;
             }
         } else {
             Log::warning('Invalid or missing statsd connection configuration.');

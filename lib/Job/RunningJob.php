@@ -132,11 +132,11 @@ class RunningJob {
      */
     private function reportFail(\Throwable $t) {
         Log::error('Job failed.', $this->createFailContext($t));
-        JobStats::instance()->reportFail($this);
+        JobStats::getInstance()->reportFail($this);
     }
 
     private function reportReschedule() {
-        JobStats::instance()->reportReschedule($this);
+        JobStats::getInstance()->reportReschedule($this);
     }
 
     /**
@@ -145,15 +145,15 @@ class RunningJob {
      */
     private function reportRetry(\Exception $e, $retryJobId) {
         Log::error('Job was retried.', $this->createFailContext($e, $retryJobId));
-        JobStats::instance()->reportRetry($this);
+        JobStats::getInstance()->reportRetry($this);
     }
 
     private function reportSuccess() {
         $duration = floor((microtime(true) - $this->startTime) * 1000);
         if ($duration > 0) {
-            JobStats::instance()->reportDuration($this, $duration);
+            JobStats::getInstance()->reportDuration($this, $duration);
         }
 
-        JobStats::instance()->reportSuccess($this);
+        JobStats::getInstance()->reportSuccess($this);
     }
 }

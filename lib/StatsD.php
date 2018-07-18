@@ -2,8 +2,8 @@
 
 namespace Resque;
 
+use Resque\Config\ConnectionInfo;
 use Resque\Config\StatsConfig;
-use Resque\StatsD\BatchClient;
 use Resque\StatsD\Client;
 use Resque\StatsD\Connection\MultiConnection;
 use Resque\StatsD\Connection\UdpSocket;
@@ -12,54 +12,24 @@ class StatsD {
 
     /** @var Client */
     private static $client;
+    /** @var Client */
+    private static $oldClient;
 
-    /**
-     * @return BatchClient
-     */
-    public static function batch() {
-        return self::$client->batch();
-    }
+    public static function client() {
+        if (self::$client === null) {
+            self::$client = new Client(new MultiConnection()); // dummy
+        }
 
-    /**
-     * @param string $key
-     * @param int $value
-     * @param int $sampleRate (optional) the default is 1
-     * @param array $tags
-     */
-    public static function count($key, $value, $sampleRate = 1, array $tags = []) {
-        self::$client->count($key, $value, $sampleRate, $tags);
-    }
-
-    /**
-     * @param string $key
-     * @param int $sampleRate
-     * @param array $tags
-     */
-    public static function decrement($key, $sampleRate = 1, array $tags = []) {
-        self::$client->decrement($key, $sampleRate, $tags);
-    }
-
-    /**
-     * @param string $key
-     * @param string|int $value
-     * @param array $tags
-     */
-    public static function gauge($key, $value, array $tags = []) {
-        self::$client->gauge($key, $value, $tags);
-    }
-
-    /**
-     * @param string $key
-     * @param int $sampleRate
-     * @param array $tags
-     */
-    public static function increment($key, $sampleRate = 1, array $tags = []) {
-        self::$client->increment($key, $sampleRate, $tags);
+        return self::$client;
     }
 
     public static function initialize(StatsConfig $config) {
         $connection = new MultiConnection();
-        foreach ($config->getConnections() as $connectionInfo) {
+        foreach ($config->getConnections() as $key => $connectionInfo) {
+            if ($key === 'old') {
+                self::createOldClient($connectionInfo);
+                continue;
+            }
             $connection->addConnection(
                 new UdpSocket(
                     $connectionInfo->getHost(),
@@ -69,25 +39,24 @@ class StatsD {
             );
         }
 
-        self::$client = new Client($connection, \Resque\Resque::VERSION_PREFIX);
+        self::$client = new Client($connection, Resque::VERSION_PREFIX);
     }
 
-    /**
-     * @param string $key
-     * @param int $value
-     * @param array $tags
-     */
-    public static function set($key, $value, array $tags = []) {
-        self::$client->set($key, $value, $tags);
+    public static function oldClient() {
+        if (self::$oldClient === null) {
+            self::$oldClient = new Client(new MultiConnection()); // dummy
+        }
+
+        return self::$oldClient;
     }
 
-    /**
-     * @param string $key
-     * @param int $value the timing in ms
-     * @param int $sampleRate the sample rate, if < 1, statsd will send an average timing
-     * @param array $tags
-     */
-    public static function timing($key, $value, $sampleRate = 1, array $tags = []) {
-        self::$client->timing($key, $value, $sampleRate, $tags);
+    private static function createOldClient(ConnectionInfo $connectionInfo) {
+        $socket = new UdpSocket(
+            $connectionInfo->getHost(),
+            $connectionInfo->getPort(),
+            $connectionInfo->getConnectTimeout()
+        );
+
+        self::$oldClient = new Client($socket, Resque::VERSION_PREFIX);
     }
 }

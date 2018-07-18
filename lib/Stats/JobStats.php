@@ -3,18 +3,11 @@
 namespace Resque\Stats;
 
 use Resque\Job\RunningJob;
+use Resque\SingletonTrait;
 
-class JobStats extends AbstractStats {
+class JobStats {
 
-    private static $instance;
-
-    public static function instance() {
-        if (self::$instance === null) {
-            self::$instance = new self('jobs');
-        }
-
-        return self::$instance;
-    }
+    use SingletonTrait;
 
     /**
      * Reports the time it takes to process a job (in ms)
@@ -22,8 +15,8 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      * @param int $duration in ms
      */
-    public function reportDuration(RunningJob $job, $duration) {
-        $this->timing($job->getName() . '.duration', $duration);
+    public function reportDuration(RunningJob $job, int $duration) {
+        Stats::old()->timing("jobs.{$job->getName()}.duration", $duration);
     }
 
     /**
@@ -32,7 +25,7 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      */
     public function reportFail(RunningJob $job) {
-        $this->inc($job->getName() . '.fail', 1);
+        Stats::old()->increment("jobs.{$job->getName()}.fail");
     }
 
     /**
@@ -41,7 +34,7 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      */
     public function reportReschedule(RunningJob $job) {
-        $this->inc($job->getName() . '.reschedule', 1);
+        Stats::old()->increment("jobs.{$job->getName()}.reschedule");
     }
 
     /**
@@ -50,7 +43,7 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      */
     public function reportRetry(RunningJob $job) {
-        $this->inc($job->getName() . '.retry', 1);
+        Stats::old()->increment("jobs.{$job->getName()}.retry");
     }
 
     /**
@@ -59,6 +52,6 @@ class JobStats extends AbstractStats {
      * @param RunningJob $job
      */
     public function reportSuccess(RunningJob $job) {
-        $this->inc($job->getName() . '.success', 1);
+        Stats::old()->increment("jobs.{$job->getName()}.success");
     }
 }

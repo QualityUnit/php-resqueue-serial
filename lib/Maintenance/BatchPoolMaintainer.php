@@ -122,7 +122,7 @@ LUA;
             }
         }
 
-        PoolStats::instance()->reportQueue($this->pool->getName(), $batchesInQueue);
+        PoolStats::getInstance()->reportQueue($this->pool->getName(), $batchesInQueue);
     }
 
     /**
@@ -155,7 +155,7 @@ LUA;
             if ($runtimeInfo->startTime > 0) {
                 $currentRunTime = microtime(true) - $runtimeInfo->startTime;
                 if ($currentRunTime > self::MIN_REPORTABLE_RUNTIME_SECONDS) {
-                    WorkerStats::instance()->reportJobRuntime($image, $currentRunTime);
+                    WorkerStats::getInstance()->reportJobRuntime($image, (int) $currentRunTime);
                 }
             }
 

@@ -2,26 +2,15 @@
 
 namespace Resque\Stats;
 
+use Resque\SingletonTrait;
 use Resque\Worker\WorkerImage;
 
-class WorkerStats extends AbstractStats {
+class WorkerStats {
 
-    private static $instance;
+    use SingletonTrait;
 
-    public static function instance() {
-        if (self::$instance === null) {
-            self::$instance = new self('workers');
-        }
-
-        return self::$instance;
-    }
-
-    /**
-     * @param WorkerImage $image
-     * @param int $runtime
-     */
-    public function reportJobRuntime(WorkerImage $image, $runtime) {
-        $this->gauge("{$image->getPoolName()}.{$image->getCode()}.{$image->getPid()}.runtime", (int) $runtime);
+    public function reportJobRuntime(WorkerImage $image, int $runtime) {
+        Stats::old()->gauge("workers.{$image->getPoolName()}.{$image->getCode()}.{$image->getPid()}.runtime", $runtime);
     }
 
 }

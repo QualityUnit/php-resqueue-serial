@@ -2,25 +2,17 @@
 
 namespace Resque\Stats;
 
-class AllocatorStats extends AbstractStats {
+use Resque\SingletonTrait;
 
-    private static $instance;
+class AllocatorStats {
 
-    public static function instance() {
-        if (self::$instance === null) {
-            self::$instance = new self('allocators');
-        }
-
-        return self::$instance;
-    }
+    use SingletonTrait;
 
     /**
      * Reports the number of allocated batches
-     *
-     * @param int $count Number of allocated batches
      */
-    public function reportBatchAllocated($count = 1) {
-        $this->inc('batch.allocated', $count);
+    public function reportBatchAllocated() {
+        Stats::old()->increment('allocators.batch.allocated');
     }
 
     /**
@@ -28,17 +20,15 @@ class AllocatorStats extends AbstractStats {
      *
      * @param int $length Number of batches waiting to be allocated
      */
-    public function reportBatchQueue($length) {
-        $this->gauge('batch.queue', $length);
+    public function reportBatchQueue(int $length) {
+        Stats::old()->gauge('allocators.batch.queue', $length);
     }
 
     /**
      * Reports the number of allocated jobs
-     *
-     * @param int $count Number of allocated items
      */
-    public function reportStaticAllocated($count = 1) {
-        $this->inc('static.allocated', $count);
+    public function reportStaticAllocated() {
+        Stats::old()->increment('allocators.static.allocated');
     }
 
     /**
@@ -46,7 +36,7 @@ class AllocatorStats extends AbstractStats {
      *
      * @param int $length Number of jobs waiting to be allocated
      */
-    public function reportStaticQueue($length) {
-        $this->gauge('static.queue', $length);
+    public function reportStaticQueue(int $length) {
+        Stats::old()->gauge('allocators.static.queue', $length);
     }
 }

@@ -2,36 +2,17 @@
 
 namespace Resque\Stats;
 
-class PoolStats extends AbstractStats {
+use Resque\SingletonTrait;
 
-    private static $instance;
+class PoolStats {
 
-    public static function instance() {
-        if (self::$instance === null) {
-            self::$instance = new self('pools');
-        }
+    use SingletonTrait;
 
-        return self::$instance;
+    public function reportProcessed(string $poolName) {
+        Stats::old()->increment("pools.$poolName.processed");
     }
 
-    /**
-     * Reports the number of processed items
-     *
-     * @param string $poolName
-     * @param int $count
-     */
-    public function reportProcessed($poolName, $count = 1) {
-        $this->inc($poolName . '.processed', $count);
+    public function reportQueue(string $poolName, int $length) {
+        Stats::old()->gauge("pools.$poolName.queue", $length);
     }
-
-    /**
-     * Reports the number of items in pool waiting to be processed
-     *
-     * @param string $poolName
-     * @param int $length
-     */
-    public function reportQueue($poolName, $length) {
-        $this->gauge($poolName . '.queue', $length);
-    }
-
 }
