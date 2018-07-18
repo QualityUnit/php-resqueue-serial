@@ -13,6 +13,8 @@ class AllocatorStats {
      */
     public function reportBatchAllocated() {
         Stats::old()->increment('allocators.batch.allocated');
+
+        Stats::node()->increment('alloc.batch.allocated');
     }
 
     /**
@@ -22,6 +24,8 @@ class AllocatorStats {
      */
     public function reportBatchQueue(int $length) {
         Stats::old()->gauge('allocators.batch.queue', $length);
+
+        Stats::global()->gauge('alloc.batch.queue', $length);
     }
 
     /**
@@ -29,6 +33,8 @@ class AllocatorStats {
      */
     public function reportStaticAllocated() {
         Stats::old()->increment('allocators.static.allocated');
+
+        Stats::node()->increment('alloc.static.allocated');
     }
 
     /**
@@ -38,5 +44,7 @@ class AllocatorStats {
      */
     public function reportStaticQueue(int $length) {
         Stats::old()->gauge('allocators.static.queue', $length);
+
+        Stats::global()->gauge('alloc.static.queue', $length);
     }
 }

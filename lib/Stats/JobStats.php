@@ -17,6 +17,9 @@ class JobStats {
      */
     public function reportDuration(RunningJob $job, int $duration) {
         Stats::old()->timing("jobs.{$job->getName()}.duration", $duration);
+
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->timing("job.{$job->getName()}.time", $duration);
     }
 
     /**
@@ -26,6 +29,9 @@ class JobStats {
      */
     public function reportFail(RunningJob $job) {
         Stats::old()->increment("jobs.{$job->getName()}.fail");
+
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->increment("job.{$job->getName()}.fail");
     }
 
     /**
@@ -35,6 +41,9 @@ class JobStats {
      */
     public function reportReschedule(RunningJob $job) {
         Stats::old()->increment("jobs.{$job->getName()}.reschedule");
+
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->increment("job.{$job->getName()}.reschedule");
     }
 
     /**
@@ -44,6 +53,9 @@ class JobStats {
      */
     public function reportRetry(RunningJob $job) {
         Stats::old()->increment("jobs.{$job->getName()}.retry");
+
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->increment("job.{$job->getName()}.retry");
     }
 
     /**
@@ -53,5 +65,18 @@ class JobStats {
      */
     public function reportSuccess(RunningJob $job) {
         Stats::old()->increment("jobs.{$job->getName()}.success");
+
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->increment("job.{$job->getName()}.success");
+    }
+
+    /**
+     * Reports the number of processed jobs
+     *
+     * @param RunningJob $job
+     */
+    public function reportJobProcessing(RunningJob $job) {
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->increment("job.{$job->getName()}.processed");
     }
 }

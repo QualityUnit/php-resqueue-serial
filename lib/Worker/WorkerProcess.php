@@ -10,8 +10,8 @@ use Resque\Job\QueuedJob;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
+use Resque\Stats\JobStats;
 use Resque\Stats\PoolStats;
-use Resque\Stats\SourceStats;
 
 class WorkerProcess extends AbstractProcess {
 
@@ -107,7 +107,7 @@ class WorkerProcess extends AbstractProcess {
     private function startWorkOn(QueuedJob $queuedJob) {
         $this->getImage()->setRuntimeInfo(microtime(true), $queuedJob->getJob()->getName());
         $runningJob = new RunningJob($this, $queuedJob);
-        SourceStats::getInstance()->reportJobProcessing($runningJob);
+        JobStats::getInstance()->reportJobProcessing($runningJob);
 
         return $runningJob;
     }
