@@ -8,6 +8,7 @@ use Resque\Job\JobParseException;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process;
+use Resque\Process\SignalTracker;
 use Resque\Protocol\DeferredException;
 use Resque\Protocol\Exceptions;
 use Resque\Protocol\Job;
@@ -21,12 +22,22 @@ class StandardProcessor implements IProcessor {
     const CHILD_SIGNAL_TIMEOUT = 5;
     const SIGNAL_SUCCESS = SIGUSR2;
 
+    /** @var SignalTracker */
+    private $successTracker;
+
+    public function __construct() {
+        $this->successTracker = new SignalTracker(self::SIGNAL_SUCCESS);
+    }
+
+
     /**
      * @param RunningJob $runningJob
      *
      * @throws \Resque\RedisError
      */
     public function process(RunningJob $runningJob) {
+        $this->successTracker->register();
+
         $pid = Process::fork();
         if ($pid === 0) {
             // CHILD PROCESS START
@@ -62,6 +73,8 @@ class StandardProcessor implements IProcessor {
             } catch (\Exception $e) {
                 $runningJob->fail(new FailException("Job execution failed: {$e->getMessage()}"));
                 UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+            } finally {
+                $this->successTracker->unregister();
             }
         }
     }
@@ -271,32 +284,13 @@ class StandardProcessor implements IProcessor {
         Process::setTitle($status);
         Log::info($status);
 
-        while (!$this->waitForChildSignal($pid, self::CHILD_SIGNAL_TIMEOUT)) {
-            // NOOP
+        if (!$this->successTracker->receivedFrom($pid)) {
+            while (!$this->successTracker->waitFor($pid, self::CHILD_SIGNAL_TIMEOUT)) {
+                // NOOP
+            }
         }
+        $this->successTracker->unregister();
 
         return Process::waitForPid($pid);
     }
-
-    /**
-     * @param $pid
-     * @param $timeoutSeconds
-     *
-     * @return bool
-     * @throws \Exception
-     */
-    private function waitForChildSignal($pid, $timeoutSeconds) {
-        pcntl_sigtimedwait([self::SIGNAL_SUCCESS], $sigInfo, $timeoutSeconds);
-
-        if ($sigInfo === null && !Process::isPidAlive($pid)) {
-            pcntl_sigtimedwait([self::SIGNAL_SUCCESS], $sigInfo, 1);
-
-            if ($sigInfo === null) {
-                throw new \Exception('Job process ended without signalling success.');
-            }
-        }
-
-        return $sigInfo !== null;
-    }
-
 }
