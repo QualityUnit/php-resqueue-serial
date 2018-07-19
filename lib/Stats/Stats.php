@@ -104,7 +104,7 @@ class Stats {
      * @return $this
      */
     public function set(string $key, int $value, array $tags = []): self {
-        $this->client()->set($key, $value, $tags);
+        $this->client()->set($this->prefix($key), $value, $tags);
 
         return $this;
     }
@@ -118,7 +118,7 @@ class Stats {
      * @return $this
      */
     public function timing(string $key, int $value, float $sampleRate = 1, array $tags = []): self {
-        $this->client()->timing($key, $value, $sampleRate, $tags);
+        $this->client()->timing($this->prefix($key), $value, $sampleRate, $tags);
 
         return $this;
     }
