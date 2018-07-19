@@ -29,7 +29,6 @@ class StandardProcessor implements IProcessor {
         $this->successTracker = new SignalTracker(self::SIGNAL_SUCCESS);
     }
 
-
     /**
      * @param RunningJob $runningJob
      *

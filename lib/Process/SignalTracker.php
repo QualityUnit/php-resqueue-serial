@@ -47,19 +47,22 @@ class SignalTracker {
         $this->originalHandler = null;
     }
 
+    /**
+     * @param int $pid
+     * @param int $timeoutSeconds
+     *
+     * @return bool
+     * @throws \Exception
+     */
     public function waitFor($pid, $timeoutSeconds) {
         pcntl_sigtimedwait([$this->trackedSignal], $sigInfo, $timeoutSeconds);
 
         if ($sigInfo === null && !Process::isPidAlive($pid)) {
-            pcntl_sigtimedwait([$this->trackedSignal], $sigInfo, 1);
-
             if ($this->receivedFrom($pid)) {
                 return true;
             }
 
-            if ($sigInfo === null) {
-                throw new \Exception('Job process ended without signalling success.');
-            }
+            throw new \Exception('Job process ended without signalling success.');
         }
 
         return $sigInfo !== null;
