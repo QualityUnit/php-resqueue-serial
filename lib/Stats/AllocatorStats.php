@@ -14,7 +14,7 @@ class AllocatorStats {
     public function reportBatchAllocated() {
         Stats::old()->increment('allocators.batch.allocated');
 
-        Stats::node()->increment('alloc.batch.allocated');
+        Stats::global()->increment('alloc.batch.allocated');
     }
 
     /**
@@ -34,7 +34,7 @@ class AllocatorStats {
     public function reportStaticAllocated() {
         Stats::old()->increment('allocators.static.allocated');
 
-        Stats::node()->increment('alloc.static.allocated');
+        Stats::global()->increment('alloc.static.allocated');
     }
 
     /**

@@ -18,8 +18,7 @@ class JobStats {
     public function reportDuration(RunningJob $job, int $duration) {
         Stats::old()->timing("jobs.{$job->getName()}.duration", $duration);
 
-        Stats::global()->forSource($job->getJob()->getSourceId())
-            ->timing("job.{$job->getName()}.time", $duration);
+        Stats::global()->timing("job.{$job->getName()}.time", $duration);
     }
 
     /**
@@ -66,8 +65,7 @@ class JobStats {
     public function reportSuccess(RunningJob $job) {
         Stats::old()->increment("jobs.{$job->getName()}.success");
 
-        Stats::global()->forSource($job->getJob()->getSourceId())
-            ->increment("job.{$job->getName()}.success");
+        Stats::global()->increment("job.{$job->getName()}.success");
     }
 
     /**

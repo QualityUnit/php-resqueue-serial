@@ -10,8 +10,6 @@ class PoolStats {
 
     public function reportProcessed(string $poolName) {
         Stats::old()->increment("pools.$poolName.processed");
-
-        Stats::node()->increment("pool.$poolName.processed");
     }
 
     public function reportQueue(string $poolName, int $length) {
