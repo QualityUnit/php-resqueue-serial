@@ -64,8 +64,6 @@ class JobStats {
      */
     public function reportSuccess(RunningJob $job) {
         Stats::old()->increment("jobs.{$job->getName()}.success");
-
-        Stats::global()->increment("job.{$job->getName()}.success");
     }
 
     /**

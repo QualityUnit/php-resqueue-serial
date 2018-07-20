@@ -150,10 +150,11 @@ class RunningJob {
 
     private function reportSuccess() {
         $duration = floor((microtime(true) - $this->startTime) * 1000);
-        if ($duration > 0) {
-            JobStats::getInstance()->reportDuration($this, $duration);
+        if ($duration < 0) {
+            $duration = 0;
         }
 
+        JobStats::getInstance()->reportDuration($this, $duration);
         JobStats::getInstance()->reportSuccess($this);
     }
 }
