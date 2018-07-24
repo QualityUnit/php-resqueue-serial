@@ -13,9 +13,15 @@ class SignalTracker {
     private $receivedSignals = [];
     /** @var callable|int|null */
     private $originalHandler;
+    /** @var int|null */
+    private $startTime;
 
     public function __construct($trackedSignal) {
         $this->trackedSignal = $trackedSignal;
+    }
+
+    public function getStartTime() {
+        return $this->startTime;
     }
 
     public function receivedFrom($pid) {
@@ -36,6 +42,7 @@ class SignalTracker {
                 $this->receivedSignals[$pid] = $pid;
             }
         });
+        $this->startTime = microtime(true);
     }
 
     public function unregister() {
@@ -45,6 +52,7 @@ class SignalTracker {
         $this->receivedSignals = [];
         SignalHandler::instance()->register($this->trackedSignal, $this->originalHandler);
         $this->originalHandler = null;
+        $this->startTime = null;
     }
 
     /**
