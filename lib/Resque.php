@@ -9,7 +9,7 @@ use Resque\Scheduler\DelayedScheduler;
 
 class Resque {
 
-    const VERSION_PREFIX = 'resqu-v4';
+    const VERSION_PREFIX = 'resqu-v5';
 
     /** @var Redis Instance of Resque_Redis that talks to redis. */
     private static $redis;

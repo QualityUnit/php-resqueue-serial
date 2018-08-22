@@ -7,7 +7,7 @@ log:
     # default = "/var/log/resque-serial.log"
     path: "php://stdout"
     # the application that sends the data, used as the "type" field of logstash
-    application_name: "resque-v4"
+    application_name: "resque-v5"
     # the system/machine name, used as the "source" field of logstash, defaults to the hostname of the machine
     system_name: ""
     # prefix for extra keys inside logstash "fields"
