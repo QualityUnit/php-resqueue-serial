@@ -3,10 +3,7 @@
 namespace Resque;
 
 use Resque\Job\QueuedJob;
-use Resque\Protocol\DeferredException;
 use Resque\Protocol\Job;
-use Resque\Protocol\UniqueException;
-use Resque\Protocol\UniqueList;
 use Resque\Queue\JobQueue;
 use Resque\Scheduler\DelayedScheduler;
 

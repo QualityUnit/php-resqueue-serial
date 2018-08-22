@@ -8,8 +8,8 @@ use Resque\Job\StaticJobSource;
 use Resque\Key;
 use Resque\Log;
 use Resque\Protocol\UniqueList;
-use Resque\Queue\Queue;
 use Resque\Queue\JobQueue;
+use Resque\Queue\Queue;
 use Resque\Worker\WorkerImage;
 
 class StaticPool implements IPool {
