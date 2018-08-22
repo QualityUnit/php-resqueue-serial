@@ -32,38 +32,23 @@ class StandardProcessor implements IProcessor {
     /**
      * @param RunningJob $runningJob
      *
-     * @return string
-     * @throws RedisError
-     */
-    public function getCache(RunningJob $runningJob) {
-        return Resque::redis()->hGet('state_cache', $runningJob->getId());
-    }
-
-    /**
-     * @param RunningJob $runningJob
-     *
      * @throws \Resque\RedisError
      */
     public function process(RunningJob $runningJob) {
         $this->successTracker->register();
 
-        $this->setCache($runningJob, 'forking');
-
         $pid = Process::fork();
         if ($pid === 0) {
             // CHILD PROCESS START
             try {
-                $this->setCache($runningJob, 'child started');
                 $workerPid = $runningJob->getWorker()->getImage()->getPid();
                 Log::setPrefix("$workerPid-std-proc-" . posix_getpid());
                 Process::setTitlePrefix("$workerPid-std-proc");
                 Process::setTitle("Processing job {$runningJob->getName()}");
                 $this->handleChild($runningJob);
-                $this->setCache($runningJob, 'done');
                 Process::signal(self::SIGNAL_SUCCESS, $workerPid);
             } catch (\Throwable $t) {
                 try {
-                    $this->setCache($runningJob, 'failed');
                     $runningJob->fail($t);
                     UniqueList::removeAll($runningJob->getJob()->getUniqueId());
                     Process::signal(self::SIGNAL_SUCCESS, $workerPid ?? 0);
@@ -89,7 +74,6 @@ class StandardProcessor implements IProcessor {
                 UniqueList::removeAll($runningJob->getJob()->getUniqueId());
             } finally {
                 $this->successTracker->unregister();
-                $this->removeCache($runningJob);
             }
         }
     }
@@ -100,7 +84,6 @@ class StandardProcessor implements IProcessor {
      * @return mixed
      */
     private function createTask(RunningJob $runningJob) {
-        $this->setCache($runningJob, 'creating task');
         $job = $runningJob->getJob();
         try {
             $this->setupEnvironment($job);
@@ -179,9 +162,7 @@ class StandardProcessor implements IProcessor {
 
             UniqueList::editState($job->getUniqueId(), UniqueList::STATE_RUNNING);
 
-            $this->setCache($runningJob, 'performing');
             $task->perform();
-            $this->setCache($runningJob, 'performed');
         } catch (\Exception $e) {
             $this->handleException($runningJob, $e);
 
@@ -191,7 +172,6 @@ class StandardProcessor implements IProcessor {
         $this->reportSuccess($runningJob);
 
         try {
-            $this->setCache($runningJob, 'deferring');
             $this->enqueueDeferred($job);
         } catch (DeferredException $ignore) {
         } catch (UniqueException $ignore) {
@@ -247,15 +227,6 @@ class StandardProcessor implements IProcessor {
         include_once $includePath . DIRECTORY_SEPARATOR . $jobPath;
     }
 
-    /**
-     * @param RunningJob $runningJob
-     *
-     * @throws RedisError
-     */
-    private function removeCache(RunningJob $runningJob) {
-        Resque::redis()->hDel('state_cache', $runningJob->getId());
-    }
-
     private function reportSuccess(RunningJob $runningJob) {
         try {
             $runningJob->success();
@@ -292,16 +263,6 @@ class StandardProcessor implements IProcessor {
         }
     }
 
-    /**
-     * @param RunningJob $runningJob
-     * @param string $value
-     *
-     * @throws RedisError
-     */
-    private function setCache(RunningJob $runningJob, string $value) {
-        Resque::redis()->hSet('state_cache', $runningJob->getId(), $value);
-    }
-
     private function setupEnvironment(Job $job) {
         $env = $job->getEnvironment();
         if (\is_array($env)) {
@@ -327,10 +288,7 @@ class StandardProcessor implements IProcessor {
             while (!$this->successTracker->waitFor($pid, self::CHILD_SIGNAL_TIMEOUT)) {
                 // NOOP
                 if (microtime(true) - $this->successTracker->getStartTime() > 3600) {
-                    $cached = $this->getCache($runningJob);
-                    Log::warning("Sending kill signal to $pid, which is likely stuck.", [
-                        'cached_value' => $cached
-                    ]);
+                    Log::warning("Sending kill signal to $pid, which is likely stuck.");
                     posix_kill($pid, SIGKILL);
                 }
             }
