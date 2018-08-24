@@ -58,13 +58,6 @@ class InitProcess {
         $this->signalProcesses(SIGHUP, 'HUP');
     }
 
-    public function reloadLogger() {
-        Log::debug('Reloading logger');
-        Log::initialize(GlobalConfig::getInstance()->getLogConfig());
-
-        $this->signalProcesses(SIGUSR1, 'USR1');
-    }
-
     /**
      * send TERM to all workers and serial workers
      */
@@ -127,7 +120,12 @@ class InitProcess {
             ->register(SIGINT, [$this, 'shutdown'])
             ->register(SIGQUIT, [$this, 'shutdown'])
             ->register(SIGHUP, [$this, 'reload'])
-            ->register(SIGUSR1, [$this, 'reloadLogger'])
+            ->register(SIGUSR1,  function () {
+                Log::warning('Received unhandled SIGUSR1.');
+            })
+            ->register(SIGUSR2,  function () {
+                Log::warning('Received unhandled SIGUSR2.');
+            })
             ->register(SIGCHLD, SIG_IGN); // prevent zombie children by ignoring them
         Log::debug('Registered signals');
     }

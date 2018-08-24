@@ -5,12 +5,12 @@ namespace Resque;
 
 
 use Monolog\Formatter\LogstashFormatter;
-use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Monolog\Processor\PsrLogMessageProcessor;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
 use Resque\Config\LogConfig;
+use Resque\Log\FileHandler;
 
 class Log {
 
@@ -87,7 +87,7 @@ class Log {
             $config->getVersion()
         );
 
-        $handler = new StreamHandler($config->getPath(), $config->getLevel());
+        $handler = new FileHandler($config->getPath(), $config->getLevel());
         $handler->setFormatter($formatter);
 
         $logger = new Logger('main');
