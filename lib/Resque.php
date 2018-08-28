@@ -29,16 +29,6 @@ class Resque {
     }
 
     /**
-     * @param int $delay Delay in seconds
-     * @param \Resque\Protocol\Job $job
-     *
-     * @throws RedisError
-     */
-    public static function delayedEnqueueExisting($delay, Job $job) {
-        DelayedScheduler::scheduleUnsafe(time() + $delay, $job);
-    }
-
-    /**
      * @param Job $job
      *
      * @return QueuedJob

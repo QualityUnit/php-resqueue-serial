@@ -85,7 +85,7 @@ class RunningJob {
      * @throws \Resque\RedisError
      */
     public function rescheduleDelayed($in) {
-        Resque::delayedEnqueueExisting($in, $this->job);
+        Resque::delayedEnqueue($in, $this->job);
         $this->reportSuccess();
         $this->reportReschedule();
     }
