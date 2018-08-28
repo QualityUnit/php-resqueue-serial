@@ -36,7 +36,7 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
      */
     public function doWork() {
         Log::debug('Retrieving job from unassigned jobs');
-        $payload = $this->buffer->popIntoBlocking($this->unassignedQueue, self::BLOCKING_TIMEOUT);
+        $payload = $this->unassignedQueue->popIntoBlocking($this->buffer, self::BLOCKING_TIMEOUT);
         if ($payload === null) {
             Log::debug('No jobs to allocate');
             return;
