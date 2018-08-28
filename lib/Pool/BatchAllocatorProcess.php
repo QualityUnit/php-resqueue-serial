@@ -6,6 +6,7 @@ use Resque\Config\GlobalConfig;
 use Resque\Key;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
+use Resque\Queue\Queue;
 use Resque\Resque;
 use Resque\Stats\AllocatorStats;
 
@@ -14,8 +15,12 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
     const BLOCKING_TIMEOUT = 3;
     const TTL_UNSET_RESPONSE = -1;
 
-    /** @var string */
-    private $bufferKey;
+    /** @var Queue */
+    private $buffer;
+    /** @var Queue */
+    private $committedQueue;
+    /** @var Queue */
+    private $failQueue;
 
     /**
      * @param $code
@@ -23,20 +28,20 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
     public function __construct($code) {
         parent::__construct('batch-allocator', AllocatorImage::create($code));
 
-        $this->bufferKey = Key::localAllocatorBuffer($code);
+        $this->buffer = new Queue(Key::localAllocatorBuffer($code));
+        $this->committedQueue = new Queue(Key::committedBatchList());
+        $this->failQueue = new Queue(Key::batchAllocationFailures());
     }
 
     /**
      * main loop
      *
-     * @throws PoolStateException
      * @throws \Resque\RedisError
      */
     public function doWork() {
         Log::debug('Retrieving batch from committed batches');
-        $keyFrom = Key::committedBatchList();
-        $batchId = Resque::redis()->brPoplPush($keyFrom, $this->bufferKey, self::BLOCKING_TIMEOUT);
-        if ($batchId === false) {
+        $batchId = $this->committedQueue->popIntoBlocking($this->buffer, self::BLOCKING_TIMEOUT);
+        if ($batchId === null) {
             Log::debug('No batches to allocate');
             return;
         }
@@ -48,9 +53,8 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
      * @throws \Resque\RedisError
      */
     public function revertBuffer() {
-        Log::info("Reverting allocator buffer {$this->bufferKey}");
-        $keyTo = Key::committedBatchList();
-        while (false !== Resque::redis()->rPoplPush($this->bufferKey, $keyTo)) {
+        Log::info("Reverting allocator buffer {$this->buffer->getKey()}");
+        while (null !== $this->buffer->popInto($this->committedQueue)) {
             // NOOP
         }
     }
@@ -59,7 +63,7 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
      * @throws \Resque\RedisError
      */
     protected function prepareWork() {
-        while (false !== ($batchId = Resque::redis()->lIndex($this->bufferKey, -1))) {
+        while (null !== ($batchId = $this->buffer->peek())) {
             $this->assignBatch($batchId);
         }
     }
@@ -84,12 +88,12 @@ class BatchAllocatorProcess extends AbstractProcess implements IAllocatorProcess
 
             AllocatorStats::getInstance()->reportBatchAllocated();
 
-            Resque::redis()->lRem($this->bufferKey, 1, $batchId);
+            $this->buffer->remove($batchId);
         } catch (\Exception $e) {
             Log::critical("Failed to allocate batch $batchId to pool.", [
                 'exception' => $e
             ]);
-            $actualBatchId = Resque::redis()->rPoplPush($this->bufferKey, Key::batchAllocationFailures());
+            $actualBatchId = $this->buffer->popInto($this->failQueue);
             $this->validatePayload($batchId, $actualBatchId);
         }
     }

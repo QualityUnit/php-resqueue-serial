@@ -31,7 +31,7 @@ class Queue {
      * @throws RedisError
      */
     public function peek() {
-        return Resque::redis()->lIndex($this->key, -1);
+        return Resque::redis()->lIndex($this->key, -1) ?: null;
     }
 
     /**
