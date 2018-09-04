@@ -61,7 +61,7 @@ class StandardProcessor implements IProcessor {
             // CHILD PROCESS END
         } else {
             try {
-                $exitCode = $this->waitForChildProcess($pid, $runningJob);
+                $exitCode = $this->waitForChildProcess($pid);
                 if ($exitCode !== 0) {
                     Log::warning("Job process signalled success, but exited with code $exitCode.", [
                         'payload' => $runningJob->getJob()->toArray()
@@ -268,12 +268,11 @@ class StandardProcessor implements IProcessor {
 
     /**
      * @param $pid
-     * @param RunningJob $runningJob
      *
      * @return int
      * @throws \Exception
      */
-    private function waitForChildProcess($pid, $runningJob) {
+    private function waitForChildProcess($pid) {
         $status = "Forked $pid at " . strftime('%F %T');
         Process::setTitle($status);
         Log::info($status);
