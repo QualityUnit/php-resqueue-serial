@@ -281,10 +281,6 @@ class StandardProcessor implements IProcessor {
         if (!$this->successTracker->receivedFrom($pid)) {
             while (!$this->successTracker->waitFor($pid, self::CHILD_SIGNAL_TIMEOUT)) {
                 // NOOP
-                if (microtime(true) - $this->successTracker->getStartTime() > 3600) {
-                    Log::warning("Sending kill signal to $pid, which is likely stuck.");
-                    posix_kill($pid, SIGKILL);
-                }
             }
         }
         $this->successTracker->unregister();
