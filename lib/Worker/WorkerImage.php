@@ -67,17 +67,7 @@ class WorkerImage extends AbstractProcessImage {
      * @throws \Resque\RedisError
      */
     public function getRuntimeInfo() {
-        $rawInfo = json_decode(Resque::redis()->get(Key::workerRuntimeInfo($this->getId())), true);
-        if (!\is_array($rawInfo)) {
-            $rawInfo = [];
-        }
-
-        $info = new RuntimeInfo();
-        $info->startTime = $rawInfo['start_time'] ?? 0.0;
-        $info->jobName = $rawInfo['job_name'] ?? 'unset';
-        $info->uniqueId = $rawInfo['unique_id'] ?? null;
-
-        return $info;
+        return RuntimeInfo::fromString(Resque::redis()->get(Key::workerRuntimeInfo($this->getId())));
     }
 
     /**
@@ -95,11 +85,10 @@ class WorkerImage extends AbstractProcessImage {
      * @throws \Resque\RedisError
      */
     public function setRuntimeInfo($startTime, $jobName, $uniqueId) {
-        Resque::redis()->set(Key::workerRuntimeInfo($this->getId()), json_encode([
-            'start_time' => $startTime,
-            'job_name' => $jobName,
-            'unique_id' => $uniqueId
-        ]));
+        Resque::redis()->set(
+            Key::workerRuntimeInfo($this->getId()),
+            (new RuntimeInfo($startTime, $jobName, $uniqueId))->toString()
+        );
     }
 
     /**
