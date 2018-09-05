@@ -1,4 +1,4 @@
-# php-resqueue-serial
+# resqu-server
 Php queue implementation
 
 ## Dependencies

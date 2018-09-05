@@ -1,30 +1,23 @@
 {
-    "name": "qualityunit/php-resque-serial",
-    "type": "library",
-    "description": "php-resque plugin that adds serial jobs",
-    "keywords": ["serial", "job", "background", "redis", "resque"],
-    "homepage": "https://github.com/QualityUnit/php-resqueue-serial",
+    "type": "project",
+    "homepage": "https://github.com/QualityUnit/resqu-server",
     "license": "MIT",
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/QualityUnit/resqu-client.git"
-        }
-    ],
     "require": {
         "php": ">=7.0.0",
         "ext-pcntl": "*",
+        "ext-posix": "*",
         "ext-json": "*",
         "colinmollenhour/credis": "^1.9.1",
         "symfony/yaml": "^3.2",
         "monolog/monolog": "^1.22"
     },
     "require-dev": {
+        "roave/security-advisories": "dev-master",
         "qualityunit/resqu-client": "~5"
     },
     "suggest": {
-        "ext-proctitle": "Allows php-resque-serial to rename the title of UNIX processes to show the status of a worker.",
-        "ext-redis": "Native PHP extension for Redis connectivity. Credis will automatically utilize when available."
+        "ext-proctitle": "Allows resqu-server to rename the title of UNIX processes to show the status of a worker.",
+        "ext-redis": "Native PHP extension for Redis connectivity.  will automatically utilize when available."
     },
     "autoload": {
         "psr-4": {
