@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aba904090d7d592ca3686adf64779a8f",
+    "content-hash": "83549563040f677ce5c1eba5246a2a5f",
     "packages": [
         {
             "name": "colinmollenhour/credis",
@@ -233,16 +233,16 @@
     "packages-dev": [
         {
             "name": "qualityunit/resqu-client",
-            "version": "1.0.3",
+            "version": "5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/QualityUnit/resqu-client.git",
-                "reference": "84744e1743af769559d0f69fd35a46e7e59aea0b"
+                "reference": "72c6f2c063a2d750c6eb7629bd8ae7cec8a2c0c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/QualityUnit/resqu-client/zipball/84744e1743af769559d0f69fd35a46e7e59aea0b",
-                "reference": "84744e1743af769559d0f69fd35a46e7e59aea0b",
+                "url": "https://api.github.com/repos/QualityUnit/resqu-client/zipball/72c6f2c063a2d750c6eb7629bd8ae7cec8a2c0c0",
+                "reference": "72c6f2c063a2d750c6eb7629bd8ae7cec8a2c0c0",
                 "shasum": ""
             },
             "require": {
@@ -272,10 +272,10 @@
                 "resqu"
             ],
             "support": {
-                "source": "https://github.com/QualityUnit/resqu-client/tree/1.0.3",
+                "source": "https://github.com/QualityUnit/resqu-client/tree/5.0.0",
                 "issues": "https://github.com/QualityUnit/resqu-client/issues"
             },
-            "time": "2018-03-22T15:38:19+00:00"
+            "time": "2018-08-28T17:02:17+00:00"
         }
     ],
     "aliases": [],

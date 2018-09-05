@@ -5,6 +5,9 @@ use Resqu\Client\JobDescriptor;
 require_once '/home/dmolnar/work/qu/php-resqueue-serial/scripts/bootstrap.php';
 require_once 'testjobs.php';
 
+ini_set('display_errors', true);
+error_reporting(E_ALL);
+
 
 class Descriptor extends JobDescriptor {
 
@@ -31,9 +34,16 @@ class Descriptor extends JobDescriptor {
     public function getName() {
         return $this->class;
     }
+
+    public function getUid() {
+        return new \Resqu\Client\JobUid('whatever', 0);
+    }
 }
 
-\Resqu\Client::enqueue(new Descriptor(__SleepJob::class, [
-    'sleep' => 10,
-    'message' => 'Test message'
-]));
+foreach ([1, 2, 3] as $i) {
+    \Resqu\Client::enqueue(new Descriptor(__SleepJob::class, [
+        'sleep' => 10,
+        'message' => "Test message$i"
+    ]));
+    sleep(3);
+}

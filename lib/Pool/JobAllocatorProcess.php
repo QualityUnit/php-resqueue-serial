@@ -59,7 +59,7 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
      * @throws \Resque\RedisError
      */
     protected function prepareWork() {
-        while (false !== ($payload = $this->buffer->peek())) {
+        while (null !== ($payload = $this->buffer->peek())) {
             $this->processPayload($payload);
         }
     }

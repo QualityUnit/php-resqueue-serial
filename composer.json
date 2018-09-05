@@ -14,12 +14,13 @@
     "require": {
         "php": ">=7.0.0",
         "ext-pcntl": "*",
+        "ext-json": "*",
         "colinmollenhour/credis": "^1.9.1",
         "symfony/yaml": "^3.2",
         "monolog/monolog": "^1.22"
     },
     "require-dev": {
-        "qualityunit/resqu-client": "~1.0"
+        "qualityunit/resqu-client": "~5"
     },
     "suggest": {
         "ext-proctitle": "Allows php-resque-serial to rename the title of UNIX processes to show the status of a worker.",

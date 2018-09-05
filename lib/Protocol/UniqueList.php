@@ -3,8 +3,10 @@
 namespace Resque\Protocol;
 
 use Resque\Key;
+use Resque\Log;
 use Resque\RedisError;
 use Resque\Resque;
+use Resque\Worker\WorkerImage;
 
 class UniqueList {
 
@@ -13,12 +15,12 @@ class UniqueList {
 
     /**
      * KEYS [ STATE KEY, DEFERRED KEY, SOURCE KEY ]
-     * ARGS [ RUNNING STATE ]
+     * ARGS [ RUNNING STATE PREFIX ]
      */
     const SCRIPT_ADD_DEFERRED = /** @lang Lua */
         <<<LUA
 local state = redis.call('GET', KEYS[1])
-if state ~= ARGV[1] then
+if 1 ~= string.find(state, ARGV[1]) then
     return false
 end
 local payload = redis.call('RPOP', KEYS[3])
@@ -32,18 +34,18 @@ LUA;
      */
     const SCRIPT_ADD_UNIQUE = /** @lang Lua */
         <<<LUA
-if not redis.call('SETNX', KEYS[1], ARGV[1]) then
+if 1 ~= redis.call('SETNX', KEYS[1], ARGV[1]) then
     return false
 end
 return redis.call('RPOPLPUSH', KEYS[2], KEYS[3])
 LUA;
     /**
      * KEYS [ STATE KEY, DEFERRED KEY ]
-     * ARGS [ RUNNING STATE ]
+     * ARGS [ RUNNING STATE PREFIX ]
      */
     const SCRIPT_FINALIZE = /** @lang Lua */
         <<<LUA
-if redis.call('GET', KEYS[1]) ~= ARGV[1] then
+if 1 ~= string.find(redis.call('GET', KEYS[1]), ARGV[1]) then
     return 1
 end
 local deferred = redis.call('GET', KEYS[2])
@@ -64,6 +66,8 @@ LUA;
      * @throws RedisError
      */
     public static function add($uniqueId, $sourceKey, $destinationKey) {
+        self::clearIfOld($uniqueId);
+
         return Resque::redis()->eval(
             self::SCRIPT_ADD_UNIQUE,
             [
@@ -72,7 +76,7 @@ LUA;
                 $destinationKey
             ],
             [
-                self::STATE_QUEUED
+                self::makeState(self::STATE_QUEUED)
             ]
         );
     }
@@ -85,41 +89,17 @@ LUA;
      * @throws RedisError
      */
     public static function addDeferred($uniqueId, $sourceKey) {
-        return false !== Resque::redis()->eval(
-                self::SCRIPT_ADD_DEFERRED,
-                [
-                    Key::uniqueState($uniqueId),
-                    Key::uniqueDeferred($uniqueId),
-                    $sourceKey
-                ],
-                [
-                    self::STATE_RUNNING
-                ]
-            );
-    }
-
-    /**
-     * @param string|null $uniqueId
-     *
-     * @return bool false if unique state already exists, true otherwise
-     * @throws RedisError
-     */
-    public static function addIfNotExists($uniqueId) {
-
-        return !$uniqueId || Resque::redis()->setNx(Key::uniqueState($uniqueId), self::STATE_QUEUED);
-    }
-
-    /**
-     * @param string $uniqueId
-     * @param string $newState
-     *
-     * @return bool
-     * @throws RedisError
-     */
-    public static function editState($uniqueId, $newState) {
-        // 1 or 0 from native redis, true or false from phpredis
-        return !$uniqueId
-            || Resque::redis()->set(Key::uniqueState($uniqueId), $newState, ['XX']);
+        return Resque::redis()->eval(
+            self::SCRIPT_ADD_DEFERRED,
+            [
+                Key::uniqueState($uniqueId),
+                Key::uniqueDeferred($uniqueId),
+                $sourceKey
+            ],
+            [
+                self::STATE_RUNNING
+            ]
+        );
     }
 
     /**
@@ -142,7 +122,9 @@ LUA;
                 Key::uniqueState($uniqueId),
                 Key::uniqueDeferred($uniqueId)
             ],
-            [self::STATE_RUNNING]
+            [
+                self::STATE_RUNNING
+            ]
         );
     }
 
@@ -169,5 +151,83 @@ LUA;
     public static function removeDeferred($uniqueId) {
         return !$uniqueId
             || Resque::redis()->del(Key::uniqueDeferred($uniqueId));
+    }
+
+    /**
+     * @param string $uniqueId
+     *
+     * @return bool
+     * @throws RedisError
+     */
+    public static function setRunning($uniqueId) {
+        // 1 or 0 from native redis, true or false from phpredis
+        return !$uniqueId
+            || Resque::redis()->set(Key::uniqueState($uniqueId), self::makeState(self::STATE_RUNNING), ['XX']);
+    }
+
+    /**
+     * @param string $uniqueId
+     *
+     * @throws RedisError
+     */
+    private static function clearIfOld($uniqueId) {
+        $state = self::getState($uniqueId);
+
+        if (!$state || $state->stateName !== self::STATE_RUNNING) {
+            return;
+        }
+
+        if ((int)$state->startTime < (time() - 3600)) {
+            self::clearUniqueKey($uniqueId);
+        }
+    }
+
+    /**
+     * @param string $uniqueId
+     *
+     * @throws RedisError
+     */
+    private static function clearUniqueKey($uniqueId) {
+        $workerKeys = Resque::redis()->keys(Key::workerRuntimeInfo('*'));
+
+        foreach ($workerKeys as $key) {
+            $workerId = explode(':', $key)[2] ?? null;
+            if (!$workerId) {
+                continue;
+            }
+
+            $runningUniqueId = WorkerImage::load($workerId)->getRuntimeInfo()->uniqueId;
+            if ($uniqueId === $runningUniqueId) {
+                Log::warning('Long running unique job', [
+                    'unique_id' => $uniqueId
+                ]);
+
+                return;
+            }
+        }
+
+        Log::warning('Clearing stale unique key.', [
+            'unique_id' => $uniqueId
+        ]);
+        self::removeAll($uniqueId);
+    }
+
+    /**
+     * @param string $uniqueId
+     *
+     * @return null|UniqueState
+     * @throws RedisError
+     */
+    private static function getState($uniqueId) {
+        $stateString = Resque::redis()->get(Key::uniqueState($uniqueId));
+        if (!$stateString) {
+            return null;
+        }
+
+        return UniqueState::fromString($stateString);
+    }
+
+    private static function makeState(string $stateName) {
+        return (new UniqueState($stateName))->toString();
     }
 }

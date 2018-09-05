@@ -8,4 +8,6 @@ class RuntimeInfo {
     public $startTime;
     /** @var string */
     public $jobName;
+    /** @var string */
+    public $uniqueId;
 }

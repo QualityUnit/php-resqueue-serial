@@ -105,7 +105,11 @@ class WorkerProcess extends AbstractProcess {
      * @throws \Resque\RedisError
      */
     private function startWorkOn(QueuedJob $queuedJob) {
-        $this->getImage()->setRuntimeInfo(microtime(true), $queuedJob->getJob()->getName());
+        $this->getImage()->setRuntimeInfo(
+            microtime(true),
+            $queuedJob->getJob()->getName(),
+            $queuedJob->getJob()->getUniqueId()
+        );
         $runningJob = new RunningJob($this, $queuedJob);
         JobStats::getInstance()->reportJobProcessing($runningJob);
 

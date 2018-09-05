@@ -156,7 +156,7 @@ class StandardProcessor implements IProcessor {
             $task = $this->createTask($runningJob);
             Log::debug("Performing task {$job->getClass()}");
 
-            UniqueList::editState($job->getUniqueId(), UniqueList::STATE_RUNNING);
+            UniqueList::setRunning($job->getUniqueId());
 
             $task->perform();
         } catch (\Exception $e) {
@@ -241,8 +241,7 @@ class StandardProcessor implements IProcessor {
      */
     private function rescheduleJob(RunningJob $runningJob, $delay) {
         try {
-            UniqueList::editState($runningJob->getJob()->getUniqueId(), UniqueList::STATE_QUEUED);
-            UniqueList::removeDeferred($runningJob->getJob()->getUniqueId());
+            UniqueList::removeAll($runningJob->getJob()->getUniqueId());
             if ($delay > 0) {
                 $runningJob->rescheduleDelayed($delay);
             } else {

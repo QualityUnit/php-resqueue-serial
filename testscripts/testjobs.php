@@ -18,6 +18,8 @@ class __SleepJob {
 
     public function perform() {
         sleep((int)($this->args['sleep'] ?? 3));
+
+        \Resque\Log::notice($this->args['message'] ?? "No 'message' to echo.");
     }
 }
 

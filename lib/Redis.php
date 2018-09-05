@@ -403,10 +403,6 @@ class Redis {
      */
     private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5, $callid = null) {
         $callid = $callid ?? microtime(true);
-        Log::notice("Attempting call retry. ($name - {$wait}s) ", [
-            'args' => $args,
-            'exception' => $e
-        ]);
         if (!$this->isAbleToRetry($e)) {
             Log::critical('Redis call failed.', [
                 'exception' => $e,
@@ -416,6 +412,11 @@ class Redis {
 
             throw new RedisError("Error communicating with Redis: {$e->getMessage()}", 0, $e);
         }
+
+        Log::notice("Attempting call retry. ($name - {$wait}s) ", [
+            'args' => $args,
+            'exception' => $e
+        ]);
         $this->close();
 
         usleep($wait * 1000000);
