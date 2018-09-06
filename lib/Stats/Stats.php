@@ -8,8 +8,6 @@ use Resque\StatsD\Client;
 
 class Stats {
 
-    /** @var bool */
-    private $isOld = false;
     /** @var string */
     private $nodeId;
     /** @var string */
@@ -29,13 +27,6 @@ class Stats {
         return new static(GlobalConfig::getInstance()->getNodeId());
     }
 
-    public static function old(): self {
-        $stats = self::node();
-        $stats->isOld = true;
-
-        return $stats;
-    }
-
     /**
      * @param string $key
      * @param int $value
@@ -45,7 +36,7 @@ class Stats {
      * @return $this
      */
     public function count(string $key, int $value, float $sampleRate = 1, array $tags = []): self {
-        $this->client()->count($this->prefix($key), $value, $sampleRate, $tags);
+        StatsD::client()->count($this->prefix($key), $value, $sampleRate, $tags);
 
         return $this;
     }
@@ -80,7 +71,7 @@ class Stats {
      * @return $this
      */
     public function gauge(string $key, int $value, array $tags = []): self {
-        $this->client()->gauge($this->prefix($key), $value, $tags);
+        StatsD::client()->gauge($this->prefix($key), $value, $tags);
 
         return $this;
     }
@@ -104,7 +95,7 @@ class Stats {
      * @return $this
      */
     public function set(string $key, int $value, array $tags = []): self {
-        $this->client()->set($this->prefix($key), $value, $tags);
+        StatsD::client()->set($this->prefix($key), $value, $tags);
 
         return $this;
     }
@@ -118,20 +109,12 @@ class Stats {
      * @return $this
      */
     public function timing(string $key, int $value, float $sampleRate = 1, array $tags = []): self {
-        $this->client()->timing($this->prefix($key), $value, $sampleRate, $tags);
+        StatsD::client()->timing($this->prefix($key), $value, $sampleRate, $tags);
 
         return $this;
     }
 
-    private function client(): Client {
-        if ($this->isOld) {
-            return StatsD::oldClient();
-        }
-
-        return StatsD::client();
-    }
-
     private function prefix(string $key): string {
-        return "{$this->nodeId}." . ($this->isOld ? '' : "{$this->sourceId}.") . $key;
+        return "{$this->nodeId}.{$this->sourceId}.$key";
     }
 }

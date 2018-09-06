@@ -155,6 +155,5 @@ class RunningJob {
         }
 
         JobStats::getInstance()->reportDuration($this, $duration);
-        JobStats::getInstance()->reportSuccess($this);
     }
 }

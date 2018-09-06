@@ -53,8 +53,6 @@ class WorkerProcess extends AbstractProcess {
             Log::debug("Processing of job {$runningJob->getId()} has finished", [
                 'payload' => $runningJob->getJob()->toString()
             ]);
-
-            PoolStats::getInstance()->reportProcessed($this->getImage()->getPoolName());
         } catch (\Exception $e) {
             Log::critical('Unexpected error occurred during execution of a job.', [
                 'exception' => $e,

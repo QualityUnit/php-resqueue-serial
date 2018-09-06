@@ -12,8 +12,6 @@ class AllocatorStats {
      * Reports the number of allocated batches
      */
     public function reportBatchAllocated() {
-        Stats::old()->increment('allocators.batch.allocated');
-
         Stats::global()->increment('alloc.batch.allocated');
     }
 
@@ -23,8 +21,6 @@ class AllocatorStats {
      * @param int $length Number of batches waiting to be allocated
      */
     public function reportBatchQueue(int $length) {
-        Stats::old()->gauge('allocators.batch.queue', $length);
-
         Stats::global()->gauge('alloc.batch.queue', $length);
     }
 
@@ -32,8 +28,6 @@ class AllocatorStats {
      * Reports the number of allocated jobs
      */
     public function reportStaticAllocated() {
-        Stats::old()->increment('allocators.static.allocated');
-
         Stats::global()->increment('alloc.static.allocated');
     }
 
@@ -43,8 +37,6 @@ class AllocatorStats {
      * @param int $length Number of jobs waiting to be allocated
      */
     public function reportStaticQueue(int $length) {
-        Stats::old()->gauge('allocators.static.queue', $length);
-
         Stats::global()->gauge('alloc.static.queue', $length);
     }
 }
