@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e17e061f53e634fddbc77da006fe0b8a",
+    "content-hash": "e411dd0e5e42b50caafa387d57597777",
     "packages": [
         {
             "name": "colinmollenhour/credis",
@@ -170,6 +170,42 @@
                 "psr-3"
             ],
             "time": "2016-10-10T12:19:37+00:00"
+        },
+        {
+            "name": "qualityunit/statsd-client",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/QualityUnit/statsd-client.git",
+                "reference": "7cb5165efafb57a4ed66c484fbceb615612e5cf7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/QualityUnit/statsd-client/zipball/7cb5165efafb57a4ed66c484fbceb615612e5cf7",
+                "reference": "7cb5165efafb57a4ed66c484fbceb615612e5cf7",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Qu\\Statsd\\": "lib"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "simple php statsd client implementation",
+            "homepage": "https://github.com/QualityUnit/statsd-client",
+            "keywords": [
+                "client",
+                "qualityunit",
+                "statsd"
+            ],
+            "time": "2018-07-26T08:12:02+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",

@@ -2,10 +2,10 @@
 
 namespace Resque;
 
+use Qu\Statsd\Client;
+use Qu\Statsd\Connection\MultiConnection;
+use Qu\Statsd\Connection\UdpSocket;
 use Resque\Config\StatsConfig;
-use Resque\StatsD\Client;
-use Resque\StatsD\Connection\MultiConnection;
-use Resque\StatsD\Connection\UdpSocket;
 
 class StatsD {
 

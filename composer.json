@@ -9,7 +9,8 @@
         "ext-json": "*",
         "colinmollenhour/credis": "^1.9.1",
         "symfony/yaml": "^3.2",
-        "monolog/monolog": "^1.22"
+        "monolog/monolog": "^1.22",
+        "qualityunit/statsd-client": "^1"
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",
