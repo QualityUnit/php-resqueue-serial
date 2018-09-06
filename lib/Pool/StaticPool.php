@@ -10,6 +10,7 @@ use Resque\Log;
 use Resque\Protocol\UniqueList;
 use Resque\Queue\JobQueue;
 use Resque\Queue\Queue;
+use Resque\Stats\JobStats;
 use Resque\Worker\WorkerImage;
 
 class StaticPool implements IPool {
@@ -54,12 +55,14 @@ class StaticPool implements IPool {
         if ($queuedJob->getJob()->isDeferrable()) {
             $deferred = UniqueList::addDeferred($uniqueId, $buffer->getKey());
             if ($deferred !== false) {
+                JobStats::getInstance()->reportUniqueDeferred();
                 return $deferred;
             }
 
             return $buffer->popInto(new Queue(Key::unassigned()));
         }
 
+        JobStats::getInstance()->reportUniqueDiscarded();
         return $buffer->pop();
     }
 

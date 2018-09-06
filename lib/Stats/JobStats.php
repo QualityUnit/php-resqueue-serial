@@ -30,6 +30,16 @@ class JobStats {
     }
 
     /**
+     * Reports the number of processed jobs
+     *
+     * @param RunningJob $job
+     */
+    public function reportJobProcessing(RunningJob $job) {
+        Stats::global()->forSource($job->getJob()->getSourceId())
+            ->increment("job.{$job->getName()}.processed");
+    }
+
+    /**
      * Reports the number of retried jobs
      *
      * @param RunningJob $job
@@ -50,12 +60,16 @@ class JobStats {
     }
 
     /**
-     * Reports the number of processed jobs
-     *
-     * @param RunningJob $job
+     * Reports the number of allocated jobs
      */
-    public function reportJobProcessing(RunningJob $job) {
-        Stats::global()->forSource($job->getJob()->getSourceId())
-            ->increment("job.{$job->getName()}.processed");
+    public function reportUniqueDeferred() {
+        Stats::global()->increment('job.unique.deferred');
+    }
+
+    /**
+     * Reports the number of allocated jobs
+     */
+    public function reportUniqueDiscarded() {
+        Stats::global()->increment('job.unique.discarded');
     }
 }
