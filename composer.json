@@ -14,7 +14,8 @@
     },
     "require-dev": {
         "roave/security-advisories": "dev-master",
-        "qualityunit/resqu-client": "~5"
+        "qualityunit/resqu-client": "~5",
+        "phpunit/phpunit": "^7"
     },
     "suggest": {
         "ext-proctitle": "Allows resqu-server to rename the title of UNIX processes to show the status of a worker.",
@@ -22,7 +23,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Resque\\": "lib"
+            "Resque\\": "lib",
+            "Test\\": "test"
         }
     }
 }
