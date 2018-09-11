@@ -20,7 +20,7 @@ class UniqueList {
     const SCRIPT_ADD_DEFERRED = /** @lang Lua */
         <<<LUA
 local state = redis.call('GET', KEYS[1])
-if 1 ~= string.find(state, ARGV[1]) then
+if not state or 1 ~= string.find(state, ARGV[1]) then
     return false
 end
 local payload = redis.call('RPOP', KEYS[3])
@@ -45,12 +45,12 @@ LUA;
      */
     const SCRIPT_FINALIZE = /** @lang Lua */
         <<<LUA
-if 1 ~= string.find(redis.call('GET', KEYS[1]), ARGV[1]) then
+local state = redis.call('GET', KEYS[1])
+if not state or 1 ~= string.find(state, ARGV[1]) then
     return 1
 end
 local deferred = redis.call('GET', KEYS[2])
 redis.call('DEL', KEYS[1], KEYS[2])
-
 return deferred or 1
 LUA;
 
@@ -156,7 +156,7 @@ LUA;
     /**
      * @param string $uniqueId
      *
-     * @return bool
+     * @return bool true if the key was set, false if it did not exist
      * @throws RedisError
      */
     public static function setRunning($uniqueId) {
