@@ -47,19 +47,15 @@ class StaticPool implements IPool {
             return $buffer->popInto($poolQueue);
         }
 
-        $enqueued = UniqueList::add($uniqueId, $buffer->getKey(), $poolQueue->getKey());
+        $enqueued = UniqueList::add(
+            $uniqueId,
+            $buffer->getKey(),
+            $poolQueue->getKey(),
+            $queuedJob->getJob()->isDeferrable()
+        );
+
         if ($enqueued !== false) {
             return $enqueued;
-        }
-
-        if ($queuedJob->getJob()->isDeferrable()) {
-            $deferred = UniqueList::addDeferred($uniqueId, $buffer->getKey());
-            if ($deferred !== false) {
-                JobStats::getInstance()->reportUniqueDeferred();
-                return $deferred;
-            }
-
-            return $buffer->popInto(new Queue(Key::unassigned()));
         }
 
         JobStats::getInstance()->reportUniqueDiscarded();

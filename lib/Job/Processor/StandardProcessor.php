@@ -111,15 +111,50 @@ class StandardProcessor implements IProcessor {
     }
 
     /**
-     * @param \Resque\Protocol\Job $job
+     * @param Job $deferredJob
      *
+     * @throws RedisError
+     */
+    private function enqueueDeferred(Job $deferredJob) {
+        Log::debug("Enqueuing deferred job {$deferredJob->getName()}", [
+            'payload' => $deferredJob->toArray()
+        ]);
+
+        $delay = $deferredJob->getUid()->getDeferralDelay();
+        if ($delay > 0) {
+            Resque::delayedEnqueue($delay, $deferredJob);
+        } else {
+            Resque::enqueue($deferredJob);
+        }
+    }
+
+    /**
+     * @param Job $job
+     *
+     * @return null|Job
      * @throws JobParseException
      * @throws RedisError
      */
-    private function enqueueDeferred(Job $job) {
+    private function finalize(Job $job) {
+        if ($job->getUniqueId() === null) {
+            return null;
+        }
+
         $payload = UniqueList::finalize($job->getUniqueId());
+        if ($payload === false) {
+            return null;
+        }
         if ($payload === 1) {
-            return;
+            Log::error('No unique key found on unique job finalization.', [
+                'payload' => $job->toArray()
+            ]);
+            return null;
+        }
+        if ($payload === 2) {
+            Log::error('Invalid state on unique job finalization.', [
+                'payload' => $job->toArray()
+            ]);
+            return null;
         }
 
         $deferred = json_decode($payload, true);
@@ -128,20 +163,10 @@ class StandardProcessor implements IProcessor {
                 'raw_payload' => $payload
             ]);
 
-            return;
+            return null;
         }
 
-
-        $deferredJob = Job::fromArray($deferred);
-        Log::debug("Enqueuing deferred job {$deferredJob->getName()}", [
-            'payload' => $deferredJob->toString()
-        ]);
-        $delay = $deferredJob->getUid()->getDeferralDelay();
-        if ($delay > 0) {
-            Resque::delayedEnqueue($delay, $deferredJob);
-        } else {
-            Resque::enqueue($deferredJob);
-        }
+        return Job::fromArray($deferred);
     }
 
     /**
@@ -156,7 +181,12 @@ class StandardProcessor implements IProcessor {
             $task = $this->createTask($runningJob);
             Log::debug("Performing task {$job->getClass()}");
 
-            UniqueList::setRunning($job->getUniqueId());
+            $uid = $job->getUniqueId();
+            if(null !== $uid && !UniqueList::setRunning($uid)) {
+                Log::error("There's no unique state key to set to running.", [
+                   'payload' => $job->toArray()
+                ]);
+            }
 
             $task->perform();
         } catch (\Exception $e) {
@@ -168,7 +198,10 @@ class StandardProcessor implements IProcessor {
         $this->reportSuccess($runningJob);
 
         try {
-            $this->enqueueDeferred($job);
+            $deferredJob = $this->finalize($job);
+            if ($deferredJob !== null) {
+                $this->enqueueDeferred($job);
+            }
         } catch (JobParseException $e) {
             Log::error('Failed to enqueue deferred job.', [
                 'exception' => $e,

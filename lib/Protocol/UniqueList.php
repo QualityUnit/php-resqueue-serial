@@ -14,44 +14,40 @@ class UniqueList {
     const KEY_STATE = 'state';
 
     /**
-     * KEYS [ STATE KEY, DEFERRED KEY, SOURCE KEY ]
-     * ARGS [ RUNNING STATE PREFIX ]
+     * KEYS [ STATE KEY, SOURCE KEY, DESTINATION KEY, DEFERRAL KEY ]
+     * ARGS [ QUEUED STATE, RUNNING STATE PREFIX, IS DEFERRABLE ]
      */
-    const SCRIPT_ADD_DEFERRED = /** @lang Lua */
+    const SCRIPT_ASSIGN_UNIQUE = /** @lang Lua */
         <<<LUA
 local state = redis.call('GET', KEYS[1])
-if not state or 1 ~= string.find(state, ARGV[1]) then
+if not state then
+    redis.call('SET', KEYS[1], ARGV[1])
+    return redis.call('RPOPLPUSH', KEYS[2], KEYS[3])
+end
+if '' == ARGV[3] or 1 ~= string.find(state, ARGV[2]) then
     return false
 end
-local payload = redis.call('RPOP', KEYS[3])
-redis.call('SETNX', KEYS[2], payload)
+local payload = redis.call('RPOP', KEYS[2])
+redis.call('SETNX', KEYS[4], payload)
 return payload
-LUA;
-
-    /**
-     * KEYS [ STATE KEY, SOURCE KEY, DESTINATION KEY ]
-     * ARGS [ QUEUED STATE ]
-     */
-    const SCRIPT_ADD_UNIQUE = /** @lang Lua */
-        <<<LUA
-if 1 ~= redis.call('SETNX', KEYS[1], ARGV[1]) then
-    return false
-end
-return redis.call('RPOPLPUSH', KEYS[2], KEYS[3])
 LUA;
     /**
      * KEYS [ STATE KEY, DEFERRED KEY ]
      * ARGS [ RUNNING STATE PREFIX ]
+     *
+     * RETURN payload -> correct state, deferred exists
+     *        false -> correct state, deferred does not exist
+     *        1 -> unique key does not exist
+     *        2 -> unique key not in correct state
      */
     const SCRIPT_FINALIZE = /** @lang Lua */
         <<<LUA
 local state = redis.call('GET', KEYS[1])
-if not state or 1 ~= string.find(state, ARGV[1]) then
-    return 1
-end
+if not state then return 1 end
+if 1 ~= string.find(state, ARGV[1]) then return 2 end
 local deferred = redis.call('GET', KEYS[2])
 redis.call('DEL', KEYS[1], KEYS[2])
-return deferred or 1
+return deferred
 LUA;
 
     const STATE_QUEUED = 'queued';
@@ -61,43 +57,26 @@ LUA;
      * @param string $uniqueId
      * @param string $sourceKey
      * @param string $destinationKey
+     * @param bool $deferrable
      *
      * @return false|string
      * @throws RedisError
      */
-    public static function add($uniqueId, $sourceKey, $destinationKey) {
+    public static function add($uniqueId, $sourceKey, $destinationKey, $deferrable) {
         self::clearIfOld($uniqueId);
 
         return Resque::redis()->eval(
-            self::SCRIPT_ADD_UNIQUE,
+            self::SCRIPT_ASSIGN_UNIQUE,
             [
                 Key::uniqueState($uniqueId),
                 $sourceKey,
-                $destinationKey
+                $destinationKey,
+                Key::uniqueDeferred($uniqueId)
             ],
             [
-                self::makeState(self::STATE_QUEUED)
-            ]
-        );
-    }
-
-    /**
-     * @param string $uniqueId
-     * @param string $sourceKey
-     *
-     * @return string
-     * @throws RedisError
-     */
-    public static function addDeferred($uniqueId, $sourceKey) {
-        return Resque::redis()->eval(
-            self::SCRIPT_ADD_DEFERRED,
-            [
-                Key::uniqueState($uniqueId),
-                Key::uniqueDeferred($uniqueId),
-                $sourceKey
-            ],
-            [
-                self::STATE_RUNNING
+                self::makeState(self::STATE_QUEUED),
+                self::STATE_RUNNING,
+                $deferrable
             ]
         );
     }
@@ -113,7 +92,7 @@ LUA;
      */
     public static function finalize($uniqueId) {
         if (!$uniqueId) {
-            return 1;
+            throw new \InvalidArgumentException('Invalid unique ID.');
         }
 
         return Resque::redis()->eval(
@@ -131,38 +110,35 @@ LUA;
     /**
      * @param string $uniqueId
      *
-     * @return bool
      * @throws RedisError
      */
     public static function removeAll($uniqueId) {
-        return !$uniqueId
-            || Resque::redis()->del([
-                Key::uniqueState($uniqueId),
-                Key::uniqueDeferred($uniqueId)
+        if (!$uniqueId) {
+            return;
+        }
+
+        $toDelete = [Key::uniqueState($uniqueId), Key::uniqueDeferred($uniqueId)];
+        if (Resque::redis()->del($toDelete) === 0) {
+            Log::warning('No unique keys to delete.', [
+                'unique_id' => $uniqueId
             ]);
+        }
     }
 
     /**
      * @param string $uniqueId
      *
-     * @return bool
-     * @throws RedisError
-     */
-    public static function removeDeferred($uniqueId) {
-        return !$uniqueId
-            || Resque::redis()->del(Key::uniqueDeferred($uniqueId));
-    }
-
-    /**
-     * @param string $uniqueId
-     *
-     * @return bool true if the key was set, false if it did not exist
+     * @return bool false if the key was not set already, true on success
+     * @throws \InvalidArgumentException when $uniqueId is falsy value
      * @throws RedisError
      */
     public static function setRunning($uniqueId) {
         // 1 or 0 from native redis, true or false from phpredis
-        return !$uniqueId
-            || Resque::redis()->set(Key::uniqueState($uniqueId), self::makeState(self::STATE_RUNNING), ['XX']);
+        if (!$uniqueId) {
+            throw new \InvalidArgumentException('Invalid unique ID.');
+        }
+
+        return (bool) Resque::redis()->set(Key::uniqueState($uniqueId), self::makeState(self::STATE_RUNNING), ['XX']);
     }
 
     /**
