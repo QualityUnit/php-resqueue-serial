@@ -383,10 +383,9 @@ class Redis {
         // $user is not used, only $password
 
         // Look for known Credis_Client options
-        $timeout = isset($options['timeout']) ? intval($options['timeout']) : null;
-        $persistent = isset($options['persistent']) ? $options['persistent'] : '';
-        $maxRetries = isset($options['max_connect_retries'])
-            ? $options['max_connect_retries'] : 0;
+        $timeout = isset($options['timeout']) ? (int)$options['timeout'] : null;
+        $persistent = $options['persistent'] ?? '';
+        $maxRetries = $options['max_connect_retries'] ?? 0;
 
         $this->driver = new Credis_Client($host, $port, $timeout, $persistent);
         $this->driver->setMaxConnectRetries($maxRetries);
@@ -401,20 +400,20 @@ class Redis {
      * @return mixed
      * @throws RedisError
      */
-    private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5, $callid = null) {
-        $callid = $callid ?? microtime(true);
+    private function attemptCallRetry(CredisException $e, $name, $args, $wait = 0.5) {
+        $loggableArgs = array_map('\strval', $args);
         if (!$this->isAbleToRetry($e)) {
             Log::critical('Redis call failed.', [
                 'exception' => $e,
                 'name' => $name,
-                'args' => $args
+                'args' => $loggableArgs
             ]);
 
             throw new RedisError("Error communicating with Redis: {$e->getMessage()}", 0, $e);
         }
 
         Log::notice("Attempting call retry. ($name - {$wait}s) ", [
-            'args' => $args,
+            'args' => $loggableArgs,
             'exception' => $e
         ]);
         $this->close();
@@ -428,11 +427,11 @@ class Redis {
                 Log::error('Waiting for redis.', [
                     'exception' => $e,
                     'name' => $name,
-                    'args' => $args
+                    'args' => $loggableArgs
                 ]);
             }
 
-            return $this->attemptCallRetry($e, $name, $args, min(2 * $wait, 60), $callid);
+            return $this->attemptCallRetry($e, $name, $args, min(2 * $wait, 60));
         }
     }
 
