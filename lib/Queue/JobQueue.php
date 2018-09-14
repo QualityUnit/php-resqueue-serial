@@ -72,7 +72,7 @@ class JobQueue extends Queue {
 
         $data = json_decode($payload, true);
         if (!\is_array($data)) {
-            Log::error('Payload data corrupted on dequeue.', ['payload' => $payload]);
+            Log::error('Payload data corrupted on dequeue.', ['raw_payload' => $payload]);
 
             return null;
         }

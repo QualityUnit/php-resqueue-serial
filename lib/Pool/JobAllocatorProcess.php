@@ -73,7 +73,7 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
         $decoded = json_decode($payload, true);
         if (!\is_array($decoded)) {
             Log::critical('Failed to process unassigned job.', [
-                'payload' => $payload
+                'raw_payload' => $payload
             ]);
 
             $this->buffer->remove($payload);
