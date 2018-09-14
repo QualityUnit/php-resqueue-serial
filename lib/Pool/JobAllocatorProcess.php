@@ -38,8 +38,15 @@ class JobAllocatorProcess extends AbstractProcess implements IAllocatorProcess {
         Log::debug('Retrieving job from unassigned jobs');
         $payload = $this->unassignedQueue->popIntoBlocking($this->buffer, self::BLOCKING_TIMEOUT);
         if ($payload === null) {
-            Log::debug('No jobs to allocate');
-            return;
+            $really = $this->buffer->peek();
+            if ($really === null) {
+                Log::debug('No jobs to allocate');
+                return;
+            }
+
+            Log::error('Buffer incosistency detected. Redis is lying again.', [
+                'raw_payload' => $payload
+            ]);
         }
 
         $this->processPayload($payload);
