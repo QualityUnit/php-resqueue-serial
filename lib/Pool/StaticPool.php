@@ -7,10 +7,8 @@ use Resque\Job\QueuedJob;
 use Resque\Job\StaticJobSource;
 use Resque\Key;
 use Resque\Log;
-use Resque\Protocol\UniqueList;
 use Resque\Queue\JobQueue;
 use Resque\Queue\Queue;
-use Resque\Stats\JobStats;
 use Resque\Worker\WorkerImage;
 
 class StaticPool implements IPool {
@@ -38,28 +36,11 @@ class StaticPool implements IPool {
      */
     public static function assignJob($queuedJob, $buffer) {
         $poolName = self::resolvePoolName($queuedJob);
-        $uniqueId = $queuedJob->getJob()->getUniqueId();
         $poolQueue = new Queue(Key::staticPoolQueue($poolName));
 
         Log::debug("Assigning job to pool $poolName");
 
-        if (!$uniqueId) {
-            return $buffer->popInto($poolQueue);
-        }
-
-        $enqueued = UniqueList::add(
-            $uniqueId,
-            $buffer->getKey(),
-            $poolQueue->getKey(),
-            $queuedJob->getJob()->isDeferrable()
-        );
-
-        if ($enqueued !== false) {
-            return $enqueued;
-        }
-
-        JobStats::getInstance()->reportUniqueDiscarded();
-        return $buffer->pop();
+        return $buffer->popInto($poolQueue);
     }
 
     /**

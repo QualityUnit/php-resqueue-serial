@@ -8,111 +8,52 @@ use Resque\RedisError;
 use Resque\Resque;
 use Resque\Worker\WorkerImage;
 
-class UniqueList {
-
-    const KEY_DEFERRED = 'deferred';
-    const KEY_STATE = 'state';
+class UniqueLock {
 
     /**
-     * KEYS [ STATE KEY, SOURCE KEY, DESTINATION KEY, DEFERRAL KEY ]
-     * ARGS [ QUEUED STATE, RUNNING STATE PREFIX, IS DEFERRABLE ]
+     * KEYS [ STATE KEY, SOURCE KEY, DEFERRAL KEY ]
+     * ARGS [ RUNNING STATE, IS DEFERRABLE ]
+     * RETURN 1 -> job was locked and is ready to be processed
+     *        2 -> job was popped from source key and deferred
+     *        3 -> job was popped from source and discarded
      */
-    const SCRIPT_ASSIGN_UNIQUE = /** @lang Lua */
+    const SCRIPT_LOCK_UNIQUE = /** @lang Lua */
         <<<LUA
-local state = redis.call('GET', KEYS[1])
-if not state then
+if not redis.call('GET', KEYS[1]) then
     redis.call('SET', KEYS[1], ARGV[1])
-    return redis.call('RPOPLPUSH', KEYS[2], KEYS[3])
-end
-if '' == ARGV[3] or 1 ~= string.find(state, ARGV[2]) then
-    return false
+    return 1
 end
 local payload = redis.call('RPOP', KEYS[2])
-redis.call('SETNX', KEYS[4], payload)
-return payload
+if '' ~= ARGV[2] then
+    redis.call('SETNX', KEYS[3], payload)
+    return 2
+end
+return 3
 LUA;
+
     /**
      * KEYS [ STATE KEY, DEFERRED KEY ]
      * ARGS [ RUNNING STATE PREFIX ]
-     *
      * RETURN payload -> correct state, deferred exists
      *        false -> correct state, deferred does not exist
      *        1 -> unique key does not exist
-     *        2 -> unique key not in correct state
      */
-    const SCRIPT_FINALIZE = /** @lang Lua */
+    const SCRIPT_UNLOCK_UNIQUE = /** @lang Lua */
         <<<LUA
-local state = redis.call('GET', KEYS[1])
-if not state then return 1 end
-if 1 ~= string.find(state, ARGV[1]) then return 2 end
+if not redis.call('GET', KEYS[1]) then return 1 end
 local deferred = redis.call('GET', KEYS[2])
 redis.call('DEL', KEYS[1], KEYS[2])
 return deferred
 LUA;
 
-    const STATE_QUEUED = 'queued';
     const STATE_RUNNING = 'running';
 
     /**
      * @param string $uniqueId
-     * @param string $sourceKey
-     * @param string $destinationKey
-     * @param bool $deferrable
-     *
-     * @return false|string
-     * @throws RedisError
-     */
-    public static function add($uniqueId, $sourceKey, $destinationKey, $deferrable) {
-        self::clearIfOld($uniqueId);
-
-        return Resque::redis()->eval(
-            self::SCRIPT_ASSIGN_UNIQUE,
-            [
-                Key::uniqueState($uniqueId),
-                $sourceKey,
-                $destinationKey,
-                Key::uniqueDeferred($uniqueId)
-            ],
-            [
-                self::makeState(self::STATE_QUEUED),
-                self::STATE_RUNNING,
-                $deferrable
-            ]
-        );
-    }
-
-    /**
-     * If deferred job exists on specified unique key, set unique state to QUEUED and return the
-     * deferred job. Otherwise clear whole unique info for specified id.
-     *
-     * @param string $uniqueId
-     *
-     * @return int|string Return 1 if there's nothing to defer
-     * @throws RedisError
-     */
-    public static function finalize($uniqueId) {
-        if (!$uniqueId) {
-            throw new \InvalidArgumentException('Invalid unique ID.');
-        }
-
-        return Resque::redis()->eval(
-            self::SCRIPT_FINALIZE,
-            [
-                Key::uniqueState($uniqueId),
-                Key::uniqueDeferred($uniqueId)
-            ],
-            [
-                self::STATE_RUNNING
-            ]
-        );
-    }
-
-    /**
-     * @param string $uniqueId
      *
      * @throws RedisError
      */
-    public static function removeAll($uniqueId) {
+    public static function clearLock($uniqueId) {
         if (!$uniqueId) {
             return;
         }
@@ -127,18 +68,69 @@ LUA;
 
     /**
      * @param string $uniqueId
+     * @param string $sourceKey
+     * @param bool $deferrable
      *
-     * @return bool false if the key was not set already, true on success
-     * @throws \InvalidArgumentException when $uniqueId is falsy value
+     * @throws DeferredException if lock fails and a job was deferred from source
+     * @throws DiscardedException if lock fails and a job was discarded from source
      * @throws RedisError
      */
-    public static function setRunning($uniqueId) {
-        // 1 or 0 from native redis, true or false from phpredis
+    public static function lock($uniqueId, $sourceKey, $deferrable) {
         if (!$uniqueId) {
             throw new \InvalidArgumentException('Invalid unique ID.');
         }
 
-        return (bool) Resque::redis()->set(Key::uniqueState($uniqueId), self::makeState(self::STATE_RUNNING), ['XX']);
+        self::clearLockIfOld($uniqueId);
+
+        $result = Resque::redis()->eval(
+            self::SCRIPT_LOCK_UNIQUE,
+            [
+                Key::uniqueState($uniqueId),
+                $sourceKey,
+                Key::uniqueDeferred($uniqueId)
+            ],
+            [
+                self::makeState(self::STATE_RUNNING),
+                $deferrable
+            ]
+        );
+
+        if ($result === 2) {
+            throw new DeferredException('Source job was deferred.');
+        }
+        if ($result === 3) {
+            throw new DiscardedException('Source job was discarded.');
+        }
+    }
+
+    /**
+     * @param string $uniqueId
+     *
+     * @return string|false deferred payload if it exists, false otherwise
+     * @throws UniqueLockMissingException if there was no lock for unique id
+     * @throws RedisError
+     */
+    public static function unlock($uniqueId) {
+        if (!$uniqueId) {
+            throw new \InvalidArgumentException('Invalid unique ID.');
+        }
+
+        $result = Resque::redis()->eval(
+            self::SCRIPT_UNLOCK_UNIQUE,
+            [
+                Key::uniqueState($uniqueId),
+                Key::uniqueDeferred($uniqueId)
+            ],
+            [
+                self::STATE_RUNNING
+            ]
+        );
+
+        if ($result === 1) {
+            throw new UniqueLockMissingException("Unique lock for '$uniqueId'' missing.");
+        }
+
+        return $result;
     }
 
     /**
@@ -146,15 +138,15 @@ LUA;
      *
      * @throws RedisError
      */
-    private static function clearIfOld($uniqueId) {
+    private static function clearLockIfOld($uniqueId) {
         $state = self::getState($uniqueId);
 
-        if (!$state || $state->stateName !== self::STATE_RUNNING) {
+        if ($state === null) {
             return;
         }
 
         if ((int)$state->startTime < (time() - 3600)) {
-            self::clearUniqueKey($uniqueId);
+            self::clearStuckLock($uniqueId);
         }
     }
 
@@ -163,7 +155,7 @@ LUA;
      *
      * @throws RedisError
      */
-    private static function clearUniqueKey($uniqueId) {
+    private static function clearStuckLock($uniqueId) {
         $workerKeys = Resque::redis()->keys(Key::workerRuntimeInfo('*'));
 
         foreach ($workerKeys as $key) {
@@ -185,7 +177,7 @@ LUA;
         Log::warning('Clearing stale unique key.', [
             'unique_id' => $uniqueId
         ]);
-        self::removeAll($uniqueId);
+        self::clearLock($uniqueId);
     }
 
     /**

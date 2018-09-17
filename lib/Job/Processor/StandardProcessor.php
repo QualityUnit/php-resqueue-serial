@@ -11,7 +11,8 @@ use Resque\Process;
 use Resque\Process\SignalTracker;
 use Resque\Protocol\Exceptions;
 use Resque\Protocol\Job;
-use Resque\Protocol\UniqueList;
+use Resque\Protocol\UniqueLock;
+use Resque\Protocol\UniqueLockMissingException;
 use Resque\RedisError;
 use Resque\Resque;
 
@@ -48,7 +49,7 @@ class StandardProcessor implements IProcessor {
             } catch (\Throwable $t) {
                 try {
                     $runningJob->fail($t);
-                    UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                    UniqueLock::clearLock($runningJob->getJob()->getUniqueId());
                     Process::signal(self::SIGNAL_SUCCESS, $workerPid ?? 0);
                 } catch (\Throwable $r) {
                     Log::critical('Failed to properly handle job failure.', [
@@ -69,7 +70,7 @@ class StandardProcessor implements IProcessor {
                 }
             } catch (\Exception $e) {
                 $runningJob->fail(new FailException("Job execution failed: {$e->getMessage()}"));
-                UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                UniqueLock::clearLock($runningJob->getJob()->getUniqueId());
             } finally {
                 $this->successTracker->unregister();
             }
@@ -135,25 +136,21 @@ class StandardProcessor implements IProcessor {
      * @throws JobParseException
      * @throws RedisError
      */
-    private function finalize(Job $job) {
+    private function unlockJob(Job $job) {
         if ($job->getUniqueId() === null) {
             return null;
         }
 
-        $payload = UniqueList::finalize($job->getUniqueId());
-        if ($payload === false) {
-            return null;
-        }
-        if ($payload === 1) {
+        try {
+            $payload = UniqueLock::unlock($job->getUniqueId());
+        } catch (UniqueLockMissingException $e) {
             Log::error('No unique key found on unique job finalization.', [
                 'payload' => $job->toArray()
             ]);
             return null;
         }
-        if ($payload === 2) {
-            Log::error('Invalid state on unique job finalization.', [
-                'payload' => $job->toArray()
-            ]);
+
+        if ($payload === false) {
             return null;
         }
 
@@ -181,13 +178,6 @@ class StandardProcessor implements IProcessor {
             $task = $this->createTask($runningJob);
             Log::debug("Performing task {$job->getClass()}");
 
-            $uid = $job->getUniqueId();
-            if(null !== $uid && !UniqueList::setRunning($uid)) {
-                Log::error("There's no unique state key to set to running.", [
-                   'payload' => $job->toArray()
-                ]);
-            }
-
             $task->perform();
         } catch (\Exception $e) {
             $this->handleException($runningJob, $e);
@@ -198,9 +188,9 @@ class StandardProcessor implements IProcessor {
         $this->reportSuccess($runningJob);
 
         try {
-            $deferredJob = $this->finalize($job);
+            $deferredJob = $this->unlockJob($job);
             if ($deferredJob !== null) {
-                $this->enqueueDeferred($job);
+                $this->enqueueDeferred($deferredJob);
             }
         } catch (JobParseException $e) {
             Log::error('Failed to enqueue deferred job.', [
@@ -220,7 +210,7 @@ class StandardProcessor implements IProcessor {
         if (\get_class($e) === \RuntimeException::class) {
             switch ($e->getCode()) {
                 case Exceptions::CODE_RETRY:
-                    UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+                    UniqueLock::clearLock($runningJob->getJob()->getUniqueId());
                     $runningJob->retry($e);
 
                     return;
@@ -234,7 +224,7 @@ class StandardProcessor implements IProcessor {
             }
         }
 
-        UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+        UniqueLock::clearLock($runningJob->getJob()->getUniqueId());
         $runningJob->fail($e);
     }
 
@@ -274,7 +264,7 @@ class StandardProcessor implements IProcessor {
      */
     private function rescheduleJob(RunningJob $runningJob, $delay) {
         try {
-            UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+            UniqueLock::clearLock($runningJob->getJob()->getUniqueId());
             if ($delay > 0) {
                 $runningJob->rescheduleDelayed($delay);
             } else {
@@ -285,7 +275,7 @@ class StandardProcessor implements IProcessor {
                 'exception' => $e,
                 'payload' => $runningJob->getJob()->toArray()
             ]);
-            UniqueList::removeAll($runningJob->getJob()->getUniqueId());
+            UniqueLock::clearLock($runningJob->getJob()->getUniqueId());
         }
     }
 

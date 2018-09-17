@@ -171,7 +171,7 @@ LUA;
      * @throws \Resque\RedisError
      */
     private function clearBuffer(IJobSource $jobSource) {
-        while (($buffered = $jobSource->bufferPop()) !== null) {
+        while (($buffered = $jobSource->getBuffer()->popJob()) !== null) {
             Log::error("Found non-empty buffer for {$this->pool->getName()} worker.", [
                 'payload' => $buffered->getJob()->toArray()
             ]);

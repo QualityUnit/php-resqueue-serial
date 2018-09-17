@@ -54,11 +54,9 @@ class BatchJobSource implements IJobSource {
     }
 
     /**
-     * @return QueuedJob|null buffered job or null if buffer is empty
-     * @throws \Resque\RedisError
-     * @throws JobParseException
+     * @return JobQueue
      */
-    public function bufferPop() {
-        return $this->buffer->popJob();
+    public function getBuffer() {
+        return $this->buffer;
     }
 }

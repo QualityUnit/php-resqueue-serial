@@ -10,8 +10,11 @@ use Resque\Job\QueuedJob;
 use Resque\Job\RunningJob;
 use Resque\Log;
 use Resque\Process\AbstractProcess;
+use Resque\Protocol\DeferredException;
+use Resque\Protocol\DiscardedException;
+use Resque\Protocol\Job;
+use Resque\Protocol\UniqueLock;
 use Resque\Stats\JobStats;
-use Resque\Stats\PoolStats;
 
 class WorkerProcess extends AbstractProcess {
 
@@ -45,6 +48,10 @@ class WorkerProcess extends AbstractProcess {
         }
 
         Log::debug("Found job {$queuedJob->getId()}. Processing.");
+
+        if (!$this->lockJob($queuedJob->getJob())) {
+            return;
+        }
 
         $runningJob = $this->startWorkOn($queuedJob);
 
@@ -84,7 +91,7 @@ class WorkerProcess extends AbstractProcess {
     }
 
     private function finishWorkOn(QueuedJob $queuedJob) {
-        $bufferedJob = $this->source->bufferPop();
+        $bufferedJob = $this->source->getBuffer()->popJob();
         if ($bufferedJob === null) {
             Log::error('Buffer is empty after processing.', [
                 'payload' => $queuedJob->toString()
@@ -94,6 +101,30 @@ class WorkerProcess extends AbstractProcess {
         $this->assertJobsEqual($queuedJob, $bufferedJob);
 
         $this->getImage()->clearRuntimeInfo();
+    }
+
+    private function lockJob(Job $job) {
+        $uid = $job->getUid();
+
+        if ($uid === null) {
+            return true;
+        }
+
+        try {
+            UniqueLock::lock(
+                $uid->getId(),
+                $this->source->getBuffer()->getKey(),
+                $uid->isDeferrable()
+            );
+
+            return true;
+        } catch (DeferredException $e) {
+            JobStats::getInstance()->reportUniqueDeferred();
+        } catch (DiscardedException $e) {
+            JobStats::getInstance()->reportUniqueDiscarded();
+        }
+
+        return false;
     }
 
     /**

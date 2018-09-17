@@ -4,6 +4,7 @@
 namespace Resque\Job;
 
 
+use Resque\Queue\JobQueue;
 use Resque\RedisError;
 
 interface IJobSource {
@@ -15,8 +16,7 @@ interface IJobSource {
     public function bufferNextJob();
 
     /**
-     * @return QueuedJob|null buffered job or null if buffer is empty
-     * @throws RedisError
+     * @return JobQueue
      */
-    public function bufferPop();
+    public function getBuffer();
 }
