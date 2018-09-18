@@ -70,15 +70,11 @@ class JobQueue extends Queue {
             return null;
         }
 
-        $data = json_decode($payload, true);
-        if (!\is_array($data)) {
+        try {
+            return QueuedJob::decode($payload);
+        } catch (\InvalidArgumentException $e) {
             Log::error('Payload data corrupted on dequeue.', ['raw_payload' => $payload]);
-
             return null;
         }
-
-        Log::debug('Job retrieved from queue.', ['payload' => $payload]);
-
-        return QueuedJob::fromArray($data);
     }
 }

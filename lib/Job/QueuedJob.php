@@ -24,13 +24,29 @@ class QueuedJob {
     }
 
     /**
+     * @param $payload
+     *
+     * @return QueuedJob
+     * @throws JobParseException
+     * @throws \InvalidArgumentException
+     */
+    public static function decode($payload) {
+        $data = json_decode($payload, true);
+        if (!\is_array($data)) {
+            throw new \InvalidArgumentException('Payload is not json object.');
+        }
+
+        return self::fromArray($data);
+    }
+
+    /**
      * @param array $array
      *
      * @return QueuedJob
      * @throws JobParseException
      */
     public static function fromArray(array $array) {
-        if(!isset($array['id'], $array['queue_time'])) {
+        if (!isset($array['id'], $array['queue_time'])) {
             throw new JobParseException($array);
         }
 
