@@ -5,10 +5,12 @@ namespace Resque\Maintenance;
 use Resque\Config\ConfigException;
 use Resque\Config\GlobalConfig;
 use Resque\Job\IJobSource;
+use Resque\Job\JobParseException;
 use Resque\Key;
 use Resque\Log;
 use Resque\Pool\StaticPool;
 use Resque\Process;
+use Resque\Protocol\UniqueLock;
 use Resque\RedisError;
 use Resque\Resque;
 use Resque\SignalHandler;
@@ -55,7 +57,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
     /**
      * Cleans up and recovers local processes.
      *
-     * @throws \Resque\RedisError
+     * @throws RedisError
      */
     public function maintain() {
         $workerLimit = $this->pool->getWorkerCount();
@@ -88,7 +90,7 @@ class StaticPoolMaintainer implements IProcessMaintainer {
                 ]);
                 $image->unregister();
                 $image->clearRuntimeInfo();
-                $this->clearBuffer($this->pool->createJobSource($image));
+                WorkerMaintenance::clearBuffer($this->pool, $image);
                 continue;
             }
 
@@ -116,19 +118,6 @@ class StaticPoolMaintainer implements IProcessMaintainer {
     }
 
     /**
-     * @param IJobSource $jobSource
-     *
-     * @throws RedisError
-     */
-    private function clearBuffer(IJobSource $jobSource) {
-        while (($buffered = $jobSource->getBuffer()->popJob()) !== null) {
-            Log::error("Found non-empty buffer for {$this->pool->getName()} worker.", [
-                'payload' => $buffered->getJob()->toArray()
-            ]);
-        }
-    }
-
-    /**
      * @throws RedisError
      */
     private function forkWorker() {
@@ -144,10 +133,9 @@ class StaticPoolMaintainer implements IProcessMaintainer {
 
             $image = WorkerImage::create($this->pool->getName(), 's');
             Log::info("Creating static pool worker {$image->getId()}");
-            $jobSource = $this->pool->createJobSource($image);
-            $this->clearBuffer($jobSource);
+            WorkerMaintenance::clearBuffer($this->pool, $image);
 
-            $worker = new WorkerProcess($jobSource, $image);
+            $worker = new WorkerProcess($this->pool->createJobSource($image), $image);
             if ($worker === null) {
                 exit(0);
             }

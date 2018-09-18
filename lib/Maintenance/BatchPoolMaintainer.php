@@ -141,7 +141,7 @@ LUA;
                 ]);
                 $image->unregister();
                 $image->clearRuntimeInfo();
-                $this->clearBuffer($this->pool->createJobSource($image));
+                WorkerMaintenance::clearBuffer($this->pool, $image);
                 continue;
             }
 
@@ -163,19 +163,6 @@ LUA;
         }
 
         return $counts;
-    }
-
-    /**
-     * @param IJobSource $jobSource
-     *
-     * @throws \Resque\RedisError
-     */
-    private function clearBuffer(IJobSource $jobSource) {
-        while (($buffered = $jobSource->getBuffer()->popJob()) !== null) {
-            Log::error("Found non-empty buffer for {$this->pool->getName()} worker.", [
-                'payload' => $buffered->getJob()->toArray()
-            ]);
-        }
     }
 
     /**
@@ -227,8 +214,9 @@ LUA;
 
             $image = WorkerImage::create($this->pool->getName(), $unitNumber);
             Log::info("Creating batch pool worker {$image->getId()}");
+            WorkerMaintenance::clearBuffer($this->pool, $image);
             $jobSource = $this->pool->createJobSource($image);
-            $this->clearBuffer($jobSource);
+
 
             $worker = new WorkerProcess($jobSource, $image);
             if ($worker === null) {
